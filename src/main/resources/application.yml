@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/your_database
-    username: your_username
-    password: your_password
+    url: jdbc:postgresql://localhost:5432/pinco
+    username: user
+    password: password
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
