@@ -1,9 +1,11 @@
-package com.back.team07;
+package com.back.pinco;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
+@EnableJpaAuditing
 public class PinCoApplication {
 
     public static void main(String[] args) {
