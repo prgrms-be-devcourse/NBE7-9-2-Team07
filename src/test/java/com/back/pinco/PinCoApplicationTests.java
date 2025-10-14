@@ -1,4 +1,4 @@
-package com.back.team07;
+package com.back.pinco;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

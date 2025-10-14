@@ -1,4 +1,4 @@
-package com.back.team07;
+package com.back.pinco;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
