@@ -1,4 +1,7 @@
 package com.back.pinco.domain.pin.repository;
 
-public class PinRepository {
+import com.back.pinco.domain.pin.entity.Pin;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PinRepository extends JpaRepository<Pin,Long> {
 }
