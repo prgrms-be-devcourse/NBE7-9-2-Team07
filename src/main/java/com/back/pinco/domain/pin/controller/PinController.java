@@ -57,6 +57,23 @@ public class PinController {
 
     }
 
+    @GetMapping("/all")
+    public RsData<List<Pin>> getAll() {
+        List<Pin> pins = pinService.findAll();
+        if(pins.isEmpty()){
+            return new RsData<>(
+                    "204",
+                    "조회된 값이 없습니다.",
+                    null
+            );
+        }
+        return new RsData<List<Pin>>(
+                "200",
+                "성공적으로 처리되었습니다",
+                pins
+        );
+
+    }
 
 
 

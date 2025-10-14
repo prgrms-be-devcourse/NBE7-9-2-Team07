@@ -48,4 +48,21 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.latitude").value(pin.getLatitude()))
                 .andExpect(jsonPath("$.longitude").value(pin.getLongitude()));
     }
+
+    @Test
+    @DisplayName("모든 핀 리턴")
+    void t2() throws Exception {
+
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/pins/all")
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getAll"))
+                .andExpect(status().isOk());
+    }
 }
