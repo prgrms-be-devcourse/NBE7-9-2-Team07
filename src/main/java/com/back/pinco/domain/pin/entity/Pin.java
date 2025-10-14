@@ -1,7 +1,6 @@
 package com.back.pinco.domain.pin.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -11,7 +10,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Table(name = "pins")
 @EntityListeners(AuditingEntityListener.class)
@@ -31,4 +29,9 @@ public class Pin {
     @Column(name = "create_at", nullable = false)
     @CreatedDate
     private LocalDateTime createAt;   // 생성일
+
+    public Pin(Double latitude, Double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
 }
