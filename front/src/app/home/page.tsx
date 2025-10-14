@@ -129,38 +129,32 @@ export default function PinCoMainPage() {
     const fetchAllPins = async () => {
         if (!mapInstance) return;
 
-        const bounds = mapInstance.getBounds();
-        const sw = bounds.getSouthWest();
-        const ne = bounds.getNorthEast();
-
-        const req = {
-            radius: 10,
-            minLatitude: sw.getLat(),
-            maxLatitude: ne.getLat(),
-            minLongitude: sw.getLng(),
-            maxLongitude: ne.getLng(),
-        };
-
         try {
-            // const res = await fetchApi<Pin[]>("/api/pins/all", {
-            //   method: "POST",
-            //   headers: { "Content-Type": "application/json" },
-            //   body: JSON.stringify(req),
-            // });
-
-            // ✅ 지금은 initialPins 사용
-            const res = initialPins;
-
-            // ✅ 기존 pins 유지 + 새로운 핀 중복 없이 병합
-            setPins((prev) => {
-                const existingIds = new Set(prev.map((p) => p.id));
-                const merged = [...prev, ...res.filter((p) => !existingIds.has(p.id))];
-                return merged;
+            const res = await fetchApi<RsData<Pin[]>>("/api/pins/all", {
+                method: "GET",
             });
 
-            console.log("🌍 모든 핀 불러오기 완료:", res);
+            // ✅ 응답 구조 로그 확인
+            console.log("📦 서버 응답:", res);
+
+            if (res.errorCode === "200" && Array.isArray(res.data)) {
+                const pins = res.data;
+
+                // ✅ 기존 핀들과 중복 없이 병합
+                setPins((prev) => {
+                    const existingIds = new Set(prev.map((p) => p.id));
+                    const merged = [...prev, ...pins.filter((p) => !existingIds.has(p.id))];
+                    return merged;
+                });
+
+                console.log(`🌍 모든 핀 불러오기 완료 (총 ${pins.length}개)`);
+            } else if (res.errorCode === "204") {
+                console.warn("⚠️ 조회된 핀이 없습니다:", res.msg);
+            } else {
+                console.error("❌ 서버 오류:", res.msg);
+            }
         } catch (err) {
-            console.error("모든 핀 불러오기 실패:", err);
+            console.error("🚨 모든 핀 불러오기 실패:", err);
         }
     };
 
