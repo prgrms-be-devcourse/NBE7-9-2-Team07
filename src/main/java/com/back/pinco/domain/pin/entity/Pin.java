@@ -1,6 +1,5 @@
 package com.back.pinco.domain.pin.entity;
 
-import com.back.pinco.domain.post.entity.Post;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,8 +31,4 @@ public class Pin {
     @Column(name = "create_at", nullable = false)
     @CreatedDate
     private LocalDateTime createAt;   // 생성일
-
-    // Pin 삭제 시 Post도 함께 삭제
-    @OneToOne(mappedBy = "pin", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Post post;  // null 가능
 }
