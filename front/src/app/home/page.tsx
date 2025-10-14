@@ -130,33 +130,25 @@ export default function PinCoMainPage() {
         if (!mapInstance) return;
 
         try {
-            const res = await fetchApi<RsData<Pin[]>>("/api/pins/all", {
-                method: "GET",
+            // 🔹 실제 API 연결 시 활성화
+            // const res = await fetchApi<RsData<Pin[]>>("/api/pins/all", { method: "GET" });
+            // const pins = res.data ?? [];
+
+            // 🔹 현재는 Mock 데이터 (백엔드 연결 전용)
+            const pins = initialPins;
+
+            setPins((prev) => {
+                const existingIds = new Set(prev.map((p) => p.id));
+                const merged = [...prev, ...pins.filter((p) => !existingIds.has(p.id))];
+                return merged;
             });
 
-            // ✅ 응답 구조 로그 확인
-            console.log("📦 서버 응답:", res);
-
-            if (res.errorCode === "200" && Array.isArray(res.data)) {
-                const pins = res.data;
-
-                // ✅ 기존 핀들과 중복 없이 병합
-                setPins((prev) => {
-                    const existingIds = new Set(prev.map((p) => p.id));
-                    const merged = [...prev, ...pins.filter((p) => !existingIds.has(p.id))];
-                    return merged;
-                });
-
-                console.log(`🌍 모든 핀 불러오기 완료 (총 ${pins.length}개)`);
-            } else if (res.errorCode === "204") {
-                console.warn("⚠️ 조회된 핀이 없습니다:", res.msg);
-            } else {
-                console.error("❌ 서버 오류:", res.msg);
-            }
+            console.log("🌍 모든 핀 불러오기 완료:", pins);
         } catch (err) {
             console.error("🚨 모든 핀 불러오기 실패:", err);
         }
     };
+
 
 
     // 🔹 게시글 생성 로직 수정
