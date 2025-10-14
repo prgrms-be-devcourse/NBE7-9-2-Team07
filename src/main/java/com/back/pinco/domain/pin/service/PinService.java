@@ -4,8 +4,6 @@ import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,8 +17,8 @@ public class PinService {
     }
 
 
-    public Pin write(double latitude, double longitude, LocalDateTime time) {
-        Pin pin = new Pin(latitude, longitude, time);
+    public Pin write(double latitude, double longitude) {
+        Pin pin = new Pin(latitude, longitude);
         return pinRepository.save(pin);
     }
 
