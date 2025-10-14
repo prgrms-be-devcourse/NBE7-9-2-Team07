@@ -87,26 +87,39 @@ export default function PinCoMainPage() {
     const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
     const [viewMode, setViewMode] = useState<"nearby" | "all">("nearby");
 
-    // ✅ 반경 1km 필터
-    const fetchNearbyPins = (lat?: number, lng?: number) => {
+    // ✅ 반경 1km 내 핀 조회
+    const fetchNearbyPins = async (lat?: number, lng?: number) => {
         const targetLat = lat ?? currentLocation?.lat;
         const targetLng = lng ?? currentLocation?.lng;
         if (!targetLat || !targetLng) return;
 
-        const R = 6371;
-        const within1Km = initialPins.filter((pin) => {
-            const dLat = ((pin.latitude - targetLat) * Math.PI) / 180;
-            const dLng = ((pin.longitude - targetLng) * Math.PI) / 180;
-            const a =
-                Math.sin(dLat / 2) ** 2 +
-                Math.cos((targetLat * Math.PI) / 180) *
-                Math.cos((pin.latitude * Math.PI) / 180) *
-                Math.sin(dLng / 2) ** 2;
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c <= 1;
-        });
+        try {
+            // ✅ [1단계] 실제 API 연결 시 이 부분만 활성화
+            // const res = await fetchApi<Pin[]>(`/api/pins?latitude=${targetLat}&longitude=${targetLng}&radius=1`, {
+            //   method: "GET",
+            // });
+            // setPins(res);
+            // console.log("📍 반경 1km 핀 조회 완료:", res);
 
-        setPins(within1Km);
+            // ✅ [2단계] 현재는 임시로 로컬 데이터 필터링
+            const R = 6371;
+            const within1Km = initialPins.filter((pin) => {
+                const dLat = ((pin.latitude - targetLat) * Math.PI) / 180;
+                const dLng = ((pin.longitude - targetLng) * Math.PI) / 180;
+                const a =
+                    Math.sin(dLat / 2) ** 2 +
+                    Math.cos((targetLat * Math.PI) / 180) *
+                    Math.cos((pin.latitude * Math.PI) / 180) *
+                    Math.sin(dLng / 2) ** 2;
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c <= 1;
+            });
+
+            setPins(within1Km);
+            console.log("📍 로컬 반경 1km 필터 적용:", within1Km);
+        } catch (err) {
+            console.error("주변 핀 조회 실패:", err);
+        }
     };
 
     // ✅ 모든 핀 조회 (/api/pins/all)
@@ -126,11 +139,12 @@ export default function PinCoMainPage() {
         };
 
         try {
-            const res = await fetchApi<Pin[]>("/api/pins/all", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(req),
-            });
+            // ✅ 실제 API 연결 시 이 부분만 활성화
+            // const res = await fetchApi<Pin[]>("/api/pins/all", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify(req),
+            // });
             setPins(res);
             console.log("🌍 모든 핀 불러오기 완료:", res);
         } catch (err) {
@@ -150,11 +164,12 @@ export default function PinCoMainPage() {
         };
 
         try {
-            const res = await fetchApi<Pin>("/api/posts", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(req),
-            });
+            // ✅ 실제 API 연결 시 이 부분만 활성화
+            // const res = await fetchApi<Pin>("/api/posts", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify(req),
+            // });
 
             setPins((prev) => [...prev, res]);
             alert("게시글과 핀이 성공적으로 등록되었습니다 🎉");
