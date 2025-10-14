@@ -109,6 +109,64 @@ export default function PinCoMainPage() {
         setPins(within1Km);
     };
 
+    // ✅ 모든 핀 조회 (/api/pins/all)
+    const fetchAllPins = async () => {
+        if (!mapInstance) return;
+
+        const bounds = mapInstance.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+
+        const req = {
+            radius: 10,
+            minLatitude: sw.getLat(),
+            maxLatitude: ne.getLat(),
+            minLongitude: sw.getLng(),
+            maxLongitude: ne.getLng(),
+        };
+
+        try {
+            const res = await fetchApi<Pin[]>("/api/pins/all", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(req),
+            });
+            setPins(res);
+            console.log("🌍 모든 핀 불러오기 완료:", res);
+        } catch (err) {
+            console.error("모든 핀 불러오기 실패:", err);
+        }
+    };
+
+    // ✅ 게시글 작성 완료 → 서버로 전송
+    const handleCreatePost = async () => {
+        if (!currentLocation) return;
+        if (!postContent.trim()) return alert("내용을 입력해주세요!");
+
+        const req: CreatePostRequest = {
+            latitude: currentLocation.lat,
+            longitude: currentLocation.lng,
+            content: postContent,
+        };
+
+        try {
+            const res = await fetchApi<Pin>("/api/posts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(req),
+            });
+
+            setPins((prev) => [...prev, res]);
+            alert("게시글과 핀이 성공적으로 등록되었습니다 🎉");
+        } catch (err) {
+            console.error("게시글 생성 실패:", err);
+            alert("서버 통신 중 오류가 발생했습니다 ❌");
+        } finally {
+            setShowPostForm(false);
+            setPostContent("");
+        }
+    };
+
     // ✅ Kakao SDK 로드
     useEffect(() => {
         const checkKakao = () => {
@@ -238,6 +296,7 @@ export default function PinCoMainPage() {
                                 onClick={() => {
                                     setViewMode("all");
                                     setPins(initialPins);
+                                    fetchAllPins(); // ✅ 서버에서 전체 핀 불러오기
                                 }}
                                 className={`px-2 py-1 text-xs rounded-md ${viewMode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
                                     }`}
@@ -263,7 +322,14 @@ export default function PinCoMainPage() {
                             filteredPins.map((pin) => (
                                 <div
                                     key={pin.id}
-                                    onClick={() => setSelectedPin(pin)}
+                                    onClick={() => {
+                                        setSelectedPin(pin);
+                                        if (mapInstance) {
+                                            const kakao = window.kakao;
+                                            const moveLatLon = new kakao.maps.LatLng(pin.latitude, pin.longitude);
+                                            mapInstance.panTo(moveLatLon); // ✅ 해당 핀 위치로 부드럽게 이동
+                                        }
+                                    }}
                                     className="border rounded-md p-3 cursor-pointer hover:bg-blue-50 transition"
                                 >
                                     <p className="text-sm text-gray-800 line-clamp-2">{pin.post?.content}</p>
@@ -283,10 +349,42 @@ export default function PinCoMainPage() {
                 <div className="flex-1 relative">
                     <div id="map" className="w-full h-full" />
 
+                    {/* ✅ 게시물 모달 (중앙에 뜸) */}
+                    {selectedPin && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-xl shadow-xl w-96 max-w-[90%] relative animate-fadeIn">
+                                <button
+                                    className="absolute top-3 right-3 text-gray-500 hover:text-black"
+                                    onClick={() => setSelectedPin(null)}
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                                <div className="p-6">
+                                    <h2 className="text-lg font-semibold mb-3">📝 게시글 내용</h2>
+                                    {selectedPin.post ? (
+                                        <>
+                                            <p className="text-gray-800 mb-6 leading-relaxed">
+                                                {selectedPin.post.content}
+                                            </p>
+                                            <div className="flex justify-between text-sm text-gray-500 border-t pt-3">
+                                                <span>작성일: {selectedPin.post.createdAt.slice(0, 10)}</span>
+                                                <span>수정일: {selectedPin.post.modifiedAt.slice(0, 10)}</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-gray-500 text-center py-6">
+                                            등록된 내용이 없습니다 🕓
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* 핀 추가 버튼 */}
                     <button
                         className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-lg shadow-lg hover:bg-blue-700 z-50 flex items-center gap-2"
-                        onClick={() => alert("핀 추가 기능은 서버 연결 후 활성화됩니다.")}
+                        onClick={handleCreatePost}
                     >
                         <Plus className="w-5 h-5" /> 핀 추가
                     </button>
