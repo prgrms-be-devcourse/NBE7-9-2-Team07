@@ -7,19 +7,19 @@ import lombok.Getter;
 @Getter
 public class RsData<T> {
 
-    private String resultCode;
+    private String errorCode;
     private String msg;
     private T data;
 
-    public RsData(String resultCode, String msg) {
-        this.resultCode = resultCode;
+    public RsData(String errorCode, String msg) {
+        this.errorCode = errorCode;
         this.msg = msg;
         this.data = null;
     }
 
     @JsonIgnore
     public int getStatusCode() {
-        String statusCode = resultCode.split("-")[0];
+        String statusCode = errorCode.split("-")[0];
         return Integer.parseInt(statusCode);
     }
 

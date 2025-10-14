@@ -34,4 +34,9 @@ public class PinService {
         Pin pin = pinRepository.findById(id).get();
         pinRepository.delete(pin);
     }
+
+
+    public List<Pin> findNearPins(double latitude,double longitude,double radius) {
+        return pinRepository.findPinsWithinRadius(latitude,longitude,radius);
+    }
 }
