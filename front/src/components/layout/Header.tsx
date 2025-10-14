@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation";
 export default function Header() {
   const pathname = usePathname();
 
-  // 로그인/회원가입 페이지에서는 헤더 숨김
-  const hideHeader = pathname.startsWith("/user");
+  // ✅ 로그인과 회원가입 페이지만 헤더 숨김
+  const hideHeader = pathname === "/user/login" || pathname === "/user/join";
 
   if (hideHeader) return null;
 
