@@ -86,6 +86,9 @@ export default function PinCoMainPage() {
     const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
     const [viewMode, setViewMode] = useState<"nearby" | "all">("nearby");
+    const [postContent, setPostContent] = useState("");
+    const [showPostForm, setShowPostForm] = useState(false);
+
 
     // ✅ 반경 1km 내 핀 조회
     const fetchNearbyPins = async (lat?: number, lng?: number) => {
@@ -139,20 +142,30 @@ export default function PinCoMainPage() {
         };
 
         try {
-            // ✅ 실제 API 연결 시 이 부분만 활성화
             // const res = await fetchApi<Pin[]>("/api/pins/all", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify(req),
+            //   method: "POST",
+            //   headers: { "Content-Type": "application/json" },
+            //   body: JSON.stringify(req),
             // });
-            setPins(res);
+
+            // ✅ 지금은 initialPins 사용
+            const res = initialPins;
+
+            // ✅ 기존 pins 유지 + 새로운 핀 중복 없이 병합
+            setPins((prev) => {
+                const existingIds = new Set(prev.map((p) => p.id));
+                const merged = [...prev, ...res.filter((p) => !existingIds.has(p.id))];
+                return merged;
+            });
+
             console.log("🌍 모든 핀 불러오기 완료:", res);
         } catch (err) {
             console.error("모든 핀 불러오기 실패:", err);
         }
     };
 
-    // ✅ 게시글 작성 완료 → 서버로 전송
+
+    // 🔹 게시글 생성 로직 수정
     const handleCreatePost = async () => {
         if (!currentLocation) return;
         if (!postContent.trim()) return alert("내용을 입력해주세요!");
@@ -171,6 +184,20 @@ export default function PinCoMainPage() {
             //     body: JSON.stringify(req),
             // });
 
+            // ✅ 테스트용 임시 핀 추가
+            const res: Pin = {
+                id: pins.length + 1,
+                latitude: req.latitude,
+                longitude: req.longitude,
+                createdAt: new Date().toISOString(),
+                post: {
+                    id: Date.now(),
+                    content: req.content,
+                    createdAt: new Date().toISOString(),
+                    modifiedAt: new Date().toISOString(),
+                },
+            };
+
             setPins((prev) => [...prev, res]);
             alert("게시글과 핀이 성공적으로 등록되었습니다 🎉");
         } catch (err) {
@@ -181,6 +208,7 @@ export default function PinCoMainPage() {
             setPostContent("");
         }
     };
+
 
     // ✅ Kakao SDK 로드
     useEffect(() => {
@@ -307,10 +335,10 @@ export default function PinCoMainPage() {
                             >
                                 주변 보기
                             </button>
+                            {/* 모두 보기 버튼 */}
                             <button
                                 onClick={() => {
                                     setViewMode("all");
-                                    setPins(initialPins);
                                     fetchAllPins(); // ✅ 서버에서 전체 핀 불러오기
                                 }}
                                 className={`px-2 py-1 text-xs rounded-md ${viewMode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
@@ -396,13 +424,42 @@ export default function PinCoMainPage() {
                         </div>
                     )}
 
-                    {/* 핀 추가 버튼 */}
+                    {/* 🔹 핀 추가 버튼 */}
                     <button
                         className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-lg shadow-lg hover:bg-blue-700 z-50 flex items-center gap-2"
-                        onClick={handleCreatePost}
+                        onClick={() => setShowPostForm(true)} // ✅ 폼 열기
                     >
                         <Plus className="w-5 h-5" /> 핀 추가
                     </button>
+
+                    {/* 🔹 게시글 입력 폼 (모달) */}
+                    {showPostForm && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-xl shadow-xl w-96 max-w-[90%] relative animate-fadeIn p-6">
+                                <button
+                                    className="absolute top-3 right-3 text-gray-500 hover:text-black"
+                                    onClick={() => setShowPostForm(false)}
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+
+                                <h2 className="text-lg font-semibold mb-3">📝 새 게시글 작성</h2>
+                                <textarea
+                                    value={postContent}
+                                    onChange={(e) => setPostContent(e.target.value)}
+                                    placeholder="게시글 내용을 입력하세요..."
+                                    className="w-full border rounded-md p-2 h-32 text-sm resize-none mb-4"
+                                />
+
+                                <button
+                                    onClick={handleCreatePost}
+                                    className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+                                >
+                                    등록하기
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* 확대/축소 버튼 */}
                     <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-50">
