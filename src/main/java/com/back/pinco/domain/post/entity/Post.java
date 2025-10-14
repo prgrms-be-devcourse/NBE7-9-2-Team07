@@ -2,7 +2,6 @@ package com.back.pinco.domain.post.entity;
 
 import com.back.pinco.domain.pin.entity.Pin;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "posts")
 @EntityListeners(AuditingEntityListener.class)
 public class Post {
@@ -38,4 +36,9 @@ public class Post {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pin_id", nullable = false, unique = true)
     private Pin pin;
+
+    public Post(String content, Pin pin) {
+        this.content = content;
+        this.pin = pin;
+    }
 }
