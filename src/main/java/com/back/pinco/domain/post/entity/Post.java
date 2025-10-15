@@ -1,6 +1,7 @@
 package com.back.pinco.domain.post.entity;
 
 import com.back.pinco.domain.pin.entity.Pin;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,10 +36,15 @@ public class Post {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pin_id", nullable = false, unique = true)
+    @JsonIgnore
     private Pin pin;
 
     public Post(String content, Pin pin) {
         this.content = content;
         this.pin = pin;
+    }
+
+    public void update(String content) {
+        this.content = content;
     }
 }
