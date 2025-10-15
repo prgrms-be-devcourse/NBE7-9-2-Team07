@@ -1,6 +1,5 @@
 package com.back.pinco.domain.post.controller;
 
-import com.back.pinco.domain.pin.controller.PinController;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.post.dto.PostDto;
@@ -59,16 +58,16 @@ public class PostControllerTest {
 
         for(PostDto postDto : postDtos){
             resultActions
-                    .andExpect(jsonPath("$.id").value(postDto.id()))
-                    .andExpect(jsonPath("$.content").value(postDto.content()))
-                    .andExpect(jsonPath("$.createAt").value(
+                    .andExpect(jsonPath("$.data.id").value(postDto.id()))
+                    .andExpect(jsonPath("$.data.content").value(postDto.content()))
+                    .andExpect(jsonPath("$.data.createAt").value(
                             matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.modifiedAt").value(
+                    .andExpect(jsonPath("$.data.modifiedAt").value(
                             matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.pin.id").value(postDto.pin().getId()))
-                    .andExpect(jsonPath("$.pin.latitude").value(postDto.pin().getLatitude()))
-                    .andExpect(jsonPath("$.pin.longitude").value(postDto.pin().getLongitude()))
-                    .andExpect(jsonPath("$.pin.createDate").value(
+                    .andExpect(jsonPath("$.data.pin.id").value(postDto.pin().getId()))
+                    .andExpect(jsonPath("$.data.pin.latitude").value(postDto.pin().getLatitude()))
+                    .andExpect(jsonPath("$.data.pin.longitude").value(postDto.pin().getLongitude()))
+                    .andExpect(jsonPath("$.data.pin.createDate").value(
                             matchesPattern(postDto.pin().getCreateAt().toString().replaceAll("0+$", "") + ".*")))
             ;
         }
@@ -112,16 +111,16 @@ public class PostControllerTest {
 
         for(PostDto postDto : postDtos){
             resultActions
-                    .andExpect(jsonPath("$.id").value(postDto.id()))
-                    .andExpect(jsonPath("$.content").value(postDto.content()))
-                    .andExpect(jsonPath("$.createAt").value(
+                    .andExpect(jsonPath("$.data.id").value(postDto.id()))
+                    .andExpect(jsonPath("$.data.content").value(postDto.content()))
+                    .andExpect(jsonPath("$.data.createAt").value(
                             matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.modifiedAt").value(
+                    .andExpect(jsonPath("$.data.modifiedAt").value(
                             matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.pin.id").value(postDto.pin().getId()))
-                    .andExpect(jsonPath("$.pin.latitude").value(postDto.pin().getLatitude()))
-                    .andExpect(jsonPath("$.pin.longitude").value(postDto.pin().getLongitude()))
-                    .andExpect(jsonPath("$.pin.createDate").value(
+                    .andExpect(jsonPath("$.data.pin.id").value(postDto.pin().getId()))
+                    .andExpect(jsonPath("$.data.pin.latitude").value(postDto.pin().getLatitude()))
+                    .andExpect(jsonPath("$.data.pin.longitude").value(postDto.pin().getLongitude()))
+                    .andExpect(jsonPath("$.data.pin.createDate").value(
                             matchesPattern(postDto.pin().getCreateAt().toString().replaceAll("0+$", "") + ".*")))
             ;
         }
@@ -148,16 +147,16 @@ public class PostControllerTest {
 
         for(PostDto postDto : postDtos){
             resultActions
-                    .andExpect(jsonPath("$.id").value(postDto.id()))
-                    .andExpect(jsonPath("$.content").value(postDto.content()))
-                    .andExpect(jsonPath("$.createAt").value(
+                    .andExpect(jsonPath("$.data.id").value(postDto.id()))
+                    .andExpect(jsonPath("$.data.content").value(postDto.content()))
+                    .andExpect(jsonPath("$.data.createAt").value(
                             matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.modifiedAt").value(
+                    .andExpect(jsonPath("$.data.modifiedAt").value(
                             matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.pin.id").value(postDto.pin().getId()))
-                    .andExpect(jsonPath("$.pin.latitude").value(postDto.pin().getLatitude()))
-                    .andExpect(jsonPath("$.pin.longitude").value(postDto.pin().getLongitude()))
-                    .andExpect(jsonPath("$.pin.createDate").value(
+                    .andExpect(jsonPath("$.data.pin.id").value(postDto.pin().getId()))
+                    .andExpect(jsonPath("$.data.pin.latitude").value(postDto.pin().getLatitude()))
+                    .andExpect(jsonPath("$.data.pin.longitude").value(postDto.pin().getLongitude()))
+                    .andExpect(jsonPath("$.data.pin.createDate").value(
                             matchesPattern(postDto.pin().getCreateAt().toString().replaceAll("0+$", "") + ".*")))
             ;
         }
@@ -181,6 +180,72 @@ public class PostControllerTest {
 
     }
 
+    @Test
+    @DisplayName("게시글 생성 - 성공")
+    void t3_1() throws Exception {
+        String content = "new content!";
+        double latitude =37.5670;
+        double longitude = 126.9785;
 
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/posts")
+
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "content": "%s",
+                                            "latitude" : "%f",
+                                            "longitude" : "%f"
+                                        }
+                                        """.formatted(content, latitude, longitude))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PostController.class))
+                .andExpect(handler().methodName("writePost"))
+                .andExpect(status().isOk());
+
+        resultActions
+                .andExpect(jsonPath("$.data.id").isNotEmpty())
+                .andExpect(jsonPath("$.data.content").value(content))
+                .andExpect(jsonPath("$.data.createAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.modifiedAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.pin.id").isNotEmpty())
+                .andExpect(jsonPath("$.data.pin.latitude").value(latitude))
+                .andExpect(jsonPath("$.data.pin.longitude").value(longitude))
+                .andExpect(jsonPath("$.data.pin.createAt").isNotEmpty());
+
+    }
+
+    @Test
+    @DisplayName("게시글 생성 - 실패 (양식 오류)")
+    void t3_2() throws Exception {
+        String content = null;
+        double latitude =-100;
+        double longitude = 200;
+
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/posts")
+
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "content": "%s",
+                                            "latitude" : "%f",
+                                            "longitude" : "%f"
+                                        }
+                                        """.formatted(content, latitude, longitude))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PostController.class))
+                .andExpect(handler().methodName("writePost"))
+                .andExpect(status().is(400));
+
+    }
 
 }

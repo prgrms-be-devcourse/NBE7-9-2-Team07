@@ -26,7 +26,7 @@ public class PostService {
 
     public Post write(String content, Pin pin) {
         Post post = new Post(content,pin);
-        return post;
+        return postRepository.save(post);
     }
 
     public Optional<Post> findById(long id) {
