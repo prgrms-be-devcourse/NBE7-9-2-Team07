@@ -115,8 +115,20 @@ export default function PinCoMainPage() {
                 },
             }));
 
-            setPins(normalized);
-            console.log("📍 반경 1km 핀 조회 완료:", normalized);
+            // ✅ 기존 핀 유지 + 새로운 핀 추가 (중복 제거)
+            setPins((prev) => {
+                const existingMap = new Map(prev.map((p) => [p.id, p]));
+                normalized.forEach((newPin) => {
+                    existingMap.set(newPin.id, {
+                        ...existingMap.get(newPin.id),
+                        ...newPin,
+                        post: existingMap.get(newPin.id)?.post || newPin.post, // ✅ 기존 post 보존
+                    });
+                });
+                return Array.from(existingMap.values());
+            });
+
+            console.log("📍 반경 1km 핀 갱신 완료:", normalized);
         } catch (err) {
             console.error("주변 핀 조회 실패:", err);
         } finally {
