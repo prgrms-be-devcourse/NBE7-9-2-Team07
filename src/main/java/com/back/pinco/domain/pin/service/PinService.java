@@ -21,7 +21,7 @@ public class PinService {
 
 
     public Pin write(double latitude, double longitude) {
-        Point point = geometryUtil.createPoint(latitude, longitude);
+        Point point = geometryUtil.createPoint(longitude, latitude);
         Pin pin = new Pin(point);
         return pinRepository.save(pin);
     }
