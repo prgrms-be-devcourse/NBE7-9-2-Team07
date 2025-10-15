@@ -72,6 +72,37 @@ public class PostController {
         );
     }
 
+    record PostReqBody(
+            @NotNull
+            @Min(-90)
+            @Max(90)
+            @RequestParam double latitude,
+
+            @NotNull
+            @Min(-180)
+            @Max(180)
+            @RequestParam double longitude,
+            @NotBlank
+            String content
+    ) {
+    }
+
+    @PostMapping
+    public RsData<PostDto> writePost(
+            @RequestBody @Valid PostReqBody postReqBody
+    ) {
+        Pin pin = pinService.write(postReqBody.latitude,postReqBody.longitude);
+        Post post = postService.write(postReqBody.content, pin);
+
+        PostDto postDto = new PostDto(post);
+
+        return new RsData<PostDto>(
+                "200",
+                "성공적으로 처리되었습니다",
+                postDto
+        );
+    }
+
 
 
 }
