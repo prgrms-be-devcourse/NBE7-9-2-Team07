@@ -60,9 +60,7 @@ public class PostService {
         postRepository.delete(post);
     }
 
-    public Optional<List<Post>> findByPin(Pin pin) {
-        return postRepository.findByPin(pin);
-    }
+
 
     public void deleteByPinId(Pin pin) {
         postRepository.deleteByPin(pin);
@@ -74,5 +72,9 @@ public class PostService {
                 .orElseThrow(NoSuchElementException::new);
         post.update(content);
         return new PostDto(post);
+    }
+
+    public Optional<Post> findByPinId(Long pinId) {
+        return postRepository.findByPinId(pinId);
     }
 }
