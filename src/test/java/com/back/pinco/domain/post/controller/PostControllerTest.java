@@ -1,6 +1,5 @@
 package com.back.pinco.domain.post.controller;
 
-import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.post.dto.PostDto;
 import com.back.pinco.domain.post.entity.Post;
@@ -34,17 +33,15 @@ public class PostControllerTest {
     @Autowired
     private MockMvc mvc;
     @Autowired
-    private PinRepository pinRepository;
-    @Autowired
     private PostRepository postRepository;
 
     @Test
     @DisplayName("게시글 조회 - 단건 - 조회 성공")
     void t1_1() throws Exception {
-        Long pinId = 1L;
-        Pin pin = pinRepository.findById(pinId).get();
-        List<Post> posts = postRepository.findByPin(pin).get();
-        List<PostDto> postDtos = posts.stream().map(PostDto::new).toList();
+        Long pinId = 13L;
+
+        Post post = postRepository.findByPinId(pinId).get();
+        PostDto postDto = new PostDto(post);
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/posts/%s".formatted(pinId))
@@ -56,16 +53,14 @@ public class PostControllerTest {
                 .andExpect(handler().methodName("getPostByPinId"))
                 .andExpect(status().isOk());
 
-        for (PostDto postDto : postDtos) {
-            resultActions
-                    .andExpect(jsonPath("$.data.id").value(postDto.id()))
-                    .andExpect(jsonPath("$.data.content").value(postDto.content()))
-                    .andExpect(jsonPath("$.data.createAt").value(
-                            matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.data.modifiedAt").value(
-                            matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-            ;
-        }
+        resultActions
+                .andExpect(jsonPath("$.data.id").value(postDto.id()))
+                .andExpect(jsonPath("$.data.content").value(postDto.content()))
+                .andExpect(jsonPath("$.data.createAt").value(
+                        matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data.modifiedAt").value(
+                        matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
+        ;
     }
 
     @Test
@@ -91,7 +86,6 @@ public class PostControllerTest {
 
         Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Post> posts = postRepository.findAll(pageable);
-        List<PostDto> postDtos = posts.stream().map(PostDto::new).toList();
 
         ResultActions resultActions = mvc
                 .perform(
@@ -112,7 +106,6 @@ public class PostControllerTest {
 
         Pageable pageable = PageRequest.of(1, 2, Sort.by(Sort.Direction.ASC, "modifiedAt"));
         Page<Post> posts = postRepository.findAll(pageable);
-        List<PostDto> postDtos = posts.stream().map(PostDto::new).toList();
 
         ResultActions resultActions = mvc
                 .perform(
