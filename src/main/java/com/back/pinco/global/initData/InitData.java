@@ -1,6 +1,5 @@
 package com.back.pinco.global.initData;
 
-import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.post.service.PostService;
 import jakarta.transaction.Transactional;
@@ -21,22 +20,27 @@ public class InitData {
     private final PinService pinService;
     private final PostService postService;
 
-    
+
     @Bean
-    ApplicationRunner baseInitData(){
+    ApplicationRunner baseInitData() {
         return args -> {
             self.work();
         };
     }
+
     @Transactional
     public void work() {
-        if(postService.count()>0){
-            return;
-        }
-        postService.write("content1", 37.5665,126.9780);
-        postService.write("content2", 40.7128,-74.0060);
-        postService.write("content3", 35.6895,139.6917);
+        if (postService.count() > 0) return;
+
+        double baseLat = 37.5665; // ✅ 서울시청 기준 위도
+        double baseLng = 126.9780; // ✅ 서울시청 기준 경도
+
+        // ✅ 시청 기준 반경 1km 이내 임의 좌표
+        postService.write("서울 시청 근처 카페 ☕", baseLat + 0.0012, baseLng + 0.0015);
+        postService.write("덕수궁 돌담길 산책 중 🌳", baseLat - 0.0008, baseLng + 0.0010);
+        postService.write("청계천 산책로 발견 👣", baseLat + 0.0006, baseLng - 0.0013);
+        postService.write("광화문에서 커피 한 잔 ☕", baseLat - 0.0005, baseLng - 0.0010);
+        postService.write("서울시청 옆 공원 벤치 휴식 🍃", baseLat + 0.0003, baseLng + 0.0002);
 
     }
-
 }

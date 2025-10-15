@@ -87,7 +87,7 @@ const initialPins: Pin[] = [
 ];
 
 export default function PinCoMainPage() {
-    const [pins, setPins] = useState<Pin[]>(initialPins);
+    const [pins, setPins] = useState<Pin[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [isMapLoaded, setIsMapLoaded] = useState(false);
     const [mapInstance, setMapInstance] = useState<any>(null);
@@ -171,32 +171,35 @@ export default function PinCoMainPage() {
     const fetchAllPosts = async () => {
         setLoading(true);
         try {
-            const posts = await fetchApi<any[]>("/api/posts", { method: "GET" }); // 바로 배열 받음
+            // fetchApi는 이미 data만 반환하므로 .data 붙이지 말기
+            const posts = await fetchApi<any[]>("/api/posts", { method: "GET" });
 
             if (!Array.isArray(posts)) {
                 console.error("🚨 posts 데이터가 배열이 아닙니다:", posts);
                 return;
             }
 
-            const convertedPins = posts.map((p) => ({
-                id: p.pin.id,
-                latitude: p.pin.latitude,
-                longitude: p.pin.longitude,
-                createdAt: p.pin.createAt ?? new Date().toISOString(),
+            // 게시물 데이터를 지도 핀 형태로 변환
+            const convertedPins = posts.map((p, idx) => ({
+                id: p.id, // pinId = postId (임시 매칭)
+                latitude: (currentLocation?.lat ?? 37.5665) + idx * 0.0002,
+                longitude: (currentLocation?.lng ?? 126.978) + idx * 0.0002,
+                createdAt: p.createAt ?? p.createdAt,
                 post: {
                     id: p.id,
                     content: p.content,
-                    createdAt: p.createAt,
-                    modifiedAt: p.modifiedAt,
+                    createdAt: p.createAt ?? p.createdAt,
+                    modifiedAt: p.modifiedAt ?? p.updatedAt ?? p.createAt,
                 },
             }));
 
             setPins(convertedPins);
-            console.log("🗺️ 게시글 기반 핀 목록:", convertedPins);
+            console.log("🗺️ 게시글 목록:", convertedPins);
         } catch (err) {
             console.error("🚨 게시글 조회 실패:", err);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     // 🔹 게시글 생성 로직
@@ -384,7 +387,10 @@ export default function PinCoMainPage() {
                 }
 
                 try {
-                    const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" });
+                    // ✅ pin에 post가 있으면 그 id 사용
+                    const postId = pin.post?.id ?? pin.id;
+                    const post = await fetchApi(`/api/posts/${postId}`, { method: "GET" });
+
                     if (!post) {
                         alert("이 핀에는 게시글이 없습니다 ❌");
                         return;
