@@ -97,7 +97,7 @@ export default function PinCoMainPage() {
     const [postContent, setPostContent] = useState("");
     const [showPostForm, setShowPostForm] = useState(false);
     const [loading, setLoading] = useState(true);
-    const { isLoggedIn } = useAuth(); 
+    const { isLoggedIn } = useAuth();
 
     // ✅ 반경 1km 내 핀 조회
     const fetchNearbyPins = async (lat?: number, lng?: number) => {
@@ -282,7 +282,7 @@ export default function PinCoMainPage() {
 
         const map = new kakao.maps.Map(container, {
             center: new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng),
-            level: 5,
+            level: 4,
         });
         setMapInstance(map);
 
@@ -336,12 +336,36 @@ export default function PinCoMainPage() {
         if (!mapInstance) return;
         const kakao = window.kakao;
 
+        // ✅ 기존 마커 제거
         mapInstance.markers?.forEach((m: any) => m.setMap(null));
         mapInstance.markers = [];
 
-        pins.forEach((pin) => {
+        // ✅ 클러스터러 생성 (도심용 세밀한 설정)
+        const clusterer = new kakao.maps.MarkerClusterer({
+            map: mapInstance,
+            averageCenter: true,
+            minLevel: 3, // 👈 줌을 아주 약간만 축소해도 묶이게
+            disableClickZoom: false,
+            gridSize: 60, // 👈 클러스터링 기준 거리(px). 작을수록 더 세밀하게 나뉨
+            styles: [
+                {
+                    width: "32px",
+                    height: "32px",
+                    background: "rgba(59, 130, 246, 0.95)", // Tailwind 'blue-500'
+                    color: "#fff",
+                    borderRadius: "50%",
+                    textAlign: "center",
+                    lineHeight: "32px",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                    boxShadow: "0 0 6px rgba(0,0,0,0.2)",
+                },
+            ],
+        });
+
+        // ✅ 개별 마커 생성
+        const markers = pins.map((pin) => {
             const marker = new kakao.maps.Marker({
-                map: mapInstance,
                 position: new kakao.maps.LatLng(pin.latitude, pin.longitude),
             });
 
@@ -351,43 +375,42 @@ export default function PinCoMainPage() {
 
             kakao.maps.event.addListener(marker, "mouseover", () => info.open(mapInstance, marker));
             kakao.maps.event.addListener(marker, "mouseout", () => info.close());
-            //핀 클릭시 게시물 불러오기
-            kakao.maps.event.addListener(marker, "click", async () => {
 
+            kakao.maps.event.addListener(marker, "click", async () => {
                 if (!isLoggedIn) {
                     alert("로그인이 필요합니다 🔒");
                     window.location.href = "/user/login";
                     return;
                 }
-                try {
-                    // pin.id 를 그대로 경로 변수로 사용
-                    const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" }); // ✅ RsData.data가 바로 반환됨
 
+                try {
+                    const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" });
                     if (!post) {
                         alert("이 핀에는 게시글이 없습니다 ❌");
                         return;
                     }
 
-                    // 서버에서 받은 데이터 반영
                     setSelectedPin({
                         ...pin,
                         post: {
                             id: post.id,
                             content: post.content,
-                            createdAt: post.createAt,    // 백엔드 필드명이 createAt
+                            createdAt: post.createAt,
                             modifiedAt: post.modifiedAt,
                         },
                     });
-
-                    console.log("📄 게시글 상세 불러오기 성공:", post);
                 } catch (err) {
                     console.error("🚨 게시글 불러오기 실패:", err);
-                    alert("게시글을 불러오지 못했습니다 ❌");
                 }
             });
-            mapInstance.markers.push(marker);
+
+            return marker;
         });
-    }, [pins, mapInstance]);
+
+        // ✅ 클러스터러에 마커 등록
+        clusterer.addMarkers(markers);
+        mapInstance.markers = markers;
+    }, [pins, mapInstance, isLoggedIn]);
 
     const filteredPins = pins.filter((p) =>
         p.post?.content.toLowerCase().includes(searchQuery.toLowerCase())
@@ -396,7 +419,7 @@ export default function PinCoMainPage() {
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
             <Script
-                src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&autoload=false`}
+                src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&autoload=false&libraries=clusterer`}
                 strategy="afterInteractive"
             />
 
