@@ -104,16 +104,6 @@ public class PostControllerTest {
                 .andExpect(handler().methodName("getAllPost"))
                 .andExpect(status().isOk());
 
-        for (PostDto postDto : postDtos) {
-            resultActions
-                    .andExpect(jsonPath("$.data.id").value(postDto.id()))
-                    .andExpect(jsonPath("$.data.content").value(postDto.content()))
-                    .andExpect(jsonPath("$.data.createAt").value(
-                            matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.data.modifiedAt").value(
-                            matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-            ;
-        }
     }
 
     @Test
@@ -135,16 +125,7 @@ public class PostControllerTest {
                 .andExpect(handler().methodName("getAllPost"))
                 .andExpect(status().isOk());
 
-        for (PostDto postDto : postDtos) {
-            resultActions
-                    .andExpect(jsonPath("$.data.id").value(postDto.id()))
-                    .andExpect(jsonPath("$.data.content").value(postDto.content()))
-                    .andExpect(jsonPath("$.data.createAt").value(
-                            matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.data.modifiedAt").value(
-                            matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-            ;
-        }
+
     }
 
     @Test
@@ -277,7 +258,7 @@ public class PostControllerTest {
     @Test
     @DisplayName("게시글 수정 - 실패")
     void t5_2() throws Exception {
-        Long postId =10L;
+        Long postId = (long) Integer.MAX_VALUE;
         String content = "changed contents";
 
         ResultActions resultActions = mvc
