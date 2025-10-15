@@ -307,8 +307,34 @@ export default function PinCoMainPage() {
 
             kakao.maps.event.addListener(marker, "mouseover", () => info.open(mapInstance, marker));
             kakao.maps.event.addListener(marker, "mouseout", () => info.close());
-            kakao.maps.event.addListener(marker, "click", () => setSelectedPin(pin));
+            //핀 클릭시 게시물 불러오기
+            kakao.maps.event.addListener(marker, "click", async () => {
+                try {
+                    // pin.id 를 그대로 경로 변수로 사용
+                    const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" }); // ✅ RsData.data가 바로 반환됨
 
+                    if (!post) {
+                        alert("이 핀에는 게시글이 없습니다 ❌");
+                        return;
+                    }
+
+                    // 서버에서 받은 데이터 반영
+                    setSelectedPin({
+                        ...pin,
+                        post: {
+                            id: post.id,
+                            content: post.content,
+                            createdAt: post.createAt,    // 백엔드 필드명이 createAt
+                            modifiedAt: post.modifiedAt,
+                        },
+                    });
+
+                    console.log("📄 게시글 상세 불러오기 성공:", post);
+                } catch (err) {
+                    console.error("🚨 게시글 불러오기 실패:", err);
+                    alert("게시글을 불러오지 못했습니다 ❌");
+                }
+            });
             mapInstance.markers.push(marker);
         });
     }, [pins, mapInstance]);
@@ -334,6 +360,7 @@ export default function PinCoMainPage() {
                                 onClick={() => {
                                     setViewMode("nearby");
                                     fetchNearbyPins();
+                                    fetchAllPosts(); // ✅ 새 함수 호출
                                 }}
                                 className={`px-2 py-1 text-xs rounded-md ${viewMode === "nearby" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
                                     }`}
@@ -371,12 +398,36 @@ export default function PinCoMainPage() {
                             filteredPins.map((pin) => (
                                 <div
                                     key={pin.id}
-                                    onClick={() => {
-                                        setSelectedPin(pin);
+                                    onClick={async () => {
                                         if (mapInstance) {
                                             const kakao = window.kakao;
                                             const moveLatLon = new kakao.maps.LatLng(pin.latitude, pin.longitude);
-                                            mapInstance.panTo(moveLatLon); // ✅ 해당 핀 위치로 부드럽게 이동
+                                            mapInstance.panTo(moveLatLon);
+                                        }
+
+                                        try {
+                                            // ✅ 동일하게 pin.id 기반으로 서버 호출
+                                            const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" });
+
+                                            if (!post) {
+                                                alert("해당 핀에 게시글이 없습니다 ❌");
+                                                return;
+                                            }
+
+                                            setSelectedPin({
+                                                ...pin,
+                                                post: {
+                                                    id: post.id,
+                                                    content: post.content,
+                                                    createdAt: post.createAt,
+                                                    modifiedAt: post.modifiedAt,
+                                                },
+                                            });
+
+                                            console.log("📄 게시글 상세 불러오기 성공:", post);
+                                        } catch (err) {
+                                            console.error("🚨 게시글 불러오기 실패:", err);
+                                            alert("게시글을 불러오지 못했습니다 ❌");
                                         }
                                     }}
                                     className="border rounded-md p-3 cursor-pointer hover:bg-blue-50 transition"
