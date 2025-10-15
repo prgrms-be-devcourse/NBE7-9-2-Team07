@@ -1,7 +1,6 @@
 package com.back.pinco.domain.pin.controller;
 
 import com.back.pinco.domain.pin.dto.PinDto;
-import com.back.pinco.domain.pin.dto.PinListResponseDto;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.global.geometry.GeometryUtil;
