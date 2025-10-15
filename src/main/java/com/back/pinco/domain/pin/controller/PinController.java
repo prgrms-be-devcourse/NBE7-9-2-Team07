@@ -21,8 +21,7 @@ public class PinController {
 
     @Autowired
     private PinService pinService;
-    @Autowired
-    private GeometryUtil geometryUtil;
+
 
     @GetMapping("")
     public RsData<List<PinDto>> getRadiusPins(
