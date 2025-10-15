@@ -39,17 +39,18 @@ public class PostController {
         Pin pin = pinService.findById(pinId).get();
 
         List<Post> posts = postService.findByPin(pin).get();
+        System.out.println(posts.size());
 
         List<PostDto> postDtos = posts.stream().map(PostDto::new).toList();
 
-        return new RsData<List<PostDto>>(
+        return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
                 postDtos
         );
     }
 
-    @GetMapping
+    @GetMapping("")
     public RsData<List<PostDto>> getAllPost(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -65,6 +66,7 @@ public class PostController {
 
         List<PostDto> postDtos = posts.stream().map(PostDto::new).toList();
 
+        System.out.println(postDtos.size());
         return new RsData<List<PostDto>>(
                 "200",
                 "성공적으로 처리되었습니다",
@@ -91,10 +93,26 @@ public class PostController {
     public RsData<PostDto> writePost(
             @RequestBody @Valid PostReqBody postReqBody
     ) {
-        Pin pin = pinService.write(postReqBody.latitude,postReqBody.longitude);
-        Post post = postService.write(postReqBody.content, pin);
+
+        Post post = postService.write(postReqBody.content, postReqBody.latitude,postReqBody.longitude);
 
         PostDto postDto = new PostDto(post);
+
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다",
+                postDto
+        );
+    }
+
+    /*
+    @DeleteMapping("/{pinId}")
+    public RsData<PostDto> deletePostByPinId(
+            @PathVariable Long pinId
+    ) {
+        Pin pin = pinService.findById(pinId).get();
+
+        PostDto postDto = new PostDto(postService.deleteByPinId(pin));
 
         return new RsData<PostDto>(
                 "200",
@@ -102,7 +120,24 @@ public class PostController {
                 postDto
         );
     }
+     */
 
+    record PostUpdateReqBody(
+            String content
+    ) {
+    }
+    @PutMapping("/{postId}")
+    public RsData<PostDto> updatePostByPinId(
+            @PathVariable Long postId,
+            @RequestBody PostUpdateReqBody reqBody
+    ) {
+        PostDto postDto = postService.modifyPost(postId, reqBody.content);
 
+        return new RsData<PostDto>(
+                "200",
+                "성공적으로 처리되었습니다",
+                postDto
+        );
+    }
 
 }

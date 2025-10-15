@@ -30,19 +30,13 @@ public class InitData {
     }
     @Transactional
     public void work() {
-        if(pinService.count()>0){
+        if(postService.count()>0){
             return;
         }
+        postService.write("content1", 37.5665,126.9780);
+        postService.write("content2", 40.7128,-74.0060);
+        postService.write("content3", 35.6895,139.6917);
 
-        Pin pin1 = pinService.write(37.5665,126.9780);
-        Pin pin2 =pinService.write(40.7128,-74.0060);
-        Pin pin3 =pinService.write(35.6895,139.6917);
-
-        postService.write("content1-1", pin1);
-        postService.write("content1-2", pin1);
-        postService.write("content2-1", pin2);
-        postService.write("content2-2", pin2);
-        postService.write("content2-3", pin2);
     }
 
 }

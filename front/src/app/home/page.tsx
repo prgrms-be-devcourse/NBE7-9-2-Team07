@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import Script from "next/script";
 import { Plus, Search, X, ZoomIn, ZoomOut } from "lucide-react";
 import { fetchApi } from "@/lib/client";
+import { useAuth } from "@/context/AuthContext";
+
+// ✅ 쿠키 읽기 함수
+const getCookie = (name: string) => {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return match ? decodeURIComponent(match[2]) : null;
+};
 
 // ✅ 타입 정의
 type Post = {
@@ -88,45 +96,59 @@ export default function PinCoMainPage() {
     const [viewMode, setViewMode] = useState<"nearby" | "all">("nearby");
     const [postContent, setPostContent] = useState("");
     const [showPostForm, setShowPostForm] = useState(false);
-
+    const [loading, setLoading] = useState(true);
+    const { isLoggedIn } = useAuth();
 
     // ✅ 반경 1km 내 핀 조회
     const fetchNearbyPins = async (lat?: number, lng?: number) => {
-        const targetLat = lat ?? currentLocation?.lat;
-        const targetLng = lng ?? currentLocation?.lng;
-        if (!targetLat || !targetLng) return;
-
+        setLoading(true);
         try {
-            // ✅ [1단계] 실제 API 연결 시 이 부분만 활성화
-            // const res = await fetchApi<Pin[]>(`/api/pins?latitude=${targetLat}&longitude=${targetLng}&radius=1`, {
-            //   method: "GET",
-            // });
-            // setPins(res);
-            // console.log("📍 반경 1km 핀 조회 완료:", res);
+            const targetLat = lat ?? currentLocation?.lat;
+            const targetLng = lng ?? currentLocation?.lng;
+            if (!targetLat || !targetLng) return;
 
-            // ✅ [2단계] 현재는 임시로 로컬 데이터 필터링
-            const R = 6371;
-            const within1Km = initialPins.filter((pin) => {
-                const dLat = ((pin.latitude - targetLat) * Math.PI) / 180;
-                const dLng = ((pin.longitude - targetLng) * Math.PI) / 180;
-                const a =
-                    Math.sin(dLat / 2) ** 2 +
-                    Math.cos((targetLat * Math.PI) / 180) *
-                    Math.cos((pin.latitude * Math.PI) / 180) *
-                    Math.sin(dLng / 2) ** 2;
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                return R * c <= 1;
+            const res = await fetchApi<any[]>(`/api/pins?latitude=${targetLat}&longitude=${targetLng}&radius=1`, {
+                method: "GET",
             });
 
-            setPins(within1Km);
-            console.log("📍 로컬 반경 1km 필터 적용:", within1Km);
+            const normalized = res.map((pin) => ({
+                id: pin.id,
+                latitude: pin.latitude,
+                longitude: pin.longitude,
+                createdAt: new Date().toISOString(),
+                post: {
+                    id: pin.id * 1000,
+                    content: pin.title ?? "내용 없음",
+                    createdAt: new Date().toISOString(),
+                    modifiedAt: new Date().toISOString(),
+                },
+            }));
+
+            // ✅ 기존 핀 유지 + 새로운 핀 추가 (중복 제거)
+            setPins((prev) => {
+                const existingMap = new Map(prev.map((p) => [p.id, p]));
+                normalized.forEach((newPin) => {
+                    existingMap.set(newPin.id, {
+                        ...existingMap.get(newPin.id),
+                        ...newPin,
+                        post: existingMap.get(newPin.id)?.post || newPin.post, // ✅ 기존 post 보존
+                    });
+                });
+                return Array.from(existingMap.values());
+            });
+
+            console.log("📍 반경 1km 핀 갱신 완료:", normalized);
         } catch (err) {
             console.error("주변 핀 조회 실패:", err);
+        } finally {
+            setLoading(false);
         }
     };
 
     // ✅ 모든 핀 조회 (/api/pins/all)
     const fetchAllPins = async () => {
+        setLoading(true);
+
         if (!mapInstance) return;
 
         try {
@@ -141,10 +163,50 @@ export default function PinCoMainPage() {
         } catch (err) {
             console.error("🚨 모든 핀 불러오기 실패:", err);
         }
+        setLoading(false);
+
     };
 
-    // 🔹 게시글 생성 로직 수정
+    // ✅ 게시글 전체 조회 (PostDto 기반)
+    const fetchAllPosts = async () => {
+        setLoading(true);
+        try {
+            const posts = await fetchApi<any[]>("/api/posts", { method: "GET" }); // 바로 배열 받음
+
+            if (!Array.isArray(posts)) {
+                console.error("🚨 posts 데이터가 배열이 아닙니다:", posts);
+                return;
+            }
+
+            const convertedPins = posts.map((p) => ({
+                id: p.pin.id,
+                latitude: p.pin.latitude,
+                longitude: p.pin.longitude,
+                createdAt: p.pin.createAt ?? new Date().toISOString(),
+                post: {
+                    id: p.id,
+                    content: p.content,
+                    createdAt: p.createAt,
+                    modifiedAt: p.modifiedAt,
+                },
+            }));
+
+            setPins(convertedPins);
+            console.log("🗺️ 게시글 기반 핀 목록:", convertedPins);
+        } catch (err) {
+            console.error("🚨 게시글 조회 실패:", err);
+        }
+        setLoading(false);
+    };
+
+    // 🔹 게시글 생성 로직
     const handleCreatePost = async () => {
+        if (!isLoggedIn) {
+            alert("로그인이 필요합니다 🔒");
+            window.location.href = "/user/login";
+            return;
+        }
+
         if (!currentLocation) return;
         if (!postContent.trim()) return alert("내용을 입력해주세요!");
 
@@ -155,38 +217,46 @@ export default function PinCoMainPage() {
         };
 
         try {
-            // ✅ 실제 API 연결 시 이 부분만 활성화
-            // const res = await fetchApi<Pin>("/api/posts", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify(req),
-            // });
+            // ✅ 백엔드에 게시글 등록 요청
+            const res = await fetchApi("/api/posts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(req),
+            });
 
-            // ✅ 테스트용 임시 핀 추가
-            const res: Pin = {
-                id: pins.length + 1,
-                latitude: req.latitude,
-                longitude: req.longitude,
-                createdAt: new Date().toISOString(),
+            const postData = res // RsData 구조 기준: { errorCode, msg, data }
+            console.log("📦 서버 응답:", res);
+
+            if (!postData) {
+                alert("게시글 생성 실패 ❌");
+                return;
+            }
+
+            // ✅ 백엔드에서 반환된 PostDto → Pin 형태로 변환
+            const newPin: Pin = {
+                id: postData.pin?.id ?? Date.now(), // pinId
+                latitude: postData.pin?.latitude ?? req.latitude,
+                longitude: postData.pin?.longitude ?? req.longitude,
+                createdAt: postData.pin?.createAt ?? new Date().toISOString(),
                 post: {
-                    id: Date.now(),
-                    content: req.content,
-                    createdAt: new Date().toISOString(),
-                    modifiedAt: new Date().toISOString(),
+                    id: postData.id,
+                    content: postData.content,
+                    createdAt: postData.createAt,
+                    modifiedAt: postData.modifiedAt,
                 },
             };
 
-            setPins((prev) => [...prev, res]);
+            // ✅ 지도 핀 목록에 추가
+            setPins((prev) => [...prev, newPin]);
             alert("게시글과 핀이 성공적으로 등록되었습니다 🎉");
         } catch (err) {
-            console.error("게시글 생성 실패:", err);
+            console.error("🚨 게시글 생성 실패:", err);
             alert("서버 통신 중 오류가 발생했습니다 ❌");
         } finally {
             setShowPostForm(false);
             setPostContent("");
         }
     };
-
 
     // ✅ Kakao SDK 로드
     useEffect(() => {
@@ -212,7 +282,7 @@ export default function PinCoMainPage() {
 
         const map = new kakao.maps.Map(container, {
             center: new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng),
-            level: 5,
+            level: 4,
         });
         setMapInstance(map);
 
@@ -237,6 +307,7 @@ export default function PinCoMainPage() {
         });
 
         fetchNearbyPins();
+        fetchAllPosts();
     }, [isMapLoaded, currentLocation]);
 
     // ✅ 지도 드래그 이벤트 (모드별로 동작)
@@ -265,12 +336,36 @@ export default function PinCoMainPage() {
         if (!mapInstance) return;
         const kakao = window.kakao;
 
+        // ✅ 기존 마커 제거
         mapInstance.markers?.forEach((m: any) => m.setMap(null));
         mapInstance.markers = [];
 
-        pins.forEach((pin) => {
+        // ✅ 클러스터러 생성 (도심용 세밀한 설정)
+        const clusterer = new kakao.maps.MarkerClusterer({
+            map: mapInstance,
+            averageCenter: true,
+            minLevel: 3, // 👈 줌을 아주 약간만 축소해도 묶이게
+            disableClickZoom: false,
+            gridSize: 60, // 👈 클러스터링 기준 거리(px). 작을수록 더 세밀하게 나뉨
+            styles: [
+                {
+                    width: "32px",
+                    height: "32px",
+                    background: "rgba(59, 130, 246, 0.95)", // Tailwind 'blue-500'
+                    color: "#fff",
+                    borderRadius: "50%",
+                    textAlign: "center",
+                    lineHeight: "32px",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                    boxShadow: "0 0 6px rgba(0,0,0,0.2)",
+                },
+            ],
+        });
+
+        // ✅ 개별 마커 생성
+        const markers = pins.map((pin) => {
             const marker = new kakao.maps.Marker({
-                map: mapInstance,
                 position: new kakao.maps.LatLng(pin.latitude, pin.longitude),
             });
 
@@ -280,20 +375,84 @@ export default function PinCoMainPage() {
 
             kakao.maps.event.addListener(marker, "mouseover", () => info.open(mapInstance, marker));
             kakao.maps.event.addListener(marker, "mouseout", () => info.close());
-            kakao.maps.event.addListener(marker, "click", () => setSelectedPin(pin));
 
-            mapInstance.markers.push(marker);
+            kakao.maps.event.addListener(marker, "click", async () => {
+                if (!isLoggedIn) {
+                    alert("로그인이 필요합니다 🔒");
+                    window.location.href = "/user/login";
+                    return;
+                }
+
+                try {
+                    const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" });
+                    if (!post) {
+                        alert("이 핀에는 게시글이 없습니다 ❌");
+                        return;
+                    }
+
+                    setSelectedPin({
+                        ...pin,
+                        post: {
+                            id: post.id,
+                            content: post.content,
+                            createdAt: post.createAt,
+                            modifiedAt: post.modifiedAt,
+                        },
+                    });
+                } catch (err) {
+                    console.error("🚨 게시글 불러오기 실패:", err);
+                }
+            });
+
+            return marker;
         });
-    }, [pins, mapInstance]);
 
-    const filteredPins = pins.filter((p) =>
-        p.post?.content.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+        // ✅ 클러스터러에 마커 등록
+        clusterer.addMarkers(markers);
+        mapInstance.markers = markers;
+    }, [pins, mapInstance, isLoggedIn]);
+
+    // ✅ 거리 계산 함수 (하버사인 공식)
+    const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371; // 지구 반지름 (km)
+        const dLat = (lat2 - lat1) * (Math.PI / 180);
+        const dLon = (lon2 - lon1) * (Math.PI / 180);
+        const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * (Math.PI / 180)) *
+            Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+
+    // ✅ 주변 보기 모드일 때만 반경 1km 이내 표시
+    const filteredPins = pins.filter((p) => {
+        if (!currentLocation) return false;
+
+        // 거리 계산
+        const distance = getDistance(
+            currentLocation.lat,
+            currentLocation.lng,
+            p.latitude,
+            p.longitude
+        );
+
+        // 주변 보기 모드일 때만 거리 제한 적용
+        const inRange = viewMode === "nearby" ? distance <= 1 : true;
+
+        // 검색어 필터
+        const matchQuery = p.post?.content
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase());
+
+        return inRange && matchQuery;
+    });
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
             <Script
-                src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&autoload=false`}
+                src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&autoload=false&libraries=clusterer`}
                 strategy="afterInteractive"
             />
 
@@ -307,6 +466,7 @@ export default function PinCoMainPage() {
                                 onClick={() => {
                                     setViewMode("nearby");
                                     fetchNearbyPins();
+                                    fetchAllPosts(); // ✅ 새 함수 호출
                                 }}
                                 className={`px-2 py-1 text-xs rounded-md ${viewMode === "nearby" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
                                     }`}
@@ -318,6 +478,7 @@ export default function PinCoMainPage() {
                                 onClick={() => {
                                     setViewMode("all");
                                     fetchAllPins(); // ✅ 서버에서 전체 핀 불러오기
+                                    fetchAllPosts(); // ✅ 새 함수 호출
                                 }}
                                 className={`px-2 py-1 text-xs rounded-md ${viewMode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
                                     }`}
@@ -339,16 +500,42 @@ export default function PinCoMainPage() {
                     </div>
 
                     <div className="space-y-2">
-                        {filteredPins.length > 0 ? (
+                        {loading ? (
+                            <p className="text-gray-400 text-sm text-center py-6">불러오는 중입니다... ⏳</p>
+                        ) : filteredPins.length > 0 ? (
                             filteredPins.map((pin) => (
                                 <div
                                     key={pin.id}
-                                    onClick={() => {
-                                        setSelectedPin(pin);
+                                    onClick={async () => {
+                                        if (!isLoggedIn) {
+                                            alert("로그인이 필요합니다 🔒");
+                                            window.location.href = "/user/login";
+                                            return;
+                                        }
                                         if (mapInstance) {
                                             const kakao = window.kakao;
                                             const moveLatLon = new kakao.maps.LatLng(pin.latitude, pin.longitude);
-                                            mapInstance.panTo(moveLatLon); // ✅ 해당 핀 위치로 부드럽게 이동
+                                            mapInstance.panTo(moveLatLon);
+                                        }
+
+                                        try {
+                                            const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" });
+                                            if (!post) {
+                                                alert("해당 핀에 게시글이 없습니다 ❌");
+                                                return;
+                                            }
+
+                                            setSelectedPin({
+                                                ...pin,
+                                                post: {
+                                                    id: post.id,
+                                                    content: post.content,
+                                                    createdAt: post.createAt,
+                                                    modifiedAt: post.modifiedAt,
+                                                },
+                                            });
+                                        } catch (err) {
+                                            console.error("🚨 게시글 불러오기 실패:", err);
                                         }
                                     }}
                                     className="border rounded-md p-3 cursor-pointer hover:bg-blue-50 transition"
