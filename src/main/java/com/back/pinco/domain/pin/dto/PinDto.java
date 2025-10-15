@@ -1,7 +1,6 @@
 package com.back.pinco.domain.pin.dto;
 
 import com.back.pinco.domain.pin.entity.Pin;
-import com.back.pinco.global.geometry.GeometryUtil;
 import java.time.LocalDateTime;
 
 public record PinDto(
@@ -10,11 +9,11 @@ public record PinDto(
         Double longitude,
         LocalDateTime createAt
 ) {
-    public PinDto(Pin pin, GeometryUtil geometryUtil) {
+    public PinDto(Pin pin) {
         this(
                 pin.getId(),
-                geometryUtil.getLatitude(pin.getPoint()),
-                geometryUtil.getLongitude(pin.getPoint()),
+                pin.getPoint().getY(), // latitude
+                pin.getPoint().getX(), // longitude
                 pin.getCreateAt()
         );
     }

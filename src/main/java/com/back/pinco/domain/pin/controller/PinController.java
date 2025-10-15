@@ -45,7 +45,7 @@ public class PinController {
         List<Pin> pins = pinService.findNearPins(latitude, longitude, radius);
 
         List<PinDto> pinDtos = pins.stream()
-                .map(pin -> new PinDto(pin, geometryUtil))
+                .map(PinDto::new)
                 .collect(Collectors.toList());
 
         PinListResponseDto pinListResponseDto = new PinListResponseDto(pinDtos);
@@ -69,7 +69,7 @@ public class PinController {
         List<Pin> pins = pinService.findAll();
 
         List<PinDto> pinDtos = pins.stream()
-                .map(pin -> new PinDto(pin, geometryUtil))
+                .map(PinDto::new)
                 .toList();
         PinListResponseDto pinListResponseDto = new PinListResponseDto(pinDtos);
 
