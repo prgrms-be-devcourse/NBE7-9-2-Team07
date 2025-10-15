@@ -97,29 +97,26 @@ export default function PinCoMainPage() {
         if (!targetLat || !targetLng) return;
 
         try {
-            // ✅ [1단계] 실제 API 연결 시 이 부분만 활성화
-            // const res = await fetchApi<Pin[]>(`/api/pins?latitude=${targetLat}&longitude=${targetLng}&radius=1`, {
-            //   method: "GET",
-            // });
-            // setPins(res);
-            // console.log("📍 반경 1km 핀 조회 완료:", res);
-
-            // ✅ [2단계] 현재는 임시로 로컬 데이터 필터링
-            const R = 6371;
-            const within1Km = initialPins.filter((pin) => {
-                const dLat = ((pin.latitude - targetLat) * Math.PI) / 180;
-                const dLng = ((pin.longitude - targetLng) * Math.PI) / 180;
-                const a =
-                    Math.sin(dLat / 2) ** 2 +
-                    Math.cos((targetLat * Math.PI) / 180) *
-                    Math.cos((pin.latitude * Math.PI) / 180) *
-                    Math.sin(dLng / 2) ** 2;
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                return R * c <= 1;
+            const res = await fetchApi<any[]>(`/api/pins?latitude=${targetLat}&longitude=${targetLng}&radius=1`, {
+                method: "GET",
             });
 
-            setPins(within1Km);
-            console.log("📍 로컬 반경 1km 필터 적용:", within1Km);
+            // 🔹 Mock 데이터를 실제 Pin 타입에 맞게 변환
+            const normalized = res.map((pin) => ({
+                id: pin.id,
+                latitude: pin.latitude,
+                longitude: pin.longitude,
+                createdAt: new Date().toISOString(), // 더미값
+                post: {
+                    id: pin.id * 1000,
+                    content: pin.title ?? "내용 없음",
+                    createdAt: new Date().toISOString(),
+                    modifiedAt: new Date().toISOString(),
+                },
+            }));
+
+            setPins(normalized);
+            console.log("📍 반경 1km 핀 조회 완료:", normalized);
         } catch (err) {
             console.error("주변 핀 조회 실패:", err);
         }
@@ -140,6 +137,36 @@ export default function PinCoMainPage() {
             });
         } catch (err) {
             console.error("🚨 모든 핀 불러오기 실패:", err);
+        }
+    };
+
+    // ✅ 게시글 전체 조회 (PostDto 기반)
+    const fetchAllPosts = async () => {
+        try {
+            const posts = await fetchApi<any[]>("/api/posts", { method: "GET" }); // 바로 배열 받음
+
+            if (!Array.isArray(posts)) {
+                console.error("🚨 posts 데이터가 배열이 아닙니다:", posts);
+                return;
+            }
+
+            const convertedPins = posts.map((p) => ({
+                id: p.pin.id,
+                latitude: p.pin.latitude,
+                longitude: p.pin.longitude,
+                createdAt: p.pin.createAt ?? new Date().toISOString(),
+                post: {
+                    id: p.id,
+                    content: p.content,
+                    createdAt: p.createAt,
+                    modifiedAt: p.modifiedAt,
+                },
+            }));
+
+            setPins(convertedPins);
+            console.log("🗺️ 게시글 기반 핀 목록:", convertedPins);
+        } catch (err) {
+            console.error("🚨 게시글 조회 실패:", err);
         }
     };
 
@@ -318,6 +345,7 @@ export default function PinCoMainPage() {
                                 onClick={() => {
                                     setViewMode("all");
                                     fetchAllPins(); // ✅ 서버에서 전체 핀 불러오기
+                                    fetchAllPosts(); // ✅ 새 함수 호출
                                 }}
                                 className={`px-2 py-1 text-xs rounded-md ${viewMode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
                                     }`}
