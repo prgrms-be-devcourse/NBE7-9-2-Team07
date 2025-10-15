@@ -88,25 +88,25 @@ export default function PinCoMainPage() {
     const [viewMode, setViewMode] = useState<"nearby" | "all">("nearby");
     const [postContent, setPostContent] = useState("");
     const [showPostForm, setShowPostForm] = useState(false);
-
+    const [loading, setLoading] = useState(true);
 
     // ✅ 반경 1km 내 핀 조회
     const fetchNearbyPins = async (lat?: number, lng?: number) => {
-        const targetLat = lat ?? currentLocation?.lat;
-        const targetLng = lng ?? currentLocation?.lng;
-        if (!targetLat || !targetLng) return;
-
+        setLoading(true);
         try {
+            const targetLat = lat ?? currentLocation?.lat;
+            const targetLng = lng ?? currentLocation?.lng;
+            if (!targetLat || !targetLng) return;
+
             const res = await fetchApi<any[]>(`/api/pins?latitude=${targetLat}&longitude=${targetLng}&radius=1`, {
                 method: "GET",
             });
 
-            // 🔹 Mock 데이터를 실제 Pin 타입에 맞게 변환
             const normalized = res.map((pin) => ({
                 id: pin.id,
                 latitude: pin.latitude,
                 longitude: pin.longitude,
-                createdAt: new Date().toISOString(), // 더미값
+                createdAt: new Date().toISOString(),
                 post: {
                     id: pin.id * 1000,
                     content: pin.title ?? "내용 없음",
@@ -119,11 +119,15 @@ export default function PinCoMainPage() {
             console.log("📍 반경 1km 핀 조회 완료:", normalized);
         } catch (err) {
             console.error("주변 핀 조회 실패:", err);
+        } finally {
+            setLoading(false);
         }
     };
 
     // ✅ 모든 핀 조회 (/api/pins/all)
     const fetchAllPins = async () => {
+        setLoading(true);
+
         if (!mapInstance) return;
 
         try {
@@ -138,10 +142,13 @@ export default function PinCoMainPage() {
         } catch (err) {
             console.error("🚨 모든 핀 불러오기 실패:", err);
         }
+        setLoading(false);
+
     };
 
     // ✅ 게시글 전체 조회 (PostDto 기반)
     const fetchAllPosts = async () => {
+        setLoading(true);
         try {
             const posts = await fetchApi<any[]>("/api/posts", { method: "GET" }); // 바로 배열 받음
 
@@ -168,6 +175,7 @@ export default function PinCoMainPage() {
         } catch (err) {
             console.error("🚨 게시글 조회 실패:", err);
         }
+        setLoading(false);
     };
 
     // 🔹 게시글 생성 로직 수정
@@ -264,6 +272,7 @@ export default function PinCoMainPage() {
         });
 
         fetchNearbyPins();
+        fetchAllPosts();
     }, [isMapLoaded, currentLocation]);
 
     // ✅ 지도 드래그 이벤트 (모드별로 동작)
@@ -394,7 +403,9 @@ export default function PinCoMainPage() {
                     </div>
 
                     <div className="space-y-2">
-                        {filteredPins.length > 0 ? (
+                        {loading ? (
+                            <p className="text-gray-400 text-sm text-center py-6">불러오는 중입니다... ⏳</p>
+                        ) : filteredPins.length > 0 ? (
                             filteredPins.map((pin) => (
                                 <div
                                     key={pin.id}
@@ -406,9 +417,7 @@ export default function PinCoMainPage() {
                                         }
 
                                         try {
-                                            // ✅ 동일하게 pin.id 기반으로 서버 호출
                                             const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" });
-
                                             if (!post) {
                                                 alert("해당 핀에 게시글이 없습니다 ❌");
                                                 return;
@@ -423,11 +432,8 @@ export default function PinCoMainPage() {
                                                     modifiedAt: post.modifiedAt,
                                                 },
                                             });
-
-                                            console.log("📄 게시글 상세 불러오기 성공:", post);
                                         } catch (err) {
                                             console.error("🚨 게시글 불러오기 실패:", err);
-                                            alert("게시글을 불러오지 못했습니다 ❌");
                                         }
                                     }}
                                     className="border rounded-md p-3 cursor-pointer hover:bg-blue-50 transition"
