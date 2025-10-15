@@ -22,22 +22,19 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    // ✅ 빈칸 체크
     if (!form.username || !form.password) {
       setError("아이디와 비밀번호를 모두 입력해주세요.");
       return;
     }
 
-    // ✅ 이메일 형식 검증 (아이디가 이메일일 수도 있으니까)
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (form.username.includes("@") && !emailPattern.test(form.username)) {
       setError("이메일 형식이 올바르지 않습니다.");
       return;
     }
 
-    // ✅ 가짜 유저 검증 (실제론 백엔드 API 호출)
+    // ✅ 가짜 유저 검증
     const mockUser = { username: "testuser", password: "12345678" };
-
     if (form.username !== mockUser.username) {
       setError("존재하지 않는 아이디입니다.");
       return;
@@ -47,9 +44,13 @@ export default function LoginPage() {
       return;
     }
 
-    alert("로그인 성공 🎉");
+    // ✅ 가짜 JWT 생성
+    const mockToken = "fake-jwt-token-for-now";
 
-    // ✅ 로그인 후 메인 페이지로 이동
+    // ✅ 쿠키에 저장 (1시간 유효)
+    document.cookie = `accessToken=${mockToken}; path=/; max-age=3600; SameSite=Strict; Secure`;
+
+    alert("로그인 성공 🎉");
     router.push("/home");
   };
 
