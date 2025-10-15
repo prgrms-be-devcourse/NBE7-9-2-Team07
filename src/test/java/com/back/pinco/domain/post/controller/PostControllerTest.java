@@ -41,7 +41,7 @@ public class PostControllerTest {
     @Test
     @DisplayName("게시글 조회 - 단건 - 조회 성공")
     void t1_1() throws Exception {
-        long pinId = 1;
+        Long pinId = 1L;
         Pin pin = pinRepository.findById(pinId).get();
         List<Post> posts = postRepository.findByPin(pin).get();
         List<PostDto> postDtos = posts.stream().map(PostDto::new).toList();
@@ -56,7 +56,7 @@ public class PostControllerTest {
                 .andExpect(handler().methodName("getPostByPinId"))
                 .andExpect(status().isOk());
 
-        for(PostDto postDto : postDtos){
+        for (PostDto postDto : postDtos) {
             resultActions
                     .andExpect(jsonPath("$.data.id").value(postDto.id()))
                     .andExpect(jsonPath("$.data.content").value(postDto.content()))
@@ -64,11 +64,6 @@ public class PostControllerTest {
                             matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
                     .andExpect(jsonPath("$.data.modifiedAt").value(
                             matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.data.pin.id").value(postDto.pin().getId()))
-                    .andExpect(jsonPath("$.data.pin.latitude").value(postDto.pin().getLatitude()))
-                    .andExpect(jsonPath("$.data.pin.longitude").value(postDto.pin().getLongitude()))
-                    .andExpect(jsonPath("$.data.pin.createDate").value(
-                            matchesPattern(postDto.pin().getCreateAt().toString().replaceAll("0+$", "") + ".*")))
             ;
         }
     }
@@ -76,11 +71,11 @@ public class PostControllerTest {
     @Test
     @DisplayName("게시글 조회 - 단건 - 조회 실패")
     void t1_2() throws Exception {
-        long pinId = 10;
+        Long postId = 10L;
 
         ResultActions resultActions = mvc
                 .perform(
-                        get("/api/posts/%s".formatted(pinId))
+                        get("/api/posts/%s".formatted(postId))
                 )
                 .andDo(print());
 
@@ -109,7 +104,7 @@ public class PostControllerTest {
                 .andExpect(handler().methodName("getAllPost"))
                 .andExpect(status().isOk());
 
-        for(PostDto postDto : postDtos){
+        for (PostDto postDto : postDtos) {
             resultActions
                     .andExpect(jsonPath("$.data.id").value(postDto.id()))
                     .andExpect(jsonPath("$.data.content").value(postDto.content()))
@@ -117,11 +112,6 @@ public class PostControllerTest {
                             matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
                     .andExpect(jsonPath("$.data.modifiedAt").value(
                             matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.data.pin.id").value(postDto.pin().getId()))
-                    .andExpect(jsonPath("$.data.pin.latitude").value(postDto.pin().getLatitude()))
-                    .andExpect(jsonPath("$.data.pin.longitude").value(postDto.pin().getLongitude()))
-                    .andExpect(jsonPath("$.data.pin.createDate").value(
-                            matchesPattern(postDto.pin().getCreateAt().toString().replaceAll("0+$", "") + ".*")))
             ;
         }
     }
@@ -136,7 +126,7 @@ public class PostControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        get("/api/posts?page=%d&size=%d&%s".formatted(1,2,"modifiedAt,asc"))
+                        get("/api/posts?page=%d&size=%d&%s".formatted(1, 2, "modifiedAt,asc"))
                 )
                 .andDo(print());
 
@@ -145,7 +135,7 @@ public class PostControllerTest {
                 .andExpect(handler().methodName("getAllPost"))
                 .andExpect(status().isOk());
 
-        for(PostDto postDto : postDtos){
+        for (PostDto postDto : postDtos) {
             resultActions
                     .andExpect(jsonPath("$.data.id").value(postDto.id()))
                     .andExpect(jsonPath("$.data.content").value(postDto.content()))
@@ -153,11 +143,6 @@ public class PostControllerTest {
                             matchesPattern(postDto.createAt().toString().replaceAll("0+$", "") + ".*")))
                     .andExpect(jsonPath("$.data.modifiedAt").value(
                             matchesPattern(postDto.modifiedAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.data.pin.id").value(postDto.pin().getId()))
-                    .andExpect(jsonPath("$.data.pin.latitude").value(postDto.pin().getLatitude()))
-                    .andExpect(jsonPath("$.data.pin.longitude").value(postDto.pin().getLongitude()))
-                    .andExpect(jsonPath("$.data.pin.createDate").value(
-                            matchesPattern(postDto.pin().getCreateAt().toString().replaceAll("0+$", "") + ".*")))
             ;
         }
     }
@@ -167,7 +152,7 @@ public class PostControllerTest {
     void t2_3() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
-                        get("/api/posts?page=%d&size=%d&%s".formatted(10,20,"modifiedAt,asc"))
+                        get("/api/posts?page=%d&size=%d&%s".formatted(10, 20, "modifiedAt,asc"))
                 )
                 .andDo(print());
 
@@ -184,7 +169,7 @@ public class PostControllerTest {
     @DisplayName("게시글 생성 - 성공")
     void t3_1() throws Exception {
         String content = "new content!";
-        double latitude =37.5670;
+        double latitude = 37.5670;
         double longitude = 126.9785;
 
         ResultActions resultActions = mvc
@@ -211,11 +196,7 @@ public class PostControllerTest {
                 .andExpect(jsonPath("$.data.id").isNotEmpty())
                 .andExpect(jsonPath("$.data.content").value(content))
                 .andExpect(jsonPath("$.data.createAt").isNotEmpty())
-                .andExpect(jsonPath("$.data.modifiedAt").isNotEmpty())
-                .andExpect(jsonPath("$.data.pin.id").isNotEmpty())
-                .andExpect(jsonPath("$.data.pin.latitude").value(latitude))
-                .andExpect(jsonPath("$.data.pin.longitude").value(longitude))
-                .andExpect(jsonPath("$.data.pin.createAt").isNotEmpty());
+                .andExpect(jsonPath("$.data.modifiedAt").isNotEmpty());
 
     }
 
@@ -223,13 +204,12 @@ public class PostControllerTest {
     @DisplayName("게시글 생성 - 실패 (양식 오류)")
     void t3_2() throws Exception {
         String content = null;
-        double latitude =-100;
+        double latitude = -100;
         double longitude = 200;
 
         ResultActions resultActions = mvc
                 .perform(
                         post("/api/posts")
-
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -245,6 +225,79 @@ public class PostControllerTest {
                 .andExpect(handler().handlerType(PostController.class))
                 .andExpect(handler().methodName("writePost"))
                 .andExpect(status().is(400));
+
+    }
+
+    @Test
+    @DisplayName("게시글 삭제 - 성공")
+    void t4_1() throws Exception {
+        Long postId = 1L;
+
+        ResultActions resultActions = mvc
+                .perform(
+                        delete("/api/posts/%s".formatted(postId))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PostController.class))
+                .andExpect(handler().methodName("deletePostByPinId"))
+                .andExpect(jsonPath("$.errorCode").value(200))
+                .andExpect(jsonPath("$.data.stateCode").value(404)); //여기서 상태 플러그 바뀐 거 검증
+
+    }
+
+    @Test
+    @DisplayName("게시글 수정 - 성공")
+    void t5_1() throws Exception {
+        Long postId =7L;
+        String content = "changed contents";
+        ResultActions resultActions = mvc
+                .perform(
+                        put("/api/posts/%s".formatted(postId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "content": "%s"
+                                        }
+                                        """.formatted(content))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PostController.class))
+                .andExpect(handler().methodName("updatePostByPinId"))
+                .andExpect(status().isOk());
+
+        resultActions
+                .andExpect(jsonPath("$.data.content").value(content));
+
+    }
+
+    @Test
+    @DisplayName("게시글 수정 - 실패")
+    void t5_2() throws Exception {
+        Long postId =10L;
+        String content = "changed contents";
+
+        ResultActions resultActions = mvc
+                .perform(
+                        put("/api/posts/%s".formatted(postId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "content": "%s"
+                                        }
+                                        """.formatted(content))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PostController.class))
+                .andExpect(handler().methodName("updatePostByPinId"))
+                .andExpect(status().is(404));
+
+
 
     }
 

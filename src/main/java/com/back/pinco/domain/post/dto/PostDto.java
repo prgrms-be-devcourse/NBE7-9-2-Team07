@@ -1,5 +1,6 @@
 package com.back.pinco.domain.post.dto;
 
+import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.post.entity.Post;
 
@@ -10,7 +11,7 @@ public record PostDto(
         String content,
         LocalDateTime createAt,
         LocalDateTime modifiedAt,
-        Pin pin
+        PinDto pin
 ) {
     public PostDto(Post post) {
         this(
@@ -18,7 +19,7 @@ public record PostDto(
                 post.getContent(),
                 post.getCreatedAt(),
                 post.getModifiedAt(),
-                post.getPin()
+                new PinDto(post.getPin())
         );
     }
 }
