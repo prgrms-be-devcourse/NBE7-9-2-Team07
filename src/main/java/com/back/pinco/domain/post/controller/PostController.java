@@ -1,6 +1,5 @@
 package com.back.pinco.domain.post.controller;
 
-import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.post.dto.PostDto;
 import com.back.pinco.domain.post.entity.Post;
@@ -28,25 +27,21 @@ public class PostController {
 
     @Autowired
     private PostService postService;
-    @Autowired
-    private PinService pinService;
 
 
     @GetMapping("/{pinId}")
-    public RsData<List<PostDto>> getPostByPinId(
+    public RsData<PostDto> getPostByPinId(
             @PathVariable Long pinId
     ) {
-        Pin pin = pinService.findById(pinId).get();
 
-        List<Post> posts = postService.findByPin(pin).get();
-        System.out.println(posts.size());
 
-        List<PostDto> postDtos = posts.stream().map(PostDto::new).toList();
+        Post post = postService.findByPinId(pinId).get();
+        PostDto postDto = new PostDto(post);
 
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
-                postDtos
+                postDto
         );
     }
 
@@ -67,7 +62,7 @@ public class PostController {
         List<PostDto> postDtos = posts.stream().map(PostDto::new).toList();
 
         System.out.println(postDtos.size());
-        return new RsData<List<PostDto>>(
+        return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
                 postDtos
@@ -133,7 +128,7 @@ public class PostController {
     ) {
         PostDto postDto = postService.modifyPost(postId, reqBody.content);
 
-        return new RsData<PostDto>(
+        return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
                 postDto
