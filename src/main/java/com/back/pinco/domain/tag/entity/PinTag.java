@@ -1,7 +1,7 @@
-package com.back.pinco.domain.post.entity;
+package com.back.pinco.domain.tag.entity;
 
 import com.back.pinco.domain.pin.entity.Pin;
-import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.domain.post.entity.Post;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,31 +14,32 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-@Table(name = "posts")
+@Table(name = "pin_tags")
 @EntityListeners(AuditingEntityListener.class)
 @SequenceGenerator(
-        name = "post_id_gen",
-        sequenceName = "POST_SEQ",
+        name = "pin_tag_id_gen",
+        sequenceName = "PIN_TAG_SEQ",
         initialValue = 1,
         allocationSize = 50
 )
-public class Post {
+public class PinTag {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "post_id_gen")
-    @Column(name = "post_id")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pin_tag_id_gen")
+    @Column(name = "pin_tag_id")
     private Long id;    // 고유 ID
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pin_id", nullable = false)
     private Pin pin;    // 핀 ID
 
-    @Column(name = "content", columnDefinition = "TEXT")
-    private String content;    // 내용
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;    // 게시글 ID
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;    // 사용자
+    @JoinColumn(name = "tag_id", nullable = false)
+    private Tag tag;    // 태그 ID
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreatedDate
@@ -48,18 +49,9 @@ public class Post {
     @LastModifiedDate
     private LocalDateTime modifiedAt;    // 수정일
 
-    @Column(name = "is_public", nullable = false)
-    private Boolean isPublic = true;    // 공개 여부
-
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;    // 삭제 여부
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;    // 삭제일
-
-    public Post(Pin pin, String content, User user) {
+    public PinTag(Pin pin, Post post, Tag tag) {
         this.pin = pin;
-        this.content = content;
-        this.user = user;
+        this.post = post;
+        this.tag = tag;
     }
 }

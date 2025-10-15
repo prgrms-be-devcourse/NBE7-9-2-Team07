@@ -1,4 +1,4 @@
-package com.back.pinco.domain.post.entity;
+package com.back.pinco.domain.bookmark.entity;
 
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.user.entity.User;
@@ -14,31 +14,28 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-@Table(name = "posts")
+@Table(name = "bookmarks")
 @EntityListeners(AuditingEntityListener.class)
 @SequenceGenerator(
-        name = "post_id_gen",
-        sequenceName = "POST_SEQ",
+        name = "bookmark_id_gen",
+        sequenceName = "BOOKMARK_SEQ",
         initialValue = 1,
         allocationSize = 50
 )
-public class Post {
+public class BookMark {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "post_id_gen")
-    @Column(name = "post_id")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bookmark_id_gen")
+    @Column(name = "bookmark_id")
     private Long id;    // 고유 ID
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pin_id", nullable = false)
-    private Pin pin;    // 핀 ID
-
-    @Column(name = "content", columnDefinition = "TEXT")
-    private String content;    // 내용
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;    // 사용자
+    private User user;    // 사용자 ID
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pin_id", nullable = false)
+    private Pin pin;    // 핀 ID
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreatedDate
@@ -48,18 +45,8 @@ public class Post {
     @LastModifiedDate
     private LocalDateTime modifiedAt;    // 수정일
 
-    @Column(name = "is_public", nullable = false)
-    private Boolean isPublic = true;    // 공개 여부
-
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;    // 삭제 여부
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;    // 삭제일
-
-    public Post(Pin pin, String content, User user) {
-        this.pin = pin;
-        this.content = content;
+    public BookMark(User user, Pin pin) {
         this.user = user;
+        this.pin = pin;
     }
 }
