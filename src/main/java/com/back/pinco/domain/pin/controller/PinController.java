@@ -28,11 +28,6 @@ public class PinController {
     @GetMapping("")
     public RsData<List<PinDto>> getRadiusPins(
             @NotNull
-            @Min(0)
-            @Max(20000)
-            @RequestParam double radius,
-
-            @NotNull
             @Min(-90)
             @Max(90)
             @RequestParam double latitude,
@@ -42,7 +37,7 @@ public class PinController {
             @Max(180)
             @RequestParam double longitude
     ) {
-        List<Pin> pins = pinService.findNearPins(latitude, longitude, radius);
+        List<Pin> pins = pinService.findNearPins(latitude, longitude);
 
         List<PinDto> pinDtos = pins.stream()
                 .map(PinDto::new)

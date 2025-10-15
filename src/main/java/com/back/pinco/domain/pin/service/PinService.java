@@ -40,7 +40,7 @@ public class PinService {
     }
 
 
-    public List<Pin> findNearPins(double latitude,double longitude,double radius) {
-        return pinRepository.findPinsWithinRadius(latitude,longitude,radius);
+    public List<Pin> findNearPins(double latitude,double longitude) {
+        return pinRepository.findPinsWithinRadius(latitude,longitude,1000.0);
     }
 }
