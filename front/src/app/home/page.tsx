@@ -412,9 +412,42 @@ export default function PinCoMainPage() {
         mapInstance.markers = markers;
     }, [pins, mapInstance, isLoggedIn]);
 
-    const filteredPins = pins.filter((p) =>
-        p.post?.content.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // ✅ 거리 계산 함수 (하버사인 공식)
+    const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371; // 지구 반지름 (km)
+        const dLat = (lat2 - lat1) * (Math.PI / 180);
+        const dLon = (lon2 - lon1) * (Math.PI / 180);
+        const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * (Math.PI / 180)) *
+            Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+
+    // ✅ 주변 보기 모드일 때만 반경 1km 이내 표시
+    const filteredPins = pins.filter((p) => {
+        if (!currentLocation) return false;
+
+        // 거리 계산
+        const distance = getDistance(
+            currentLocation.lat,
+            currentLocation.lng,
+            p.latitude,
+            p.longitude
+        );
+
+        // 주변 보기 모드일 때만 거리 제한 적용
+        const inRange = viewMode === "nearby" ? distance <= 1 : true;
+
+        // 검색어 필터
+        const matchQuery = p.post?.content
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase());
+
+        return inRange && matchQuery;
+    });
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
