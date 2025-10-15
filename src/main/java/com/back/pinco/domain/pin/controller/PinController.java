@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,32 +26,41 @@ public class PinController {
     private GeometryUtil geometryUtil;
 
     @GetMapping("")
-    public RsData<List<Pin>> getRadiusPins(
+    public RsData<PinListResponseDto> getRadiusPins(
             @NotNull
             @Min(0)
             @Max(20000)
             @RequestParam double radius,
+
             @NotNull
             @Min(-90)
             @Max(90)
             @RequestParam double latitude,
+
             @NotNull
             @Min(-180)
             @Max(180)
             @RequestParam double longitude
     ) {
-        List<Pin> pins = pinService.findNearPins(radius, latitude, longitude);
+        List<Pin> pins = pinService.findNearPins(latitude, longitude, radius);
+
+        List<PinDto> pinDtos = pins.stream()
+                .map(pin -> new PinDto(pin, geometryUtil))
+                .collect(Collectors.toList());
+
+        PinListResponseDto pinListResponseDto = new PinListResponseDto(pinDtos);
+
         if (pins.isEmpty()) {
             return new RsData<>(
                     "204",
                     "조회된 값이 없습니다.",
-                    null
+                    pinListResponseDto
             );
         }
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
-                pins
+                pinListResponseDto
         );
     }
 
