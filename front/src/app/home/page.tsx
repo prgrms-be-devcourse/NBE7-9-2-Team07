@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import Script from "next/script";
 import { Plus, Search, X, ZoomIn, ZoomOut } from "lucide-react";
 import { fetchApi } from "@/lib/client";
+import { useAuth } from "@/context/AuthContext";
+
+// ✅ 쿠키 읽기 함수
+const getCookie = (name: string) => {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return match ? decodeURIComponent(match[2]) : null;
+};
 
 // ✅ 타입 정의
 type Post = {
@@ -89,6 +97,7 @@ export default function PinCoMainPage() {
     const [postContent, setPostContent] = useState("");
     const [showPostForm, setShowPostForm] = useState(false);
     const [loading, setLoading] = useState(true);
+    const { isLoggedIn } = useAuth(); 
 
     // ✅ 반경 1km 내 핀 조회
     const fetchNearbyPins = async (lat?: number, lng?: number) => {
@@ -192,6 +201,12 @@ export default function PinCoMainPage() {
 
     // 🔹 게시글 생성 로직
     const handleCreatePost = async () => {
+        if (!isLoggedIn) {
+            alert("로그인이 필요합니다 🔒");
+            window.location.href = "/user/login";
+            return;
+        }
+
         if (!currentLocation) return;
         if (!postContent.trim()) return alert("내용을 입력해주세요!");
 
@@ -338,6 +353,12 @@ export default function PinCoMainPage() {
             kakao.maps.event.addListener(marker, "mouseout", () => info.close());
             //핀 클릭시 게시물 불러오기
             kakao.maps.event.addListener(marker, "click", async () => {
+
+                if (!isLoggedIn) {
+                    alert("로그인이 필요합니다 🔒");
+                    window.location.href = "/user/login";
+                    return;
+                }
                 try {
                     // pin.id 를 그대로 경로 변수로 사용
                     const post = await fetchApi(`/api/posts/${pin.id}`, { method: "GET" }); // ✅ RsData.data가 바로 반환됨
@@ -430,6 +451,11 @@ export default function PinCoMainPage() {
                                 <div
                                     key={pin.id}
                                     onClick={async () => {
+                                        if (!isLoggedIn) {
+                                            alert("로그인이 필요합니다 🔒");
+                                            window.location.href = "/user/login";
+                                            return;
+                                        }
                                         if (mapInstance) {
                                             const kakao = window.kakao;
                                             const moveLatLon = new kakao.maps.LatLng(pin.latitude, pin.longitude);

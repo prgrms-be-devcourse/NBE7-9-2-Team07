@@ -1,4 +1,5 @@
 // src/app/layout.tsx
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 
@@ -10,10 +11,11 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className="bg-gray-50 text-gray-900">
-        {/* 공통 Header */}
-        <Header />
-        <main>{children}</main>
+      <body>
+        <AuthProvider>
+          <Header />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
