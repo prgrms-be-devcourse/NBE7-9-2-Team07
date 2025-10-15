@@ -3,6 +3,7 @@ package com.back.pinco.domain.pin.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.locationtech.jts.geom.Point;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -20,18 +21,15 @@ public class Pin {
     @Column(name = "pin_id")
     private Long id;
 
-    @Column(name = "latitude", nullable = false)
-    private Double latitude;    // 위도
-
-    @Column(name = "longitude", nullable = false)
-    private Double longitude;   // 경도
+    @Column(name = "point", nullable = false, columnDefinition = "geography(Point, 4326)")
+    private Point point;
 
     @Column(name = "create_at", nullable = false)
     @CreatedDate
     private LocalDateTime createAt;   // 생성일
 
-    public Pin(Double latitude, Double longitude) {
-        this.latitude = latitude;
-        this.longitude = longitude;
+
+    public Pin(Point point) {
+        this.point = point;
     }
 }
