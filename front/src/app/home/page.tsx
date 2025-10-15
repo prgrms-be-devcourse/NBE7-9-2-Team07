@@ -178,7 +178,7 @@ export default function PinCoMainPage() {
         setLoading(false);
     };
 
-    // 🔹 게시글 생성 로직 수정
+    // 🔹 게시글 생성 로직
     const handleCreatePost = async () => {
         if (!currentLocation) return;
         if (!postContent.trim()) return alert("내용을 입력해주세요!");
@@ -190,38 +190,46 @@ export default function PinCoMainPage() {
         };
 
         try {
-            // ✅ 실제 API 연결 시 이 부분만 활성화
-            // const res = await fetchApi<Pin>("/api/posts", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify(req),
-            // });
+            // ✅ 백엔드에 게시글 등록 요청
+            const res = await fetchApi("/api/posts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(req),
+            });
 
-            // ✅ 테스트용 임시 핀 추가
-            const res: Pin = {
-                id: pins.length + 1,
-                latitude: req.latitude,
-                longitude: req.longitude,
-                createdAt: new Date().toISOString(),
+            const postData = res // RsData 구조 기준: { errorCode, msg, data }
+            console.log("📦 서버 응답:", res);
+
+            if (!postData) {
+                alert("게시글 생성 실패 ❌");
+                return;
+            }
+
+            // ✅ 백엔드에서 반환된 PostDto → Pin 형태로 변환
+            const newPin: Pin = {
+                id: postData.pin?.id ?? Date.now(), // pinId
+                latitude: postData.pin?.latitude ?? req.latitude,
+                longitude: postData.pin?.longitude ?? req.longitude,
+                createdAt: postData.pin?.createAt ?? new Date().toISOString(),
                 post: {
-                    id: Date.now(),
-                    content: req.content,
-                    createdAt: new Date().toISOString(),
-                    modifiedAt: new Date().toISOString(),
+                    id: postData.id,
+                    content: postData.content,
+                    createdAt: postData.createAt,
+                    modifiedAt: postData.modifiedAt,
                 },
             };
 
-            setPins((prev) => [...prev, res]);
+            // ✅ 지도 핀 목록에 추가
+            setPins((prev) => [...prev, newPin]);
             alert("게시글과 핀이 성공적으로 등록되었습니다 🎉");
         } catch (err) {
-            console.error("게시글 생성 실패:", err);
+            console.error("🚨 게시글 생성 실패:", err);
             alert("서버 통신 중 오류가 발생했습니다 ❌");
         } finally {
             setShowPostForm(false);
             setPostContent("");
         }
     };
-
 
     // ✅ Kakao SDK 로드
     useEffect(() => {
