@@ -53,7 +53,6 @@ public class PinControllerTest {
     @DisplayName("모든 핀 리턴")
     void t2() throws Exception {
 
-
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/all")
