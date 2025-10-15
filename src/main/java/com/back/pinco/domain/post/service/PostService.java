@@ -6,6 +6,8 @@ import com.back.pinco.domain.post.entity.Post;
 import com.back.pinco.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +26,7 @@ public class PostService {
 
     public Post write(String content, Pin pin) {
         Post post = new Post(content,pin);
-        return post;
+        return postRepository.save(post);
     }
 
     public Optional<Post> findById(long id) {
@@ -35,8 +37,16 @@ public class PostService {
         return postRepository.findAll();
     }
 
+    public Page<Post> findAll(Pageable pageable) {
+        return postRepository.findAll(pageable);
+    }
+
     public void deleteById(long id) {
         Post post = postRepository.findById(id).get();
         postRepository.delete(post);
+    }
+
+    public Optional<List<Post>> findByPin(Pin pin) {
+        return postRepository.findByPin(pin);
     }
 }
