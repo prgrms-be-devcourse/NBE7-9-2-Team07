@@ -130,26 +130,18 @@ export default function PinCoMainPage() {
         if (!mapInstance) return;
 
         try {
-            // 🔹 실제 API 연결 시 활성화
-            // const res = await fetchApi<RsData<Pin[]>>("/api/pins/all", { method: "GET" });
-            // const pins = res.data ?? [];
-
-            // 🔹 현재는 Mock 데이터 (백엔드 연결 전용)
-            const pins = initialPins;
+            const pins = await fetchApi<Pin[]>("/api/pins/all", { method: "GET" }); // ✅ 수정
+            console.log("🌍 모든 핀 불러오기 완료:", pins);
 
             setPins((prev) => {
                 const existingIds = new Set(prev.map((p) => p.id));
                 const merged = [...prev, ...pins.filter((p) => !existingIds.has(p.id))];
                 return merged;
             });
-
-            console.log("🌍 모든 핀 불러오기 완료:", pins);
         } catch (err) {
             console.error("🚨 모든 핀 불러오기 실패:", err);
         }
     };
-
-
 
     // 🔹 게시글 생성 로직 수정
     const handleCreatePost = async () => {
