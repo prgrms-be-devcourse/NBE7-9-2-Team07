@@ -30,7 +30,7 @@ export async function fetchApi<T>(url: string, options?: RequestInit): Promise<T
 
   // ✅ 백엔드의 resultCode / errorCode 대응
   const code = rsData.resultCode || rsData.errorCode;
-  if (!code?.startsWith("200")) {
+  if (!code?.startsWith("200") && !code?.startsWith("201")) {
     throw new Error(rsData.msg || "서버 처리 실패");
   }
 
