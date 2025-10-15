@@ -32,7 +32,8 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("com.h2database:h2")
-    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("org.postgresql:postgresql")    // PostgreSQL JDBC 드라이버
+    implementation("org.hibernate.orm:hibernate-spatial")   // PostGIS 및 공간 데이터 처리
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
