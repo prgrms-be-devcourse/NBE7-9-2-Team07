@@ -26,7 +26,7 @@ public class PinController {
     private GeometryUtil geometryUtil;
 
     @GetMapping("")
-    public RsData<PinListResponseDto> getRadiusPins(
+    public RsData<List<PinDto>> getRadiusPins(
             @NotNull
             @Min(0)
             @Max(20000)
@@ -48,30 +48,27 @@ public class PinController {
                 .map(PinDto::new)
                 .collect(Collectors.toList());
 
-        PinListResponseDto pinListResponseDto = new PinListResponseDto(pinDtos);
-
-        if (pins.isEmpty()) {
+        if (pinDtos.isEmpty()) {
             return new RsData<>(
                     "204",
                     "조회된 값이 없습니다.",
-                    pinListResponseDto
+                    null
             );
         }
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
-                pinListResponseDto
+                pinDtos
         );
     }
 
     @GetMapping("/all")
-    public RsData<PinListResponseDto> getAll() {
+    public RsData<List<PinDto>> getAll() {
         List<Pin> pins = pinService.findAll();
 
         List<PinDto> pinDtos = pins.stream()
                 .map(PinDto::new)
                 .toList();
-        PinListResponseDto pinListResponseDto = new PinListResponseDto(pinDtos);
 
         if (pins.isEmpty()) {
             return new RsData<>(
@@ -83,7 +80,7 @@ public class PinController {
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
-                pinListResponseDto
+                pinDtos
         );
     }
 }
