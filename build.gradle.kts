@@ -36,6 +36,7 @@ dependencies {
     implementation("org.hibernate.orm:hibernate-spatial")   // PostGIS 및 공간 데이터 처리
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("org.springframework.boot:spring-boot-starter-security")
 }
 
 tasks.named<Test>("test") {
