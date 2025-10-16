@@ -1,4 +1,4 @@
-package com.back.pinco.domain.post.service;
+package com.back.pinco.domain.tag.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
