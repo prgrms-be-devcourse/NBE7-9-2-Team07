@@ -1,5 +1,6 @@
 package com.back.pinco.domain.tag.controller;
 
+import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.tag.dto.PinTagDto;
 import com.back.pinco.domain.tag.dto.TagDto;
 import com.back.pinco.domain.tag.entity.PinTag;
@@ -92,6 +93,29 @@ public class TagController {
         } catch (Exception e) {
             e.printStackTrace();
             return new RsData<>("500", "태그 복구 중 오류가 발생했습니다.", null);
+        }
+    }
+
+    // 태그 키워드로 핀 조회
+    @GetMapping("/tags/{keyword}/pins")
+    public RsData<List<PinDto>> getPinsByTag(@PathVariable String keyword) {
+        try {
+            List<PinDto> pins = tagService.getPinsByTagKeyword(keyword)
+                    .stream()
+                    .map(PinDto::new)
+                    .toList();
+
+            if (pins.isEmpty()) {
+                return new RsData<>("404", "해당 태그가 달린 게시물이 없습니다.", null);
+            }
+
+            return new RsData<>("200", "태그 기반 게시물 목록 조회 성공", pins);
+
+        } catch (EntityNotFoundException e) {
+            return new RsData<>("404", "존재하지 않는 태그입니다.", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new RsData<>("500", "태그 기반 게시물 조회 중 오류가 발생했습니다.", null);
         }
     }
 }

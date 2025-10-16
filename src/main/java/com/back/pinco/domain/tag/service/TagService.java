@@ -89,6 +89,7 @@ public class TagService {
         pinTag.setIsDeleted();
     }
 
+    // 삭제된 핀 복구
     @Transactional
     public void restoreTagFromPin(Long pinId, Long tagId) {
         PinTag pinTag = pinTagRepository.findByPin_IdAndTag_Id(pinId, tagId)
@@ -101,8 +102,16 @@ public class TagService {
         pinTag.restore();
     }
 
-    public List<Tag> searchTagsByMultipleKeywords(List<String> keywords) {
-        return tagRepository.findByKeywordIn(keywords);
+    // 태그 키워드로 핀 조회
+    @Transactional(readOnly = true)
+    public List<Pin> getPinsByTagKeyword(String keyword) {
+        // 우선 태그가 존재하는지 확인 (없으면 404)
+        if (tagRepository.findByKeyword(keyword).isEmpty()) {
+            throw new EntityNotFoundException("존재하지 않는 태그입니다.");
+        }
+
+        // 태그에 연결된 핀 목록 조회 (fetch join으로 lazy 문제 방지)
+        return pinTagRepository.findPinsByTagKeyword(keyword);
     }
 }
 
