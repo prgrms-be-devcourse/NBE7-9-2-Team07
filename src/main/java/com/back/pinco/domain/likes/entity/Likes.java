@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -14,8 +13,18 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-@Table(name = "likes",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "pin_id"}))
+@Table(
+        name = "likes",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_like_user_pin",
+                columnNames = {"user_id", "pin_id"}
+        ),
+        indexes = {
+                @Index(name = "idx_like_user", columnList = "user_id"),
+                @Index(name = "idx_like_pin", columnList = "pin_id"),
+                @Index(name = "idx_like_status", columnList = "is_liked")
+        }
+)
 @EntityListeners(AuditingEntityListener.class)
 @SequenceGenerator(
         name = "like_id_gen",
@@ -45,9 +54,9 @@ public class Likes {
     @CreatedDate
     private LocalDateTime createdAt;    // 생성일
 
-    @Column(name = "modified_at")
-    @LastModifiedDate
-    private LocalDateTime modifiedAt;    // 수정일
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;    // 삭제일
+
 
     public Likes(User user, Pin pin) {
         this.user = user;

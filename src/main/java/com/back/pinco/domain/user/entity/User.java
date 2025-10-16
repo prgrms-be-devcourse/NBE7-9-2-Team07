@@ -12,7 +12,10 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-@Table(name = "users")
+@Table(
+        name = "users",
+        indexes = @Index(name = "idx_user_email", columnList = "email")
+)
 @EntityListeners(AuditingEntityListener.class)
 @SequenceGenerator(
         name = "user_id_gen",
@@ -30,14 +33,11 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;    // 이메일
 
-    @Column(name = "password", nullable = false, length = 255)
+    @Column(name = "password", nullable = false)
     private String password;    // 비밀번호
 
     @Column(name = "username", nullable = false, length = 50)
     private String userName;    // 사용자명
-
-    @Column(name = "bookmark_id")
-    private Long bookMark;    // 북마크 ID
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreatedDate
@@ -47,9 +47,20 @@ public class User {
     @LastModifiedDate
     private LocalDateTime modifiedAt;    // 수정일
 
+
     public User(String email, String password, String userName) {
         this.email = email;
         this.password = password;
         this.userName = userName;
+    }
+
+    // 사용자명 변경
+    public void updateUserName(String userName) {
+        this.userName = userName;
+    }
+
+    // 비밀번호 변경
+    public void updatePassword(String password) {
+        this.password = password;
     }
 }

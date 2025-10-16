@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -12,7 +11,12 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-@Table(name = "tags")
+@Table(
+        name = "tags",
+        indexes = {
+                @Index(name = "idx_tag_keyword", columnList = "keyword")
+        }
+)
 @EntityListeners(AuditingEntityListener.class)
 @SequenceGenerator(
         name = "tag_id_gen",
@@ -34,11 +38,9 @@ public class Tag {
     @CreatedDate
     private LocalDateTime createdAt;    // 생성일
 
-    @Column(name = "modified_at")
-    @LastModifiedDate
-    private LocalDateTime modifiedAt;    // 수정일
 
     public Tag(String keyword) {
         this.keyword = keyword;
     }
+
 }

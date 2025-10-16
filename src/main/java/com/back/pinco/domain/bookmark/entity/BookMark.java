@@ -14,7 +14,17 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-@Table(name = "bookmarks")
+@Table(
+        name = "bookmarks",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_bookmark_user_pin",
+                columnNames = {"user_id", "pin_id"}
+        ),
+        indexes = {
+                @Index(name = "idx_bookmark_user", columnList = "user_id"),
+                @Index(name = "idx_bookmark_pin", columnList = "pin_id")
+        }
+)
 @EntityListeners(AuditingEntityListener.class)
 @SequenceGenerator(
         name = "bookmark_id_gen",
@@ -41,12 +51,29 @@ public class BookMark {
     @CreatedDate
     private LocalDateTime createdAt;    // 생성일
 
-    @Column(name = "modified_at")
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false; // 삭제 여부
+
+    @Column(name = "deleted_at")
     @LastModifiedDate
-    private LocalDateTime modifiedAt;    // 수정일
+    private LocalDateTime deletedAt;    // 삭제일
+
 
     public BookMark(User user, Pin pin) {
         this.user = user;
         this.pin = pin;
     }
+
+    // 소프트 삭제
+    public void setIsDeleted() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    // 북마크 복구
+    public void restore() {
+        this.isDeleted = false;
+        this.deletedAt = null;
+    }
+
 }
