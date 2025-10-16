@@ -120,4 +120,30 @@ public class TagController {
             return new RsData<>("500", "태그 기반 게시물 조회 중 오류가 발생했습니다.", null);
         }
     }
+
+    // 새로운 태그 생성 (관리자용)
+    @PostMapping("/tags")
+    public RsData<TagDto> createTag(@RequestBody Map<String, String> request) {
+        String keyword = request.get("keyword");
+
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return new RsData<>("400", "태그 키워드를 입력해주세요.", null);
+        }
+
+        try {
+            // 이미 존재하는 태그 확인
+            boolean exists = tagService.existsByKeyword(keyword);
+            if (exists) {
+                return new RsData<>("409", "이미 존재하는 태그입니다.", null);
+            }
+
+            TagDto newTag = new TagDto(tagService.createTag(keyword));
+            return new RsData<>("200", "새로운 태그가 생성되었습니다.", newTag);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new RsData<>("500", "태그 생성 중 오류가 발생했습니다.", null);
+        }
+    }
+
 }

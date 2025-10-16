@@ -12,5 +12,7 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     List<Tag> findByKeywordContainingIgnoreCase(String keyword);
 
     List<Tag> findByKeywordIn(List<String> keywords);
+
+    boolean existsByKeyword(String keyword);
 }
 

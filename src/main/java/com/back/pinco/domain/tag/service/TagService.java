@@ -30,5 +30,16 @@ public class TagService {
     public List<Tag> searchTags(String keyword) {
         return tagRepository.findByKeywordContainingIgnoreCase(keyword);
     }
+
+    @Transactional
+    public boolean existsByKeyword(String keyword) {
+        return tagRepository.existsByKeyword(keyword);
+    }
+
+    @Transactional
+    public Tag createTag(String keyword) {
+        Tag tag = new Tag(keyword.trim());
+        return tagRepository.save(tag);
+    }
 }
 
