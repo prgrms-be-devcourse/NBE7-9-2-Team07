@@ -4,6 +4,7 @@ import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.tag.dto.PinTagDto;
 import com.back.pinco.domain.tag.dto.TagDto;
 import com.back.pinco.domain.tag.entity.PinTag;
+import com.back.pinco.domain.tag.service.PinTagService;
 import com.back.pinco.domain.tag.service.TagService;
 import com.back.pinco.global.rsData.RsData;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class TagController {
 
     private final TagService tagService;
+    private final PinTagService PinTagService;
 
     // 태그 전체 조회
     @GetMapping("/tags")
@@ -35,7 +37,7 @@ public class TagController {
                                          @RequestBody Map<String, String> request) {
         String keyword = request.get("keyword");
         try {
-            PinTag pinTag = tagService.addTagToPin(pinId, keyword);
+            PinTag pinTag = PinTagService.addTagToPin(pinId, keyword);
             return new RsData<>("200", "태그가 핀에 추가되었습니다.", new PinTagDto(pinTag));
         } catch (EntityNotFoundException e) {
             return new RsData<>("404", "핀을 찾을 수 없습니다.", null);
@@ -50,7 +52,7 @@ public class TagController {
     @GetMapping("/pins/{pinId}/tags")
     public RsData<List<TagDto>> getTagsByPin(@PathVariable Long pinId) {
         try {
-            List<TagDto> tags = tagService.getTagsByPin(pinId).stream()
+            List<TagDto> tags = PinTagService.getTagsByPin(pinId).stream()
                     .map(TagDto::new)
                     .toList();
 
@@ -71,7 +73,7 @@ public class TagController {
     public RsData<Void> removeTagFromPin(@PathVariable Long pinId,
                                          @PathVariable Long tagId) {
         try {
-            tagService.removeTagFromPin(pinId, tagId);
+            PinTagService.removeTagFromPin(pinId, tagId);
             return new RsData<>("200", "태그가 삭제되었습니다.", null);
         } catch (EntityNotFoundException e) {
             return new RsData<>("404", "삭제할 태그 또는 핀을 찾을 수 없습니다.", null);
@@ -86,7 +88,7 @@ public class TagController {
     public RsData<Void> restoreTagFromPin(@PathVariable Long pinId,
                                           @PathVariable Long tagId) {
         try {
-            tagService.restoreTagFromPin(pinId, tagId);
+            PinTagService.restoreTagFromPin(pinId, tagId);
             return new RsData<>("200", "태그가 복구되었습니다.", null);
         } catch (EntityNotFoundException e) {
             return new RsData<>("404", "복구할 태그 또는 핀을 찾을 수 없습니다.", null);
@@ -100,7 +102,7 @@ public class TagController {
     @GetMapping("/tags/{keyword}/pins")
     public RsData<List<PinDto>> getPinsByTag(@PathVariable String keyword) {
         try {
-            List<PinDto> pins = tagService.getPinsByTagKeyword(keyword)
+            List<PinDto> pins = PinTagService.getPinsByTagKeyword(keyword)
                     .stream()
                     .map(PinDto::new)
                     .toList();
