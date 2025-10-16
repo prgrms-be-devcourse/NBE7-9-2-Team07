@@ -5,6 +5,7 @@ import com.back.pinco.domain.tag.dto.TagDto;
 import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.tag.service.TagService;
 import com.back.pinco.global.rsData.RsData;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class TagController {
 
     private final TagService tagService;
 
-    // ✅ 태그 전체 조회
+    // 태그 전체 조회
     @GetMapping("/tags")
     public RsData<List<TagDto>> getAllTags() {
         List<TagDto> tags = tagService.getAllTags().stream()
@@ -27,16 +28,24 @@ public class TagController {
         return new RsData<>("200", "태그 목록 조회 성공", tags);
     }
 
-    // ✅ 특정 핀에 태그 추가
+    // 특정 핀에 태그 추가
     @PostMapping("/pins/{pinId}/tags")
     public RsData<PinTagDto> addTagToPin(@PathVariable Long pinId,
                                          @RequestBody Map<String, String> request) {
         String keyword = request.get("keyword");
-        PinTag pinTag = tagService.addTagToPin(pinId, keyword);
-        return new RsData<>("200", "태그가 핀에 추가되었습니다.", new PinTagDto(pinTag));
+        try {
+            PinTag pinTag = tagService.addTagToPin(pinId, keyword);
+            return new RsData<>("200", "태그가 핀에 추가되었습니다.", new PinTagDto(pinTag));
+        } catch (EntityNotFoundException e) {
+            return new RsData<>("404", "핀을 찾을 수 없습니다.", null);
+        } catch (IllegalStateException e) {
+            return new RsData<>("409", "이미 이 핀에 연결된 태그입니다.", null);
+        } catch (Exception e) {
+            return new RsData<>("500", "알 수 없는 서버 오류가 발생했습니다.", null);
+        }
     }
 
-    // ✅ 핀에 연결된 태그 조회
+    // 핀에 연결된 태그 조회
     @GetMapping("/pins/{pinId}/tags")
     public RsData<List<TagDto>> getTagsByPin(@PathVariable Long pinId) {
         List<TagDto> tags = tagService.getTagsByPin(pinId).stream()
@@ -50,7 +59,7 @@ public class TagController {
         return new RsData<>("200", "핀의 태그 목록 조회 성공", tags);
     }
 
-    // ✅ 태그 삭제 (Soft Delete)
+    // 태그 삭제 (Soft Delete)
     @DeleteMapping("/pins/{pinId}/tags/{tagId}")
     public RsData<Void> removeTagFromPin(@PathVariable Long pinId,
                                          @PathVariable Long tagId) {
@@ -58,7 +67,7 @@ public class TagController {
         return new RsData<>("200", "태그가 삭제되었습니다.", null);
     }
 
-    // ✅ 태그 복구
+    // 태그 복구
     @PatchMapping("/pins/{pinId}/tags/{tagId}/restore")
     public RsData<Void> restoreTagFromPin(@PathVariable Long pinId,
                                           @PathVariable Long tagId) {
