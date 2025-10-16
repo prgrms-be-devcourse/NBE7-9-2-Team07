@@ -48,30 +48,50 @@ public class TagController {
     // 핀에 연결된 태그 조회
     @GetMapping("/pins/{pinId}/tags")
     public RsData<List<TagDto>> getTagsByPin(@PathVariable Long pinId) {
-        List<TagDto> tags = tagService.getTagsByPin(pinId).stream()
-                .map(TagDto::new)
-                .toList();
+        try {
+            List<TagDto> tags = tagService.getTagsByPin(pinId).stream()
+                    .map(TagDto::new)
+                    .toList();
 
-        if (tags.isEmpty()) {
-            return new RsData<>("404", "해당 핀에 연결된 태그가 없습니다.", null);
+            if (tags.isEmpty()) {
+                return new RsData<>("404", "해당 핀에 연결된 태그가 없습니다.", null);
+            }
+            return new RsData<>("200", "핀의 태그 목록 조회 성공", tags);
+        } catch (EntityNotFoundException e) {
+            return new RsData<>("404", "핀을 찾을 수 없습니다.", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new RsData<>("500", "태그 조회 중 오류가 발생했습니다.", null);
         }
-
-        return new RsData<>("200", "핀의 태그 목록 조회 성공", tags);
     }
 
     // 태그 삭제 (Soft Delete)
     @DeleteMapping("/pins/{pinId}/tags/{tagId}")
     public RsData<Void> removeTagFromPin(@PathVariable Long pinId,
                                          @PathVariable Long tagId) {
-        tagService.removeTagFromPin(pinId, tagId);
-        return new RsData<>("200", "태그가 삭제되었습니다.", null);
+        try {
+            tagService.removeTagFromPin(pinId, tagId);
+            return new RsData<>("200", "태그가 삭제되었습니다.", null);
+        } catch (EntityNotFoundException e) {
+            return new RsData<>("404", "삭제할 태그 또는 핀을 찾을 수 없습니다.", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new RsData<>("500", "태그 삭제 중 오류가 발생했습니다.", null);
+        }
     }
 
-    // 태그 복구
+    // 태그 복구(추후 관리자가 사용)
     @PatchMapping("/pins/{pinId}/tags/{tagId}/restore")
     public RsData<Void> restoreTagFromPin(@PathVariable Long pinId,
                                           @PathVariable Long tagId) {
-        tagService.restoreTagFromPin(pinId, tagId);
-        return new RsData<>("200", "태그가 복구되었습니다.", null);
+        try {
+            tagService.restoreTagFromPin(pinId, tagId);
+            return new RsData<>("200", "태그가 복구되었습니다.", null);
+        } catch (EntityNotFoundException e) {
+            return new RsData<>("404", "복구할 태그 또는 핀을 찾을 수 없습니다.", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new RsData<>("500", "태그 복구 중 오류가 발생했습니다.", null);
+        }
     }
 }
