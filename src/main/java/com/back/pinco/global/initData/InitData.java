@@ -2,6 +2,8 @@ package com.back.pinco.global.initData;
 
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.post.service.PostService;
+import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.domain.user.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ public class InitData {
     private InitData self;
     private final PinService pinService;
     private final PostService postService;
+    private final UserService userService;
 
 
     @Bean
@@ -42,5 +45,8 @@ public class InitData {
         postService.write("광화문에서 커피 한 잔 ☕", baseLat - 0.0005, baseLng - 0.0010);
         postService.write("서울시청 옆 공원 벤치 휴식 🍃", baseLat + 0.0003, baseLng + 0.0002);
 
+        User user1 = userService.createUser("user1@example.com", "유저1", "12345678");
+        User user2 = userService.createUser("user2@example.com", "유저2", "12341234");
     }
+
 }
