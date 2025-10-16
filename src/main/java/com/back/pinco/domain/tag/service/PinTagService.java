@@ -13,9 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class PinTagService {
+    private final TagService tagService;
     private final TagRepository tagRepository;
     private final PinTagRepository pinTagRepository;
     private final PinRepository pinRepository; // 이미 존재한다고 가정
@@ -93,5 +95,25 @@ public class PinTagService {
 
         // 태그에 연결된 핀 목록 조회 (fetch join으로 lazy 문제 방지)
         return pinTagRepository.findPinsByTagKeyword(keyword);
+    }
+
+    // 여러 태그를 핀에 연결(핀 만들때 사용하시면 됩니다!)
+    @Transactional
+    public void linkTagsToPin(Long pinId, List<String> tagKeywords) {
+        // 핀 존재 확인
+        Pin pin = pinRepository.findById(pinId)
+                .orElseThrow(() -> new EntityNotFoundException("핀을 찾을 수 없습니다."));
+
+        // 태그 리스트 순회
+        for (String keyword : tagKeywords) {
+            if (keyword == null || keyword.trim().isEmpty()) continue;
+
+            // 태그가 존재하지 않으면 새로 생성
+            Tag tag = tagService.getOrCreateTag(keyword);
+
+            // 새로운 연결 생성
+            PinTag newPinTag = new PinTag(pin, tag, false);
+            pinTagRepository.save(newPinTag);
+        }
     }
 }
