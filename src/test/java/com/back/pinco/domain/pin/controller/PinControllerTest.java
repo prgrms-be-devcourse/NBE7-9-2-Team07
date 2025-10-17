@@ -1,17 +1,13 @@
 package com.back.pinco.domain.pin.controller;
 
-import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +16,12 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -33,7 +32,7 @@ public class PinControllerTest {
     @Autowired
     private PinRepository pinRepository;
 
-    long targetId = 502; //일단 내 DB에 맞춰뒀음. 추후 수정 필요
+    long targetId = 152L; //일단 내 DB에 맞춰뒀음. 추후 수정 필요
     long failedTargetId = Integer.MAX_VALUE;
 
     @Test
@@ -459,5 +458,61 @@ public class PinControllerTest {
                 .andExpect(handler().methodName("deletePin"))
                 .andExpect(jsonPath("$.errorCode").value("1002"))
                 .andExpect(jsonPath("$.msg").exists());
+    }
+
+
+    @Test
+    @DisplayName("좋아요 신규 등록 테스트")
+    void likePinT1() throws Exception {
+        //given
+        Long pinId = 1L;
+        String requestBody = "{\"userId\": 1}";
+
+        // when
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/pins/{pinId}/likes", pinId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody)
+                                .with(csrf())
+                                .with(user("testuser").roles("USER"))  // 인증 사용자 추가
+                )
+                .andDo(print());
+
+        // then
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("toggleLike"))
+                .andExpect(status().isOk());
+
+    }
+
+
+    @Test
+    @DisplayName("특정 핀의 좋아요 개수 가져오기")
+    void likechangeT1() throws Exception {
+        // given
+        Long targetId = 1L;
+        Pin pin = pinRepository.findById(targetId).get();
+
+        // when
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/pins/%s".formatted(targetId))
+                )
+                .andDo(print());
+
+        // then
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getPinById"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(pin.getId()))
+                .andExpect(jsonPath("$.data.latitude").value(pin.getPoint().getY()))
+                .andExpect(jsonPath("$.data.longitude").value(pin.getPoint().getX()))
+                .andExpect(jsonPath("$.data.createdAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data.modifiedAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data.likeCount").value(2))
+        ;
     }
 }

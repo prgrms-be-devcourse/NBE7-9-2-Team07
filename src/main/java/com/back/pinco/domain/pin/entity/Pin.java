@@ -2,7 +2,6 @@ package com.back.pinco.domain.pin.entity;
 
 import com.back.pinco.domain.pin.dto.PutPinReqbody;
 import com.back.pinco.domain.tag.entity.PinTag;
-import com.back.pinco.domain.tag.entity.Tag;
 import com.back.pinco.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -98,5 +97,9 @@ public class Pin {
     public void update(PutPinReqbody putPinReqbody) {
         this.content=putPinReqbody.content();
         //추가로 수정 할 수 있는 필드가 있다면 여기 추가
+    }
+
+    public void setLikeCount(int likeCount) {
+        this.likeCount = likeCount;
     }
 }
