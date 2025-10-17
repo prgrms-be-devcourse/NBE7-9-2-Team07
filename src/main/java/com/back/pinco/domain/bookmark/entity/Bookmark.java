@@ -57,7 +57,11 @@ import java.time.LocalDateTime;
     @LastModifiedDate
     private LocalDateTime deletedAt;    // 삭제일
 
-
+    /**
+     * 북마크 생성자
+     * @param user 사용자
+     * @param pin 핀
+     */
     public Bookmark(User user, Pin pin) {
         this.user = user;
         this.pin = pin;
