@@ -24,17 +24,36 @@ public class LikesService {
     private final LikesRepository likesRepository;
 
 
-    // 전달 받은 ID의 좋아요 개수 조회
-    public long getLikesCount(Long pinId) {
-        return likesRepository.countByPinId(pinId);
+    /**
+     * 해당 핀의 좋아요 개수 반환
+     * @param pinId   핀 ID
+     * @return int 좋아요 개수
+     */
+    public int getLikesCount(Long pinId) {
+        if (!likesRepository.existsByPinId(pinId)) {
+            return 0;
+        }
+
+        return (int) likesRepository.countByPinId(pinId);
     }
 
-    // 좋아요 DB 저장 확인
+    /**
+     * 해당 핀에 대해 사용자의 좋아요 저장 여부 확인
+     * @param pinId    핀 ID
+     * @param userId   사용자 ID
+     * @return boolean 좋아요 존재 여부
+     */
     private boolean existByLikes(Long pinId, Long userId) {
         return likesRepository.existsByPinIdAndUserId(pinId, userId);
     }
 
-    // 좋아요 토글
+
+    /**
+     * 좋아요 상태를 토글하고, 현재 좋아요 상태와 해당 핀의 총 좋아요 개수를 반환
+     * @param pin
+     * @param user
+     * @return LikesStatusDto
+     */
     public LikesStatusDto toggleLike(Pin pin, User user) {
         if (!existByLikes(pin.getId(), user.getId())) {
             // 신규 좋아요
@@ -47,11 +66,16 @@ public class LikesService {
         likes.toggleLike();
         likesRepository.save(likes);
 
-        return new LikesStatusDto(likes.getIsLiked(), (int) getLikesCount(pin.getId()));
+        return new LikesStatusDto(likes.getIsLiked(), getLikesCount(pin.getId()));
     }
 
-    // 해당 핀에 좋아요 누른 유저 ID 목록 전달
+    /**
+     * 해당 핀에 좋아요 누른 유저 ID 목록 전달
+     * @param pinId
+     * @return
+     */
     public Optional<List<Long>> getUsersWhoLikedPin(Long pinId) {
+
         return Optional.of (List.of(80L, 81L, 82L));
     }
 
