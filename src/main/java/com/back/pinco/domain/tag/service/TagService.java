@@ -26,7 +26,13 @@ public class TagService {
     }
 
     public List<Tag> getAllTags() {
-        return tagRepository.findAll();
+        List<Tag> tags = tagRepository.findAll();
+
+        if (tags.isEmpty()) {
+            throw new ServiceException(ErrorCode.TAG_NOT_FOUND);
+        }
+
+        return tags;
     }
 
     @Transactional(readOnly = true)
