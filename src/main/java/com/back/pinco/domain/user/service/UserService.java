@@ -2,6 +2,8 @@ package com.back.pinco.domain.user.service;
 
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
+import com.back.pinco.global.exception.ErrorCode;
+import com.back.pinco.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,41 +18,75 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
 
-    // 회원 가입
     @Transactional
     public User createUser(String email, String password, String userName) {
+        // 1) 입력 검증(형식/길이)
+        if (email == null || email.isBlank() ||
+                !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+            throw new ServiceException(ErrorCode.INVALID_EMAIL_FORMAT);
+        }
+        if (password == null || password.isBlank() || password.length() < 8) {
+            throw new ServiceException(ErrorCode.INVALID_PASSWORD_FORMAT);
+        }
+        if (userName == null || userName.isBlank() || userName.length() < 2 || userName.length() > 20) {
+            throw new ServiceException(ErrorCode.INVALID_USERNAME_FORMAT);
+        }
+
+        // 2) 중복 체크(이메일/닉네임)
+        if (userRepository.existsByEmail(email)) {
+            throw new ServiceException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+        if (userRepository.existsByUserName(userName)) {
+            throw new ServiceException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+        }
+
+        // 3) 저장
         String hashedPwd = passwordEncoder.encode(password);
-        User user = new User(email,hashedPwd, userName);
-        userRepository.save(user);
-        return user;
+        User user = new User(email, hashedPwd, userName);
+        return userRepository.save(user);
     }
 
-    // 로그인
     @Transactional(readOnly = true)
-    public boolean login(String email, String pwd) {
-        // 사용자 존재 여부 확인
-        Optional<User> loginUser = userRepository.findByEmail(email);
-        // 비밀번호 비교 (암호화된 값과 평문 비교)
-        return passwordEncoder.matches(pwd, loginUser.get().getPassword());
+    public void login(String email, String rawPwd) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(rawPwd, user.getPassword())) {
+            throw new ServiceException(ErrorCode.PASSWORD_NOT_MATCH);
+        }
     }
 
-    // 회원 정보 조회
     @Transactional(readOnly = true)
-    public Optional<User> userInform(Long id) {
-        return userRepository.findById((id));
+    public User userInform(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_INFO_NOT_FOUND));
     }
 
-    // 회원 정보 이름 수정
     @Transactional
-    public void editName(User user, String username) {
-        user.setUserName(username);
+    public void editName(User user, String newUserName) {
+        if (newUserName == null || newUserName.isBlank()
+                || newUserName.length() < 2 || newUserName.length() > 20) {
+            throw new ServiceException(ErrorCode.INVALID_USERNAME_FORMAT);
+        }
+        if (newUserName.equals(user.getUserName())) {
+            return; // 변경 없음
+        }
+        // 자신 제외 중복 체크
+        if (userRepository.existsByUserNameAndIdNot(newUserName, user.getId())) {
+            throw new ServiceException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+        }
+        user.setUserName(newUserName);
     }
 
     // 회원 정보 패스워드 수정
     @Transactional
     public void editPwd(User user, String pwd) {
-        String hashedPwd = passwordEncoder.encode(pwd);
-        user.setPassword(hashedPwd);
+        if (pwd == null || pwd.isBlank() || pwd.length() < 8) {
+            throw new ServiceException(ErrorCode.INVALID_PASSWORD_FORMAT);
+        } else {
+            String hashedPwd = passwordEncoder.encode(pwd);
+            user.setPassword(hashedPwd);
+        }
     }
 
     // 회원 정보 모두 수정
@@ -87,7 +123,13 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
+    }
+
+    @Transactional
+    public boolean existsUserId(Long id) {
+        return userRepository.existsById(id);
     }
 }
