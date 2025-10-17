@@ -25,6 +25,8 @@ public class BookmarkService {
     private final UserService userService;
     private final PinService pinService;
 
+    // jwt 적용 시 수정 필요
+
     // 북마크 생성
     public BookmarkDto createBookmark(Long userId, Long pinId) {
         User user = userService.findById(userId)
