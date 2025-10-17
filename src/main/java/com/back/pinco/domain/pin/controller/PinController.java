@@ -1,5 +1,7 @@
 package com.back.pinco.domain.pin.controller;
 
+import com.back.pinco.domain.likes.dto.LikesStatusDto;
+import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
 import com.back.pinco.domain.pin.dto.PutPinReqbody;
@@ -8,6 +10,7 @@ import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
+import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rsData.RsData;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -34,6 +37,9 @@ public class PinController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private LikesService likesService;
 
     //검증 예외처리 핸들러
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -71,6 +77,7 @@ public class PinController {
     @GetMapping("/{pinId}")
     public RsData<PinDto> getPinById(@PathVariable("pinId") Long pinId){
         Pin pin = pinService.findById(pinId);
+        pin.setLikeCount((int) likesService.getLikesCount(pinId));  // 좋아요 수 설정
 
         PinDto pinDto = new PinDto(pin);
 
@@ -179,5 +186,31 @@ public class PinController {
     }
 
 
+    // 좋아요 토글
+    public record postLikesStatusReqbody(
+            @NotNull
+            Long userId
+    ) {
+    }
+    @PostMapping("/{pinId}/likes")
+    public RsData<LikesStatusDto> toggleLike(
+            @PathVariable("pinId") Long pinId,
+            @Valid @RequestBody postLikesStatusReqbody reqbody
+    ) {
+        // 좋아요를 누르고 DB에 저장되기 전에 pin이 삭제되는 걸 잡을 수 있는가?
+
+        Pin pin = pinService.findById(pinId);
+//                .orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND);
+
+        User user = userService.userInform(reqbody.userId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_INFO_NOT_FOUND));
+
+        return new RsData<LikesStatusDto>(
+                "200",
+                "성공적으로 처리되었습니다",
+                likesService.toggleLike(pin, user)
+        );
+
+    }
 
 }
