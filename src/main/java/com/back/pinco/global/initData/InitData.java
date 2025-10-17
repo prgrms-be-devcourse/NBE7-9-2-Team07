@@ -5,6 +5,10 @@ import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
+import com.back.pinco.domain.tag.entity.PinTag;
+import com.back.pinco.domain.tag.entity.Tag;
+import com.back.pinco.domain.tag.service.PinTagService;
+import com.back.pinco.domain.tag.service.TagService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import jakarta.transaction.Transactional;
@@ -26,7 +30,8 @@ public class InitData {
     private final UserService userService;
     private final BookmarkService bookmarkService;
     private final LikesService likesService;
-
+    private final TagService tagService;
+    private final PinTagService pinTagService;
 
     @Bean
     ApplicationRunner baseInitData() {
@@ -67,6 +72,29 @@ public class InitData {
         likesService.toggleLike(pinA, user1);
         likesService.toggleLike(pinB, user1);
         likesService.toggleLike(pinA, user2);
+
+        // 샘플 태그 등록
+        Tag t1 = tagService.createTag("카페");
+        Tag t2 = tagService.createTag("감성");
+        Tag t3 = tagService.createTag("반려동물");
+        Tag t4 = tagService.createTag("데이트");
+        Tag t5 = tagService.createTag("야경");
+        Tag t6 = tagService.createTag("산책로");
+        Tag t7 = tagService.createTag("전망좋은");
+
+        // 샘플 핀-태그 연결 (PinTag)
+        PinTag pt1 = pinTagService.createPinTag(pinA, t1);
+        PinTag pt2 = pinTagService.createPinTag(pinA, t2);
+        PinTag pt3 = pinTagService.createPinTag(pinA, t4);
+        PinTag pt4 = pinTagService.createPinTag(pinB, t2);
+        PinTag pt5 = pinTagService.createPinTag(pinB, t3);
+        PinTag pt6 = pinTagService.createPinTag(pinC, t5);
+        PinTag pt7 = pinTagService.createPinTag(pinC, t6);
+        PinTag pt8 = pinTagService.createPinTag(pinD, t4);
+        PinTag pt9 = pinTagService.createPinTag(pinD, t5);
+        PinTag pt10 = pinTagService.createPinTag(pinD, t7);
+        PinTag pt11 = pinTagService.createPinTag(pinE, t2);
+        PinTag pt12 = pinTagService.createPinTag(pinE, t1);
     }
 
 }
