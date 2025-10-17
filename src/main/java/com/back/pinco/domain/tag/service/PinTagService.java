@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -113,5 +114,29 @@ public class PinTagService {
         }
 
         return pins;
+    }
+
+    // 새로운 게시글 등록시 사용할 메서드
+    @Transactional
+    public List<Tag> linkTagsToPin(Long pinId, List<String> tagKeywords) {
+        Pin pin = pinRepository.findById(pinId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.TAG_PIN_NOT_FOUND));
+
+        List<Tag> linkedTags = new ArrayList<>();
+
+        for (String keyword : tagKeywords) {
+            Tag tag = tagRepository.findByKeyword(keyword)
+                    .orElseGet(() -> tagRepository.save(new Tag(keyword)));
+
+            pinTagRepository.findByPin_IdAndTag_Id(pinId, tag.getId())
+                    .ifPresentOrElse(
+                            existing -> { if (existing.getIsDeleted()) existing.restore(); },
+                            () -> pinTagRepository.save(new PinTag(pin, tag, false))
+                    );
+
+            linkedTags.add(tag);
+        }
+
+        return linkedTags; // PinController에서 DTO 구성에 사용
     }
 }
