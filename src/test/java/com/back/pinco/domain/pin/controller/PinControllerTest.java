@@ -1,10 +1,7 @@
 package com.back.pinco.domain.pin.controller;
 
-import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -468,8 +465,8 @@ public class PinControllerTest {
     @DisplayName("좋아요 신규 등록 테스트")
     void likePinT1() throws Exception {
         //given
-        Long pinId = 154L;
-        String requestBody = "{\"userId\": 153}";
+        Long pinId = 1L;
+        String requestBody = "{\"userId\": 1}";
 
         // when
         ResultActions resultActions = mvc
@@ -495,7 +492,7 @@ public class PinControllerTest {
     @DisplayName("특정 핀의 좋아요 개수 가져오기")
     void likechangeT1() throws Exception {
         // given
-        Long targetId = 152L;
+        Long targetId = 1L;
         Pin pin = pinRepository.findById(targetId).get();
 
         // when

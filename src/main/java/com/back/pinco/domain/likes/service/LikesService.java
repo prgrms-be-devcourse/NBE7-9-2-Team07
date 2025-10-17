@@ -24,16 +24,6 @@ public class LikesService {
     private final LikesRepository likesRepository;
 
 
-    // 데이터 세팅용 메소드
-    public long count() {
-        return likesRepository.count();
-    }
-
-    public Likes saveUserLikesPin(User user, Pin pin) {
-        return likesRepository.save(new Likes(user, pin));
-    }
-
-
     // 전달 받은 ID의 좋아요 개수 조회
     public long getLikesCount(Long pinId) {
         return likesRepository.countByPinId(pinId);
