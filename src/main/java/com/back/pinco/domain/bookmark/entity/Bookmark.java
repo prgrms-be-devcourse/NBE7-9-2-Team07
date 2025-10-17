@@ -31,8 +31,7 @@ import java.time.LocalDateTime;
         sequenceName = "BOOKMARK_SEQ",
         initialValue = 1,
         allocationSize = 50
-)
-public class BookMark {
+)public class Bookmark {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bookmark_id_gen")
@@ -52,27 +51,27 @@ public class BookMark {
     private LocalDateTime createdAt;    // 생성일
 
     @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false; // 삭제 여부
+    private Boolean isDeleted = Boolean.FALSE; // 삭제 여부
 
     @Column(name = "deleted_at")
     @LastModifiedDate
     private LocalDateTime deletedAt;    // 삭제일
 
 
-    public BookMark(User user, Pin pin) {
+    public Bookmark(User user, Pin pin) {
         this.user = user;
         this.pin = pin;
     }
 
     // 소프트 삭제
     public void setIsDeleted() {
-        this.isDeleted = true;
+        this.isDeleted = Boolean.TRUE;
         this.deletedAt = LocalDateTime.now();
     }
 
     // 북마크 복구
     public void restore() {
-        this.isDeleted = false;
+        this.isDeleted = Boolean.FALSE;
         this.deletedAt = null;
     }
 
