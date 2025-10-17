@@ -48,7 +48,7 @@ public class PinController {
     //id로 조회
     @GetMapping("/{pinId}")
     public RsData<PinDto> getPinById(@PathVariable("pinId") Long pinId){
-        Pin pin = pinService.findById(pinId).get();
+        Pin pin = pinService.findById(pinId);
 
         PinDto pinDto = new PinDto(pin);
 

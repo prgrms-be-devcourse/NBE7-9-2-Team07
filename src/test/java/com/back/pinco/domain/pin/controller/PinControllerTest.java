@@ -109,7 +109,7 @@ public class PinControllerTest {
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getPinById"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().is(1002));
     }
 
     @Test
