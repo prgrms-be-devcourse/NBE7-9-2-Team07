@@ -2,6 +2,9 @@ package com.back.pinco.domain.pin.dto;
 
 import com.back.pinco.domain.pin.entity.Pin;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.tag.entity.Tag;
 import com.back.pinco.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -13,7 +16,7 @@ public record PinDto(
         Point point,
         String content,
         User user,
-        Tag tag,
+        List<PinTag> pinTags,
         int likeCount,
         Boolean isPublic,
         LocalDateTime createdAt,
@@ -25,7 +28,7 @@ public record PinDto(
                 pin.getPoint(),
                 pin.getContent(),
                 pin.getUser(),
-                pin.getTag(),
+                pin.getPinTags(),
                 pin.getLikeCount(),
                 pin.getIsPublic(),
                 pin.getCreatedAt(),

@@ -39,15 +39,17 @@ public class InitData {
         double baseLat = 37.5665; // ✅ 서울시청 기준 위도
         double baseLng = 126.9780; // ✅ 서울시청 기준 경도
 
-        // ✅ 시청 기준 반경 1km 이내 임의 좌표
-        pinService.write(null, new PostPinReqbody( baseLat + 0.0012, baseLng + 0.0015,"서울 시청 근처 카페 ☕"));
-        pinService.write(null, new PostPinReqbody(  baseLat - 0.0008, baseLng + 0.0010,"덕수궁 돌담길 산책 중 🌳"));
-        pinService.write(null, new PostPinReqbody(  baseLat + 0.0006, baseLng - 0.0013,"청계천 산책로 발견 👣"));
-        pinService.write(null, new PostPinReqbody(  baseLat - 0.0005, baseLng - 0.0010,"광화문에서 커피 한 잔 ☕"));
-        pinService.write(null, new PostPinReqbody( baseLat + 0.0003, baseLng + 0.0002,"서울시청 옆 공원 벤치 휴식 🍃"));
-
         User user1 = userService.createUser("user1@example.com", "유저1", "12345678");
         User user2 = userService.createUser("user2@example.com", "유저2", "12341234");
+
+        // ✅ 시청 기준 반경 1km 이내 임의 좌표
+        pinService.write(user1, new PostPinReqbody( baseLat + 0.0012, baseLng + 0.0015,"서울 시청 근처 카페 ☕"));
+        pinService.write(user1, new PostPinReqbody(  baseLat - 0.0008, baseLng + 0.0010,"덕수궁 돌담길 산책 중 🌳"));
+        pinService.write(user1, new PostPinReqbody(  baseLat + 0.0006, baseLng - 0.0013,"청계천 산책로 발견 👣"));
+        pinService.write(user2, new PostPinReqbody(  baseLat - 0.0005, baseLng - 0.0010,"광화문에서 커피 한 잔 ☕"));
+        pinService.write(user2, new PostPinReqbody( baseLat + 0.0003, baseLng + 0.0002,"서울시청 옆 공원 벤치 휴식 🍃"));
+
+
     }
 
 }

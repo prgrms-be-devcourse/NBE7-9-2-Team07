@@ -6,6 +6,7 @@ import com.back.pinco.domain.pin.dto.PutPinReqbody;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.rsData.RsData;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -20,22 +21,25 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/pins")
+@RequestMapping("/api/pins")
 public class PinController {
 
     @Autowired
     private PinService pinService;
 
+    @Autowired
+    private UserService userService;
+
     //생성
     @PostMapping
     public RsData<PinDto> createPin(@RequestBody PostPinReqbody pinReqbody) {
-        //User actor = rq.getActor(); jwt 구현 후 변경 예정. 일단 null 넣음
-        User actor = null;
+        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
+        User actor = userService.findByEmail("user1@example.com").get();
         Pin pin = pinService.write(actor, pinReqbody);
         PinDto pinDto= new PinDto(pin);
         return new RsData<>(
                 "200",
-        "작성 성공",
+        "성공적으로 처리되었습니다",
                 pinDto
         );
     }
@@ -55,7 +59,7 @@ public class PinController {
         );
     }
     //범위로 조회
-    @GetMapping("")
+    @GetMapping
     public RsData<List<PinDto>> getRadiusPins(
             @NotNull
             @Min(-90)
@@ -122,12 +126,12 @@ public class PinController {
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
                 "200",
-                "수정 성공",
+                "성공적으로 처리되었습니다",
                 pinDto
         );
     }
     //공개 여부 갱신
-    @PutMapping(("/{pinId}"))
+    @PutMapping(("/{pinId}/public"))
     public RsData<PinDto> chagePinPublic(
             @PathVariable("pinId") Long pinId,
             @RequestBody PutPinReqbody putPinReqbody
@@ -138,7 +142,7 @@ public class PinController {
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
                 "200",
-                "수정 성공",
+                "성공적으로 처리되었습니다",
                 pinDto
         );
     }
@@ -148,7 +152,7 @@ public class PinController {
         pinService.deleteById(pinId);
         return new RsData<>(
                 "200",
-                "Pin deleted successfully",
+                "성공적으로 처리되었습니다",
                 null
         );
     }
