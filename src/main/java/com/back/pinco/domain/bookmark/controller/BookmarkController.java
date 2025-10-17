@@ -5,10 +5,9 @@ import com.back.pinco.domain.bookmark.dto.BookmarkRequestDto;
 import com.back.pinco.domain.bookmark.service.BookmarkService;
 import com.back.pinco.global.rsData.RsData;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookmarks")
@@ -28,4 +27,27 @@ public class BookmarkController {
                 bookmarkDto
         );
     }
+
+    // 나의 북마크 목록 조회
+    @GetMapping
+    public RsData<List<BookmarkDto>> getMyBookmarks(@RequestParam Long userId) {
+        List<BookmarkDto> bookmarkDtos = bookmarkService.getMyBookmarks(userId);
+
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다.",
+                bookmarkDtos
+        );
+    }
+
+    // 북마크 삭제 (soft delete)
+    @DeleteMapping("/{bookmarkId}")
+    public RsData<Void> deleteBookmark(@PathVariable Long bookmarkId, @RequestParam Long userId) {
+        bookmarkService.deleteBookmark(userId, bookmarkId);
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다."
+        );
+    }
+
 }

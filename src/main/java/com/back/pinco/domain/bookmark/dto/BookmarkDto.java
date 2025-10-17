@@ -10,8 +10,8 @@ public record BookmarkDto(
         PinDto pin,
         LocalDateTime createdAt
 ) {
-    public BookmarkDto (Bookmark bookmark) {
-        this (
+    public BookmarkDto(Bookmark bookmark) {
+        this(
                 bookmark.getId(),
                 new PinDto(bookmark.getPin()),
                 bookmark.getCreatedAt()

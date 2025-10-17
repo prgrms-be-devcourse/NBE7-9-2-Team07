@@ -52,6 +52,7 @@ public enum ErrorCode {
     BOOKMARKS_NOT_FOUND(4003, HttpStatus.NO_CONTENT, "조회된 북마크 목록이 없습니다."),
     BOOKMARK_CREATE_FAILED(4004, HttpStatus.INTERNAL_SERVER_ERROR, "북마크 생성 중 오류가 발생했습니다."),
     BOOKMARK_DELETE_FAILED(4005, HttpStatus.INTERNAL_SERVER_ERROR, "북마크 삭제 중 오류가 발생했습니다."),
+    BOOKMARK_RESTORE_FAILED(4006, HttpStatus.INTERNAL_SERVER_ERROR, "북마크 복구 중 오류가 발생했습니다."),
 
     // Likes 도메인_5000번대
     LIKES_USER_NOT_FOUND(5001, HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),

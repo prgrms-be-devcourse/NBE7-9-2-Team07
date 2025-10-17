@@ -14,24 +14,9 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-@Table(
-        name = "bookmarks",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_bookmark_user_pin",
-                columnNames = {"user_id", "pin_id"}
-        ),
-        indexes = {
-                @Index(name = "idx_bookmark_user", columnList = "user_id"),
-                @Index(name = "idx_bookmark_pin", columnList = "pin_id")
-        }
-)
+@Table(name = "bookmarks", uniqueConstraints = @UniqueConstraint(name = "uk_bookmark_user_pin", columnNames = {"user_id", "pin_id"}), indexes = {@Index(name = "idx_bookmark_user", columnList = "user_id"), @Index(name = "idx_bookmark_pin", columnList = "pin_id")})
 @EntityListeners(AuditingEntityListener.class)
-@SequenceGenerator(
-        name = "bookmark_id_gen",
-        sequenceName = "BOOKMARK_SEQ",
-        initialValue = 1,
-        allocationSize = 50
-)
+@SequenceGenerator(name = "bookmark_id_gen", sequenceName = "BOOKMARK_SEQ", initialValue = 1, allocationSize = 50)
 public class Bookmark {
 
     @Id
