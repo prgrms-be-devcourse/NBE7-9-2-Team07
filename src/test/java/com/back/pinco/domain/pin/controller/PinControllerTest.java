@@ -1,7 +1,10 @@
 package com.back.pinco.domain.pin.controller;
 
+import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -190,10 +193,8 @@ public class PinControllerTest {
     }
 
     @Test
-    @DisplayName("id로 핀 조회 - 실패")
+    @DisplayName("id로 핀 조회 - 실패 (id가 없음)")
     void t2_2() throws Exception {
-
-
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/%s".formatted(failedTargetId))
@@ -201,6 +202,27 @@ public class PinControllerTest {
                 .andDo(print());
 
         resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getPinById"))
+                .andExpect(jsonPath("$.errorCode").value("1002"))
+                .andExpect(jsonPath("$.msg").exists());
+    }
+
+    @Test
+    @DisplayName("id로 핀 조회 - 실패 (있긴 한데 삭제되어서 안 뜸)")
+    void t2_3() throws Exception {
+        ResultActions resultActions1 = mvc
+                .perform(
+                        delete("/api/pins/%s".formatted(targetId))
+                )
+                .andDo(print());
+        ResultActions resultActions2 = mvc
+                .perform(
+                        get("/api/pins/%s".formatted(targetId))
+                )
+                .andDo(print());
+
+        resultActions2
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getPinById"))
                 .andExpect(jsonPath("$.errorCode").value("1002"))
@@ -225,7 +247,9 @@ public class PinControllerTest {
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getRadiusPins"))
-                .andExpect(status().isOk())
+                .andExpect(status().isOk());
+
+        resultActions
                 .andExpect(jsonPath("$.data[0].id").value(pin.getId()))
                 .andExpect(jsonPath("$.data[0].latitude").value(pin.getPoint().getY()))
                 .andExpect(jsonPath("$.data[0].longitude").value(pin.getPoint().getX()))
@@ -256,6 +280,7 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("1003"))
                 .andExpect(jsonPath("$.msg").exists());
     }
+
 
     @Test
     @DisplayName("모든 핀 리턴")

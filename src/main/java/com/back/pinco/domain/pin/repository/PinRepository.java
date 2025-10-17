@@ -11,7 +11,7 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
 
     @Query(value = """
     SELECT * FROM pins p
-    WHERE ST_DWithin(
+    WHERE p.is_public = false AND ST_DWithin(
         p.point,
         ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,
         :radiusInMeters
