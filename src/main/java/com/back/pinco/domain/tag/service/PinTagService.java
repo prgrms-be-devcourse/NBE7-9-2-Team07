@@ -165,4 +165,9 @@ public class PinTagService {
 
         return result;
     }
+
+    public PinTag createPinTag(Pin pin, Tag tag) {
+        PinTag pinTag = new PinTag(pin, tag);
+        return pinTagRepository.save(pinTag);
+    }
 }

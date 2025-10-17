@@ -6,6 +6,9 @@ import com.back.pinco.domain.tag.entity.Tag;
 import com.back.pinco.domain.tag.repository.TagRepository;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
@@ -40,8 +43,19 @@ class TagControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @PersistenceContext
+    private EntityManager em;
+
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
+    // ✅ 테스트 실행 전 DB 초기화
+    @BeforeEach
+    void clearDatabase() {
+        em.createNativeQuery("TRUNCATE TABLE pin_tags RESTART IDENTITY CASCADE").executeUpdate();
+        em.createNativeQuery("TRUNCATE TABLE pins RESTART IDENTITY CASCADE").executeUpdate();
+        em.createNativeQuery("TRUNCATE TABLE tags RESTART IDENTITY CASCADE").executeUpdate();
+        em.createNativeQuery("TRUNCATE TABLE users RESTART IDENTITY CASCADE").executeUpdate();
+    }
     // t1: 전체 태그 조회 - 성공
     @Test
     @DisplayName("t1 - 태그 목록 조회 성공")
