@@ -42,5 +42,10 @@ public class Tag {
     public Tag(String keyword) {
         this.keyword = keyword;
     }
+    
+    public Tag(Long id, String keyword) { //태그 생성용
+        this.id = id;
+        this.keyword = keyword;
+    }
 
 }
