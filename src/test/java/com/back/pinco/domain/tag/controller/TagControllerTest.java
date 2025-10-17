@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false) // 보안 필터 비활성화
 @Transactional
 class TagControllerTest {
 
@@ -103,7 +103,7 @@ class TagControllerTest {
     void t5() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
-        Pin pin = pinRepository.save(new Pin(point, user));
+        Pin pin = pinRepository.save(new Pin(point, user, "테스트용 핀"));
         tagRepository.save(new Tag("감성"));
 
         mvc.perform(post("/api/pins/" + pin.getId() + "/tags")
@@ -132,7 +132,7 @@ class TagControllerTest {
     void t7() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
-        Pin pin = pinRepository.save(new Pin(point, user));
+        Pin pin = pinRepository.save(new Pin(point, user, "테스트용 핀"));
         tagRepository.save(new Tag("카페"));
 
         mvc.perform(post("/api/pins/" + pin.getId() + "/tags")
@@ -154,7 +154,7 @@ class TagControllerTest {
     void t8() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
-        Pin pin = pinRepository.save(new Pin(point, user));
+        Pin pin = pinRepository.save(new Pin(point, user, "테스트용 핀"));
         tagRepository.save(new Tag("데이트"));
 
         mvc.perform(post("/api/pins/" + pin.getId() + "/tags")
@@ -184,7 +184,7 @@ class TagControllerTest {
     void t10() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
-        Pin pin = pinRepository.save(new Pin(point, user));
+        Pin pin = pinRepository.save(new Pin(point, user, "테스트용 핀"));
 
         mvc.perform(get("/api/pins/" + pin.getId() + "/tags"))
                 .andDo(print())
@@ -202,8 +202,8 @@ class TagControllerTest {
         // 2. 핀 2개 생성
         Point point1 = geometryFactory.createPoint(new Coordinate(127.0276, 37.4979));
         Point point2 = geometryFactory.createPoint(new Coordinate(127.0256, 37.5009));
-        Pin pin1 = pinRepository.save(new Pin(point1, user));
-        Pin pin2 = pinRepository.save(new Pin(point2, user));
+        Pin pin1 = pinRepository.save(new Pin(point1, user, "테스트용 핀1"));
+        Pin pin2 = pinRepository.save(new Pin(point2, user, "테스트용 핀2"));
 
         // 3. 태그 생성
         Tag tag1 = tagRepository.save(new Tag("카페"));
@@ -250,7 +250,7 @@ class TagControllerTest {
     void t12() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new Coordinate(127.1, 37.5));
-        pinRepository.save(new Pin(point, user));
+        Pin pin = pinRepository.save(new Pin(point, user, "테스트용 핀"));
 
         mvc.perform(get("/api/tags/filter")
                         .param("keywords", "없는태그"))
@@ -282,8 +282,8 @@ class TagControllerTest {
 
         Point point1 = geometryFactory.createPoint(new Coordinate(127.0276, 37.4979));
         Point point2 = geometryFactory.createPoint(new Coordinate(127.0256, 37.5009));
-        Pin pin1 = pinRepository.save(new Pin(point1, user));
-        Pin pin2 = pinRepository.save(new Pin(point2, user));
+        Pin pin1 = pinRepository.save(new Pin(point1, user, "테스트용 핀"));
+        Pin pin2 = pinRepository.save(new Pin(point2, user, "테스트용 핀"));
 
         tagRepository.save(new Tag("카페"));
         tagRepository.save(new Tag("데이트"));
@@ -313,7 +313,7 @@ class TagControllerTest {
     void t15() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
-        Pin pin = pinRepository.save(new Pin(point, user));
+        Pin pin = pinRepository.save(new Pin(point, user, "테스트용 핀"));
         Tag tag = tagRepository.save(new Tag("여행"));
 
         mvc.perform(post("/api/pins/" + pin.getId() + "/tags")
@@ -334,7 +334,7 @@ class TagControllerTest {
         // 사용자, 핀, 태그 생성
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
-        Pin pin = pinRepository.save(new Pin(point, user));
+        Pin pin = pinRepository.save(new Pin(point, user, "테스트용 핀"));
         Tag tag = tagRepository.save(new Tag("복구테스트"));
 
         // 핀에 태그 추가
@@ -372,7 +372,7 @@ class TagControllerTest {
     void t18() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.5, 37.5));
-        Pin pin = pinRepository.save(new Pin(point, user));
+        Pin pin = pinRepository.save(new Pin(point, user, "테스트용 핀"));
         Tag tag = tagRepository.save(new Tag("활성태그"));
 
         mvc.perform(post("/api/pins/" + pin.getId() + "/tags")
