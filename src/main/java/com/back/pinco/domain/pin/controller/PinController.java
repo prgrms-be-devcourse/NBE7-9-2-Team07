@@ -154,7 +154,7 @@ public class PinController {
     }
     //공개 여부 갱신
     @PutMapping(("/{pinId}/public"))
-    public RsData<PinDto> chagePinPublic(
+    public RsData<PinDto> changePinPublic(
             @PathVariable("pinId") Long pinId
     ){
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
