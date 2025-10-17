@@ -2,7 +2,6 @@ package com.back.pinco.global.initData;
 
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
 import com.back.pinco.domain.pin.service.PinService;
-import com.back.pinco.domain.post.service.PostService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import jakarta.transaction.Transactional;
@@ -21,7 +20,6 @@ public class InitData {
     @Lazy
     private InitData self;
     private final PinService pinService;
-    private final PostService postService;
     private final UserService userService;
 
 

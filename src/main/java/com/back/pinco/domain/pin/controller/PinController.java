@@ -15,9 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.awt.*;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -120,8 +120,8 @@ public class PinController {
             @PathVariable("pinId") Long pinId,
             @RequestBody PutPinReqbody putPinReqbody
             ){
-        //User actor = rq.getActor(); jwt 구현 후 변경 예정. 일단 null 넣음
-        User actor = null;
+        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
+        User actor = userService.findByEmail("user1@example.com").get();
         Pin pin = pinService.update(actor, pinId, putPinReqbody);
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
@@ -136,8 +136,8 @@ public class PinController {
             @PathVariable("pinId") Long pinId,
             @RequestBody PutPinReqbody putPinReqbody
     ){
-        //User actor = rq.getActor(); jwt 구현 후 변경 예정. 일단 null 넣음
-        User actor = null;
+        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
+        User actor = userService.findByEmail("user1@example.com").get();
         Pin pin = pinService.changePublic(actor, pinId, putPinReqbody);
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(

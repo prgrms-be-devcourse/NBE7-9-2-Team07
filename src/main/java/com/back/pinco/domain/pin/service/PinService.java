@@ -6,6 +6,7 @@ import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.geometry.GeometryUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
@@ -41,13 +42,15 @@ public class PinService {
         return pinRepository.findPinsWithinRadius(latitude,longitude,1000.0);
     }
 
+    @Transactional
     public Pin update(User actor, Long pinId, PutPinReqbody putPinReqbody) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(NoSuchElementException::new);
-        //여기에 이제 인증 들어가긴 해야함
+        //근데 이제 인증 들어가긴 해야함
         pin.update(putPinReqbody);
         return pin;
     }
 
+    @Transactional
     public Pin changePublic(User actor, Long pinId, PutPinReqbody putPinReqbody) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(NoSuchElementException::new);
         //여기에 이제 인증 들어가긴 해야함

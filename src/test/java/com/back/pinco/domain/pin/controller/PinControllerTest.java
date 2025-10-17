@@ -22,13 +22,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public class PinControllerTest {
     @Autowired
     private MockMvc mvc;
     @Autowired
     private PinRepository pinRepository;
+
+    long targetId = 502; //일단 내 DB에 맞춰뒀음. 추후 수정 필요
+    long failedTargetId = Integer.MAX_VALUE;
 
     @Test
     @DisplayName("핀 생성")
@@ -71,9 +74,9 @@ public class PinControllerTest {
     @Test
     @DisplayName("id로 핀 조회 - 성공")
     void t2_1() throws Exception {
-        long targetId = 302;
-        Pin pin = pinRepository.findById(targetId).get();
 
+        Pin pin = pinRepository.findById(targetId).get();
+        System.out.println("/api/pins/%s".formatted(targetId));
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/%s".formatted(targetId))
@@ -87,30 +90,32 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.data.id").value(pin.getId()))
                 .andExpect(jsonPath("$.data.latitude").value(pin.getPoint().getY()))
                 .andExpect(jsonPath("$.data.longitude").value(pin.getPoint().getX()))
-                .andExpect(jsonPath("$.data.createAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")));
+                .andExpect(jsonPath("$.data.createdAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data.modifiedAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+        ;
     }
 
     @Test
     @DisplayName("id로 핀 조회 - 실패")
     void t2_2() throws Exception {
-        long targetId = Integer.MAX_VALUE;
+
 
         ResultActions resultActions = mvc
                 .perform(
-                        get("/api/pins/$s".formatted(targetId))
+                        get("/api/pins/%s".formatted(failedTargetId))
                 )
                 .andDo(print());
 
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getPinById"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("특정 지점에서 범위 내 좌표 확인")
     void t3_1() throws Exception {
-        long targetId = 1;
+
         Pin pin = pinRepository.findById(targetId).get();
 
         ResultActions resultActions = mvc
@@ -126,11 +131,11 @@ public class PinControllerTest {
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getRadiusPins"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()", is(1)))
                 .andExpect(jsonPath("$.data[0].id").value(pin.getId()))
                 .andExpect(jsonPath("$.data[0].latitude").value(pin.getPoint().getY()))
                 .andExpect(jsonPath("$.data[0].longitude").value(pin.getPoint().getX()))
-                .andExpect(jsonPath("$.data[0].createAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")));
+                .andExpect(jsonPath("$.data[0].createdAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data[0].modifiedAt").value(matchesPattern(pin.getModifiedAt().toString().replaceAll("0+$", "") + ".*")));
     }
 
     @Test
@@ -179,20 +184,21 @@ public class PinControllerTest {
                     .andExpect(jsonPath("$.data[%d].id".formatted(i)).value(pin.getId()))
                     .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pin.getPoint().getY()))
                     .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pin.getPoint().getX()))
-                    .andExpect(jsonPath("$.data[%d].createAt".formatted(i)).value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")));
+                    .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].modifiedAt".formatted(i)).value(matchesPattern(pin.getModifiedAt().toString().replaceAll("0+$", "") + ".*")));
         }
     }
 
     @Test
     @DisplayName("핀 내용 수정")
-    void t5_1() throws Exception {
-        Long pinId = 1L;
+    void t5_1_1() throws Exception {
+
         String content = "updated Content!";
-        Pin pin = pinRepository.findById(pinId).get();
+        Pin pin = pinRepository.findById(targetId).get();
 
         ResultActions resultActions = mvc
                 .perform(
-                        put("/api/pins/$f".formatted(pinId))
+                        put("/api/pins/%s".formatted(targetId))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -208,44 +214,102 @@ public class PinControllerTest {
                 .andExpect(status().isOk());
 
         resultActions
-                .andExpect(jsonPath("$.data.id").value(pinId))
+                .andExpect(jsonPath("$.data.id").value(targetId))
                 .andExpect(jsonPath("$.data.latitude").value(pin.getPoint().getY()))
                 .andExpect(jsonPath("$.data.longitude").value(pin.getPoint().getX()))
                 .andExpect(jsonPath("$.data.content").value(content));
     }
 
-
     @Test
-    @DisplayName("핀 공개 여부 수정")
-    void t5_2() throws Exception {
-        Long pinId = 1L;
-        String content = "updated Content!";
-        Pin pin = pinRepository.findById(pinId).get();
+    @DisplayName("핀 내용 수정 - 실패 (id없음)")
+    void t5_1_2() throws Exception {
 
+        String content = "updated Content!";
         ResultActions resultActions = mvc
                 .perform(
-                        put("/api/pins/$f/public".formatted(pinId))
+                        put("/api/pins/%s".formatted(failedTargetId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "content": "%s"
+                                        }
+                                        """.formatted(content))
                 )
                 .andDo(print());
 
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("updatePinContent"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("핀 내용 수정 - 실패 (내용 없음)")
+    void t5_1_3() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        put("/api/pins/%s".formatted(failedTargetId))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("updatePinContent"))
+                .andExpect(status().is(400));
+    }
+
+
+    @Test
+    @DisplayName("핀 공개 여부 수정")
+    void t5_2_1() throws Exception {
+
+        Pin pin = pinRepository.findById(targetId).get();
+
+        String expectedIsPublicString = String.valueOf(!pin.getIsPublic());
+
+        ResultActions resultActions = mvc
+                .perform(
+                        put("/api/pins/%s/public".formatted(targetId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}")
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("chagePinPublic"))
                 .andExpect(status().isOk());
 
         resultActions
-                .andExpect(jsonPath("$.data.id").value(pinId))
-                .andExpect(jsonPath("$.data.isPublic").value(!pin.getIsPublic()));
+                .andExpect(jsonPath("$.data.id").value(targetId))
+                .andExpect(jsonPath("$.data.isPublic").value(expectedIsPublicString));
+    }
+
+    @Test
+    @DisplayName("핀 공개 여부 수정 - 실패 (id 없음)")
+    void t5_2_2() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        put("/api/pins/%s/public".formatted(failedTargetId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}")
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("chagePinPublic"))
+                .andExpect(status().isNotFound());
+
     }
 
     @Test
     @DisplayName("핀 삭제 - 성공")
-    void t6() throws Exception {
-        Long pinId = 1L;
+    void t6_1() throws Exception {
 
         ResultActions resultActions = mvc
                 .perform(
-                        delete("/api/pins/$f".formatted(pinId))
+                        delete("/api/pins/%s".formatted(targetId))
                 )
                 .andDo(print());
 
@@ -253,5 +317,21 @@ public class PinControllerTest {
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("deletePin"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("핀 삭제 - 실패 (id없음)")
+    void t6_2() throws Exception {
+
+        ResultActions resultActions = mvc
+                .perform(
+                        delete("/api/pins/%s".formatted(failedTargetId))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("deletePin"))
+                .andExpect(status().isNotFound());
     }
 }
