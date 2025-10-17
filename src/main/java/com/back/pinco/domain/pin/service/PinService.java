@@ -25,7 +25,7 @@ public class PinService {
 
     public Pin write(User actor, PostPinReqbody pinReqbody) {
         Point point = geometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
-        Pin pin = new Pin(point, actor);
+        Pin pin = new Pin(point, actor, pinReqbody.content());
         return pinRepository.save(pin);
     }
 

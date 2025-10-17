@@ -78,9 +78,10 @@ public class Pin {
     private LocalDateTime deletedAt;    // 삭제일
 
 
-    public Pin(Point point, User user) {
+    public Pin(Point point, User user, String content) {
         this.point = point;
         this.user = user;
+        this.content  = content;
     }
 
     // 소프트 삭제

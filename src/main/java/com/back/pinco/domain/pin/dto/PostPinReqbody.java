@@ -7,17 +7,20 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.bind.annotation.RequestParam;
 
-public record PinPostReqbody(
+import java.util.List;
+
+public record PostPinReqbody(
         @NotNull
         @Min(-90)
         @Max(90)
-        @RequestParam double latitude,
+        Double latitude,
 
         @NotNull
         @Min(-180)
         @Max(180)
-        @RequestParam double longitude,
+        Double longitude,
         @NotBlank
         String content
+        //List<Tag> tags 태그 부분 완성 후 요청 받고->태그 서비스단에 넘겨서->최종 태그 받아서 -> 수정 및 생성하면 될듯
 ){
 }
