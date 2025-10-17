@@ -36,8 +36,8 @@ public class UserService {
 
     // 회원 정보 조회
     @Transactional(readOnly = true)
-    public Optional<User> userInform(String email) {
-        return userRepository.findByEmail((email));
+    public Optional<User> userInform(Long id) {
+        return userRepository.findById((id));
     }
 
     // 회원 정보 이름 수정
@@ -66,15 +66,28 @@ public class UserService {
         userRepository.delete(user);
     }
 
+    @Transactional
+    public boolean checkExist(String email) {
+        if (!userRepository.existsByEmail(email)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     // 비밀번호 확인
     @Transactional
     public boolean checkPwd(User user, String pwd) {
-        return user.getPassword().equals(pwd);
+        return passwordEncoder.matches(pwd, user.getPassword());
     }
 
     // 이메일로 사용자 찾기
     @Transactional
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
     }
 }
