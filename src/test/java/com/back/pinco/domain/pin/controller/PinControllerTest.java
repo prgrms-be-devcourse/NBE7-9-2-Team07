@@ -401,7 +401,7 @@ public class PinControllerTest {
 
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
-                .andExpect(handler().methodName("chagePinPublic"))
+                .andExpect(handler().methodName("changePinPublic"))
                 .andExpect(status().isOk());
 
         resultActions
@@ -422,7 +422,7 @@ public class PinControllerTest {
 
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
-                .andExpect(handler().methodName("chagePinPublic"))
+                .andExpect(handler().methodName("changePinPublic"))
                 .andExpect(jsonPath("$.errorCode").value("1002"))
                 .andExpect(jsonPath("$.msg").exists());
 
