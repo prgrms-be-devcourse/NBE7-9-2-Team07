@@ -58,13 +58,18 @@ public class Likes {
     private LocalDateTime deletedAt;    // 삭제일
 
 
+    /**
+     * 좋아요 생성자
+     * @param user 사용자
+     * @param pin 핀
+     */
     public Likes(User user, Pin pin) {
         this.user = user;
         this.pin = pin;
         this.isLiked = true;
     }
 
-    // 좋아요 토글
+    /** 좋아요 상태 토글 메서드 */
     public void toggleLike() {
         this.isLiked = !this.isLiked;
     }
