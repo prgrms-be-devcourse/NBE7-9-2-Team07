@@ -1,6 +1,6 @@
 package com.back.pinco.domain.tag.controller;
 
-import com.back.pinco.domain.pin.dto.PinDto;
+import com.back.pinco.domain.tag.dto.GetFilteredPinResponse;
 import com.back.pinco.domain.tag.dto.PinTagDto;
 import com.back.pinco.domain.tag.dto.PostTagRequest;
 import com.back.pinco.domain.tag.dto.TagDto;
@@ -63,14 +63,17 @@ public class TagController {
         return new RsData<>("200", "태그가 복구되었습니다.", null);
     }
 
-    // 태그 키워드로 핀 조회
-    @GetMapping("/tags/{keyword}/pins")
-    public RsData<List<PinDto>> getPinsByTag(@PathVariable String keyword) {
-        List<PinDto> pins = pinTagService.getPinsByTagKeyword(keyword).stream()
-                .map(PinDto::new)
+    // 여러 태그 기반 필터링 조회
+    @GetMapping("/tags/filter")
+    public RsData<List<GetFilteredPinResponse>> getPinsByMultipleTags(@RequestParam List<String> keywords) {
+        List<GetFilteredPinResponse> pins = pinTagService.getPinsByMultipleTagKeywords(keywords)
+                .stream()
+                .map(GetFilteredPinResponse::new)
                 .toList();
-        return new RsData<>("200", "태그 기반 게시물 목록 조회 성공", pins);
+
+        return new RsData<>("200", "태그 필터링 기반 게시물 목록 조회 성공", pins);
     }
+
 
     // 새로운 태그 생성 (관리자용)
     @PostMapping("/tags")

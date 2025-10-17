@@ -8,6 +8,7 @@ import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -16,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -190,52 +192,125 @@ class TagControllerTest {
                 .andExpect(jsonPath("$.msg").value("해당 핀에 연결된 태그가 없습니다."));
     }
 
-    // t11: 태그 기반 핀 조회 - 성공
+    // t11: 여러 태그 기반 핀 교집합 조회 - 성공
     @Test
-    @DisplayName("t11 - 태그 기반 핀 조회 성공")
+    @DisplayName("t11 - 여러 태그 기반 핀 교집합 조회 성공")
     void t11() throws Exception {
+        // 1. 유저 생성
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
-        Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
-        Pin pin = pinRepository.save(new Pin(point, user));
-        tagRepository.save(new Tag("반려동물"));
 
-        mvc.perform(post("/api/pins/" + pin.getId() + "/tags")
+        // 2. 핀 2개 생성
+        Point point1 = geometryFactory.createPoint(new Coordinate(127.0276, 37.4979));
+        Point point2 = geometryFactory.createPoint(new Coordinate(127.0256, 37.5009));
+        Pin pin1 = pinRepository.save(new Pin(point1, user));
+        Pin pin2 = pinRepository.save(new Pin(point2, user));
+
+        // 3. 태그 생성
+        Tag tag1 = tagRepository.save(new Tag("카페"));
+        Tag tag2 = tagRepository.save(new Tag("감성"));
+        Tag tag3 = tagRepository.save(new Tag("데이트"));
+
+        // 4. 핀-태그 매핑 (pin1은 3개 다, pin2는 일부)
+        mvc.perform(post("/api/pins/" + pin1.getId() + "/tags")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"keyword\":\"반려동물\"}"))
-                .andDo(print());
+                        .content("{\"keyword\":\"카페\"}"))
+                .andExpect(status().isOk());
 
-        mvc.perform(get("/api/tags/반려동물/pins"))
+        mvc.perform(post("/api/pins/" + pin1.getId() + "/tags")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"keyword\":\"감성\"}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(post("/api/pins/" + pin1.getId() + "/tags")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"keyword\":\"데이트\"}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(post("/api/pins/" + pin2.getId() + "/tags")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"keyword\":\"감성\"}"))
+                .andExpect(status().isOk());
+
+        // 5. 여러 태그 기반 교집합 조회
+        mvc.perform(get("/api/tags/filter")
+                        .param("keywords", "카페")
+                        .param("keywords", "감성")
+                        .param("keywords", "데이트"))
                 .andDo(print())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errorCode").value("200"))
-                .andExpect(jsonPath("$.msg").value("태그 기반 게시물 목록 조회 성공"));
+                .andExpect(jsonPath("$.msg").value("태그 필터링 기반 게시물 목록 조회 성공"))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].id").value(pin1.getId()));
     }
 
-    // t12: 태그 기반 핀 조회 실패 - 존재하지 않는 태그
+    // t12: 여러 태그 기반 핀 교집합 조회 - 존재하지 않는 태그 요청 시
     @Test
-    @DisplayName("t12 - 태그 기반 핀 조회 실패 (존재하지 않는 태그)")
+    @DisplayName("t12 - 여러 태그 기반 핀 교집합 조회 - 존재하지 않는 태그 요청 시")
     void t12() throws Exception {
-        mvc.perform(get("/api/tags/없는태그/pins"))
+        User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
+        Point point = geometryFactory.createPoint(new Coordinate(127.1, 37.5));
+        pinRepository.save(new Pin(point, user));
+
+        mvc.perform(get("/api/tags/filter")
+                        .param("keywords", "없는태그"))
                 .andDo(print())
+                .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("3001"))
                 .andExpect(jsonPath("$.msg").value("존재하지 않는 태그입니다."));
     }
 
-    // t13: 태그 기반 핀 조회 실패 - 연결된 게시물 없음
+    // t13: 태그는 존재하지만 핀이 없을 경우
     @Test
-    @DisplayName("t13 - 태그 기반 핀 조회 실패 (연결된 게시물 없음)")
+    @DisplayName("t13 - 태그는 존재하지만 핀이 없을 경우")
     void t13() throws Exception {
-        tagRepository.save(new Tag("빈태그"));
+        tagRepository.save(new Tag("감성"));
 
-        mvc.perform(get("/api/tags/빈태그/pins"))
+        mvc.perform(get("/api/tags/filter")
+                        .param("keywords", "감성"))
                 .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("3007"))
+                .andExpect(jsonPath("$.msg").value("해당 핀에 연결된 태그가 없습니다."));
+    }
+
+    // t14: 태그는 모두 존재하지만 교집합이 없을 경우
+    @Test
+    @DisplayName("t14 - 태그는 모두 존재하지만 교집합이 없을 경우")
+    void t14() throws Exception {
+        User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
+
+        Point point1 = geometryFactory.createPoint(new Coordinate(127.0276, 37.4979));
+        Point point2 = geometryFactory.createPoint(new Coordinate(127.0256, 37.5009));
+        Pin pin1 = pinRepository.save(new Pin(point1, user));
+        Pin pin2 = pinRepository.save(new Pin(point2, user));
+
+        tagRepository.save(new Tag("카페"));
+        tagRepository.save(new Tag("데이트"));
+
+        mvc.perform(post("/api/pins/" + pin1.getId() + "/tags")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"keyword\":\"카페\"}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(post("/api/pins/" + pin2.getId() + "/tags")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"keyword\":\"데이트\"}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/tags/filter")
+                        .param("keywords", "카페")
+                        .param("keywords", "데이트"))
+                .andDo(print())
+                .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("3012"))
                 .andExpect(jsonPath("$.msg").value("해당 태그가 달린 게시물이 없습니다."));
     }
 
-    // t14: 태그 삭제 - 성공
+    // t15: 태그 삭제 - 성공
     @Test
     @DisplayName("t14 - 연결된 태그 삭제 성공")
-    void t14() throws Exception {
+    void t15() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
         Pin pin = pinRepository.save(new Pin(point, user));
@@ -252,10 +327,10 @@ class TagControllerTest {
                 .andExpect(jsonPath("$.msg").value("태그가 삭제되었습니다."));
     }
 
-    // t15: 태그 복구 - 성공
+    // t16: 태그 복구 - 성공
     @Test
     @DisplayName("t15 - 삭제된 태그 복구 성공")
-    void t15() throws Exception {
+    void t16() throws Exception {
         // 사용자, 핀, 태그 생성
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.2, 37.4));
@@ -281,20 +356,20 @@ class TagControllerTest {
                 .andExpect(jsonPath("$.msg").value("태그가 복구되었습니다."));
     }
 
-    // t16: 태그 복구 실패 - 존재하지 않는 핀 또는 태그
+    // t17: 태그 복구 실패 - 존재하지 않는 핀 또는 태그
     @Test
     @DisplayName("t16 - 태그 복구 실패 (존재하지 않는 핀 또는 태그)")
-    void t16() throws Exception {
+    void t17() throws Exception {
         mvc.perform(patch("/api/pins/9999/tags/9999/restore"))
                 .andDo(print())
                 .andExpect(jsonPath("$.errorCode").value("3003"))
                 .andExpect(jsonPath("$.msg").value("태그 연결이 존재하지 않습니다."));
     }
 
-    // t17: 태그 복구 실패 - 이미 활성화된 태그
+    // t18: 태그 복구 실패 - 이미 활성화된 태그
     @Test
     @DisplayName("t17 - 태그 복구 실패 (이미 활성화된 태그)")
-    void t17() throws Exception {
+    void t18() throws Exception {
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.5, 37.5));
         Pin pin = pinRepository.save(new Pin(point, user));
@@ -309,5 +384,20 @@ class TagControllerTest {
                 .andDo(print())
                 .andExpect(jsonPath("$.errorCode").value("3004"))
                 .andExpect(jsonPath("$.msg").value("이미 이 핀에 연결된 태그입니다."));
+    }
+
+    // t19: 태그 전체 조회 실패 - 존재하지 않는 태그 목록
+    @Test
+    @DisplayName("t18 - 태그 전체 조회 실패 (존재하지 않는 태그 목록)")
+    void t19() throws Exception {
+        tagRepository.deleteAll();
+
+        ResultActions resultActions = mvc.perform(get("/api/tags"))
+                .andDo(print());
+
+        resultActions
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("3001"))
+                .andExpect(jsonPath("$.msg").value("존재하지 않는 태그입니다."));
     }
 }

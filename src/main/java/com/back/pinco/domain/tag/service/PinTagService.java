@@ -102,20 +102,6 @@ public class PinTagService {
         }
     }
 
-    // 태그 키워드로 핀 조회
-    @Transactional(readOnly = true)
-    public List<Pin> getPinsByTagKeyword(String keyword) {
-        Tag tag = tagRepository.findByKeyword(keyword)
-                .orElseThrow(() -> new ServiceException(ErrorCode.TAG_NOT_FOUND));
-
-        List<Pin> pins = pinTagRepository.findPinsByTagKeyword(keyword);
-        if (pins.isEmpty()) {
-            throw new ServiceException(ErrorCode.TAG_POSTS_NOT_FOUND);
-        }
-
-        return pins;
-    }
-
     // 새로운 게시글 등록시 사용할 메서드
     @Transactional
     public List<Tag> linkTagsToPin(Long pinId, List<String> tagKeywords) {
@@ -130,7 +116,9 @@ public class PinTagService {
 
             pinTagRepository.findByPin_IdAndTag_Id(pinId, tag.getId())
                     .ifPresentOrElse(
-                            existing -> { if (existing.getIsDeleted()) existing.restore(); },
+                            existing -> {
+                                if (existing.getIsDeleted()) existing.restore();
+                            },
                             () -> pinTagRepository.save(new PinTag(pin, tag, false))
                     );
 
@@ -138,5 +126,43 @@ public class PinTagService {
         }
 
         return linkedTags; // PinController에서 DTO 구성에 사용
+    }
+
+    // 여러 태그 기반으로 핀 조회
+    @Transactional(readOnly = true)
+    public List<Pin> getPinsByMultipleTagKeywords(List<String> keywords) {
+        // 유효성 검사
+        if (keywords == null || keywords.isEmpty()) {
+            throw new ServiceException(ErrorCode.INVALID_TAG_INPUT);
+        }
+
+        // 각 태그별 핀 목록 조회
+        List<List<Pin>> pinsByEachTag = keywords.stream()
+                .map(keyword -> {
+                    Tag tag = tagRepository.findByKeyword(keyword)
+                            .orElseThrow(() -> new ServiceException(ErrorCode.TAG_NOT_FOUND));
+                    List<Pin> pins = pinTagRepository.findPinsByTagKeyword(keyword);
+
+                    if (pins.isEmpty()) {
+                        throw new ServiceException(ErrorCode.PIN_TAG_LIST_EMPTY);
+                    }
+                    return pins;
+                })
+                .toList();
+
+        // 교집합 계산 (retainAll)
+        if (pinsByEachTag.isEmpty()) return List.of();
+
+        List<Pin> result = new ArrayList<>(pinsByEachTag.get(0));
+        for (List<Pin> pins : pinsByEachTag.subList(1, pinsByEachTag.size())) {
+            result.retainAll(pins);
+        }
+
+        // 최종 반환
+        if (result.isEmpty()) {
+            throw new ServiceException(ErrorCode.TAG_POSTS_NOT_FOUND);
+        }
+
+        return result;
     }
 }

@@ -16,14 +16,9 @@ public interface PinTagRepository extends JpaRepository<PinTag, Long> {
 
     List<PinTag> findByTag_IdAndIsDeletedFalse(Long id);
 
-    @Query("""
-                SELECT p
-                FROM PinTag pt
-                JOIN pt.pin p
-                JOIN pt.tag t
-                WHERE t.keyword = :keyword
-                  AND pt.isDeleted = false
-            """)
+    @Query("SELECT pt.pin FROM PinTag pt " +
+            "JOIN pt.tag t " +
+            "WHERE t.keyword = :keyword AND pt.isDeleted = false")
     List<Pin> findPinsByTagKeyword(@Param("keyword") String keyword);
 }
 
