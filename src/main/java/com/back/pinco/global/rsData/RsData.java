@@ -19,7 +19,7 @@ public class RsData<T> {
 
     @JsonIgnore
     public int getStatusCode() {
-        String statusCode = errorCode;
+        String statusCode = errorCode.split("-")[0];
         return Integer.parseInt(statusCode);
     }
 
