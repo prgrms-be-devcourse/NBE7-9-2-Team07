@@ -1,5 +1,7 @@
 package com.back.pinco.domain.pin.entity;
 
+import com.back.pinco.domain.pin.dto.PutPinReqbody;
+import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.tag.entity.Tag;
 import com.back.pinco.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -11,6 +13,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -44,10 +48,14 @@ public class Pin {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;    // 작성자
-
+/*
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tag_id")
     private Tag tag;    // 태그
+
+ */
+    @OneToMany(mappedBy = "pin", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PinTag> pinTags = new ArrayList<>();
 
     @Column(name = "like_count", nullable = false)
     private int likeCount = 0;    // 좋아요 수
@@ -70,9 +78,10 @@ public class Pin {
     private LocalDateTime deletedAt;    // 삭제일
 
 
-    public Pin(Point point, User user) {
+    public Pin(Point point, User user, String content) {
         this.point = point;
         this.user = user;
+        this.content  = content;
     }
 
     // 소프트 삭제
@@ -86,4 +95,8 @@ public class Pin {
         this.isPublic = !this.isPublic;
     }
 
+    public void update(PutPinReqbody putPinReqbody) {
+        this.content=putPinReqbody.content();
+        //추가로 수정 할 수 있는 필드가 있다면 여기 추가
+    }
 }
