@@ -2,6 +2,7 @@ package com.back.pinco.domain.tag.controller;
 
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.tag.dto.PinTagDto;
+import com.back.pinco.domain.tag.dto.PostTagRequest;
 import com.back.pinco.domain.tag.dto.TagDto;
 import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.tag.service.PinTagService;
@@ -11,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,8 +33,8 @@ public class TagController {
     // 특정 핀에 태그 추가
     @PostMapping("/pins/{pinId}/tags")
     public RsData<PinTagDto> addTagToPin(@PathVariable Long pinId,
-                                         @RequestBody Map<String, String> request) {
-        PinTag pinTag = pinTagService.addTagToPin(pinId, request.get("keyword"));
+                                         @RequestBody PostTagRequest request) {
+        PinTag pinTag = pinTagService.addTagToPin(pinId, request.keyword());
         return new RsData<>("200", "태그가 핀에 추가되었습니다.", new PinTagDto(pinTag));
     }
 
@@ -74,8 +74,8 @@ public class TagController {
 
     // 새로운 태그 생성 (관리자용)
     @PostMapping("/tags")
-    public RsData<TagDto> createTag(@RequestBody Map<String, String> request) {
-        TagDto newTag = new TagDto(tagService.createTag(request.get("keyword")));
+    public RsData<TagDto> createTag(@RequestBody PostTagRequest request) {
+        TagDto newTag = new TagDto(tagService.createTag(request.keyword()));
         return new RsData<>("200", "새로운 태그가 생성되었습니다.", newTag);
     }
 }
