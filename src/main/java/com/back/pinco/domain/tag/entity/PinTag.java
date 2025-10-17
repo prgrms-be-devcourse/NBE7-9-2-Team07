@@ -74,4 +74,9 @@ public class PinTag {
         this.deletedAt = null;
     }
 
+    public PinTag(Pin pin, Tag tag, boolean isDeleted) {
+        this.pin = pin;
+        this.tag = tag;
+        this.isDeleted = isDeleted;
+    }
 }

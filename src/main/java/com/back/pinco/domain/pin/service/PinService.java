@@ -25,6 +25,7 @@ public class PinService {
         return pinRepository.count();
     }
 
+
     public Pin write(User actor, PostPinReqbody pinReqbody) {
         try {
             Point point = geometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
@@ -37,7 +38,11 @@ public class PinService {
     }
 
     public Pin findById(long id) {
-        return pinRepository.findById(id).orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
+        Pin pin = pinRepository.findById(id).orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
+        if(pin.getIsDeleted()){
+            throw new ServiceException(ErrorCode.PIN_NOT_FOUND);
+        }
+        return pin;
     }
 
     public Boolean checkId(long id) {
@@ -45,7 +50,7 @@ public class PinService {
     }
 
     public List<Pin> findAll() {
-        List<Pin> pins = pinRepository.findAll();
+        List<Pin> pins = pinRepository.findAll().stream().filter(pin -> !pin.getIsDeleted()).toList();
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
@@ -91,4 +96,6 @@ public class PinService {
         }
         pinRepository.save(pin);
     }
+
+
 }

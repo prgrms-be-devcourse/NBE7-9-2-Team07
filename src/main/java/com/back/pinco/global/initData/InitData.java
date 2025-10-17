@@ -1,8 +1,6 @@
 package com.back.pinco.global.initData;
 
-import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
-import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
@@ -23,6 +21,7 @@ public class InitData {
     private InitData self;
     private final PinService pinService;
     private final UserService userService;
+    private final BookmarkService bookmarkService;
     private final LikesService likesService;
 
 
@@ -45,6 +44,12 @@ public class InitData {
         User user2 = userService.createUser("user2@example.com", "12341234", "유저2");
 
         // ✅ 시청 기준 반경 1km 이내 임의 좌표
+        Pin pinA = pinService.write(user1, new PostPinReqbody(baseLat + 0.0012, baseLng + 0.0015, "서울 시청 근처 카페 ☕"));
+        Pin pinB = pinService.write(user1, new PostPinReqbody(baseLat - 0.0008, baseLng + 0.0010, "덕수궁 돌담길 산책 중 🌳"));
+        Pin pinC = pinService.write(user1, new PostPinReqbody(baseLat + 0.0006, baseLng - 0.0013, "청계천 산책로 발견 👣"));
+        Pin pinD = pinService.write(user2, new PostPinReqbody(baseLat - 0.0005, baseLng - 0.0010, "광화문에서 커피 한 잔 ☕"));
+        Pin pinE = pinService.write(user2, new PostPinReqbody(baseLat + 0.0003, baseLng + 0.0002, "서울시청 옆 공원 벤치 휴식 🍃"));
+
         Pin pin1 = pinService.write(user1, new PostPinReqbody( baseLat + 0.0012, baseLng + 0.0015,"서울 시청 근처 카페 ☕"));
         Pin pin2 = pinService.write(user1, new PostPinReqbody(  baseLat - 0.0008, baseLng + 0.0010,"덕수궁 돌담길 산책 중 🌳"));
         Pin pin3 = pinService.write(user1, new PostPinReqbody(  baseLat + 0.0006, baseLng - 0.0013,"청계천 산책로 발견 👣"));
