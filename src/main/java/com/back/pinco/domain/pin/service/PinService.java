@@ -40,6 +40,10 @@ public class PinService {
         return pinRepository.findById(id).orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
     }
 
+    public Boolean checkId(long id) {
+        return pinRepository.findById(id).isPresent();
+    }
+
     public List<Pin> findAll() {
         List<Pin> pins = pinRepository.findAll();
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
@@ -66,7 +70,7 @@ public class PinService {
     }
 
     @Transactional
-    public Pin changePublic(User actor, Long pinId, PutPinReqbody putPinReqbody) {
+    public Pin changePublic(User actor, Long pinId) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
         //여기에 이제 인증 들어가긴 해야함
         try {

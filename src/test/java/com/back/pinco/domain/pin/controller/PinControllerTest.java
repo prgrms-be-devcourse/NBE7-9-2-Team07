@@ -35,7 +35,7 @@ public class PinControllerTest {
 
     @Test
     @DisplayName("핀 생성")
-    void t1() throws Exception {
+    void t1_1() throws Exception {
 
         double lat = 0;
         double lon = 0;
@@ -69,6 +69,100 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.data.latitude").value(lat))
                 .andExpect(jsonPath("$.data.longitude").value(lon))
                 .andExpect(jsonPath("$.data.content").value(content));
+    }
+
+    @Test
+    @DisplayName("핀 생성 - 실패 (경도 정보 오류)")
+    void t1_2() throws Exception {
+
+        double lat = 0;
+
+        String content = "new Content!";
+
+        String jsonContent = String.format(
+                """
+                {
+                    "content": "%s",
+                    "latitude" : %s
+                }
+                """, content, lat
+        );
+
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/pins")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonContent)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("createPin"))
+                .andExpect(jsonPath("$.errorCode").value("1007"))
+                .andExpect(jsonPath("$.msg").exists());
+    }
+
+    @Test
+    @DisplayName("핀 생성 - 실패 (경도 정보 오류)")
+    void t1_3() throws Exception {
+
+        double lon = 0;
+        String content = "new Content!";
+
+        String jsonContent = String.format(
+                """
+                {
+                    "content": "%s",
+                    "longitude" : %s
+                }
+                """, content, lon
+        );
+
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/pins")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonContent)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("createPin"))
+                .andExpect(jsonPath("$.errorCode").value("1006"))
+                .andExpect(jsonPath("$.msg").exists());
+    }
+
+    @Test
+    @DisplayName("핀 생성 - 실패 (내용 정보 오류)")
+    void t1_4() throws Exception {
+
+        double lat = 0;
+        double lon = 0;
+
+        String jsonContent = String.format(
+                """
+                {
+                    "latitude" : %s, 
+                    "longitude" : %s
+                }
+                """, lat, lon
+        );
+
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/pins")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonContent)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("createPin"))
+                .andExpect(jsonPath("$.errorCode").value("1005"))
+                .andExpect(jsonPath("$.msg").exists());
     }
 
     @Test
@@ -109,7 +203,8 @@ public class PinControllerTest {
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getPinById"))
-                .andExpect(status().is(1002));
+                .andExpect(jsonPath("$.errorCode").value("1002"))
+                .andExpect(jsonPath("$.msg").exists());
     }
 
     @Test
@@ -158,7 +253,8 @@ public class PinControllerTest {
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getRadiusPins"))
-                .andExpect(status().isNoContent());
+                .andExpect(jsonPath("$.errorCode").value("1003"))
+                .andExpect(jsonPath("$.msg").exists());
     }
 
     @Test
@@ -240,7 +336,8 @@ public class PinControllerTest {
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("updatePinContent"))
-                .andExpect(status().isNotFound());
+                .andExpect(jsonPath("$.errorCode").value("1002"))
+                .andExpect(jsonPath("$.msg").exists());
     }
 
     @Test
@@ -248,14 +345,16 @@ public class PinControllerTest {
     void t5_1_3() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
-                        put("/api/pins/%s".formatted(failedTargetId))
+                        put("/api/pins/%s".formatted(targetId)).contentType(MediaType.APPLICATION_JSON)
+                                .content("{}")
                 )
                 .andDo(print());
 
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("updatePinContent"))
-                .andExpect(status().is(400));
+                .andExpect(jsonPath("$.errorCode").value("1005"))
+                .andExpect(jsonPath("$.msg").exists());
     }
 
 
@@ -299,7 +398,8 @@ public class PinControllerTest {
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("chagePinPublic"))
-                .andExpect(status().isNotFound());
+                .andExpect(jsonPath("$.errorCode").value("1002"))
+                .andExpect(jsonPath("$.msg").exists());
 
     }
 
@@ -332,6 +432,7 @@ public class PinControllerTest {
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("deletePin"))
-                .andExpect(status().isNotFound());
+                .andExpect(jsonPath("$.errorCode").value("1002"))
+                .andExpect(jsonPath("$.msg").exists());
     }
 }
