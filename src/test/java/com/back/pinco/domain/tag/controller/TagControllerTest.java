@@ -79,7 +79,7 @@ class TagControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"keyword\":\"카페\"}"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("409"))
+                .andExpect(jsonPath("$.errorCode").value("3002"))
                 .andExpect(jsonPath("$.msg").value("이미 존재하는 태그입니다."));
     }
 
@@ -91,7 +91,7 @@ class TagControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"keyword\":\"  \"}"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("400"))
+                .andExpect(jsonPath("$.errorCode").value("3010"))
                 .andExpect(jsonPath("$.msg").value("태그 키워드를 입력해주세요."));
     }
 
@@ -120,7 +120,7 @@ class TagControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"keyword\":\"카페\"}"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("404"))
+                .andExpect(jsonPath("$.errorCode").value("3006"))
                 .andExpect(jsonPath("$.msg").value("핀을 찾을 수 없습니다."));
     }
 
@@ -142,7 +142,7 @@ class TagControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"keyword\":\"카페\"}"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("409"))
+                .andExpect(jsonPath("$.errorCode").value("3004"))
                 .andExpect(jsonPath("$.msg").value("이미 이 핀에 연결된 태그입니다."));
     }
 
@@ -172,8 +172,8 @@ class TagControllerTest {
     void t9() throws Exception {
         mvc.perform(get("/api/pins/9999/tags"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("404"))
-                .andExpect(jsonPath("$.msg").value("해당 핀에 연결된 태그가 없습니다."));
+                .andExpect(jsonPath("$.errorCode").value("3006"))
+                .andExpect(jsonPath("$.msg").value("핀을 찾을 수 없습니다."));
     }
 
     // t10: 핀의 태그 목록 조회 실패 - 연결된 태그 없음
@@ -186,7 +186,7 @@ class TagControllerTest {
 
         mvc.perform(get("/api/pins/" + pin.getId() + "/tags"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("404"))
+                .andExpect(jsonPath("$.errorCode").value("3007"))
                 .andExpect(jsonPath("$.msg").value("해당 핀에 연결된 태그가 없습니다."));
     }
 
@@ -216,7 +216,7 @@ class TagControllerTest {
     void t12() throws Exception {
         mvc.perform(get("/api/tags/없는태그/pins"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("404"))
+                .andExpect(jsonPath("$.errorCode").value("3001"))
                 .andExpect(jsonPath("$.msg").value("존재하지 않는 태그입니다."));
     }
 
@@ -228,7 +228,7 @@ class TagControllerTest {
 
         mvc.perform(get("/api/tags/빈태그/pins"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("404"))
+                .andExpect(jsonPath("$.errorCode").value("3012"))
                 .andExpect(jsonPath("$.msg").value("해당 태그가 달린 게시물이 없습니다."));
     }
 
@@ -281,38 +281,33 @@ class TagControllerTest {
                 .andExpect(jsonPath("$.msg").value("태그가 복구되었습니다."));
     }
 
-    // ✅ t16: 태그 복구 실패 - 존재하지 않는 핀 또는 태그
+    // t16: 태그 복구 실패 - 존재하지 않는 핀 또는 태그
     @Test
     @DisplayName("t16 - 태그 복구 실패 (존재하지 않는 핀 또는 태그)")
     void t16() throws Exception {
-        // 존재하지 않는 ID로 복구 요청
         mvc.perform(patch("/api/pins/9999/tags/9999/restore"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("500"))
-                .andExpect(jsonPath("$.msg").value("태그 복구 중 오류가 발생했습니다."));
+                .andExpect(jsonPath("$.errorCode").value("3003"))
+                .andExpect(jsonPath("$.msg").value("태그 연결이 존재하지 않습니다."));
     }
 
-    // ✅ t17: 태그 복구 실패 - 이미 활성화된 태그
+    // t17: 태그 복구 실패 - 이미 활성화된 태그
     @Test
     @DisplayName("t17 - 태그 복구 실패 (이미 활성화된 태그)")
     void t17() throws Exception {
-        // 1️⃣ 사용자, 핀, 태그 생성
         User user = userRepository.save(new User("tempUser", "pw", "email@test.com"));
         Point point = geometryFactory.createPoint(new org.locationtech.jts.geom.Coordinate(127.5, 37.5));
         Pin pin = pinRepository.save(new Pin(point, user));
         Tag tag = tagRepository.save(new Tag("활성태그"));
 
-        // 핀에 태그 추가 (삭제 안 함)
         mvc.perform(post("/api/pins/" + pin.getId() + "/tags")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"keyword\":\"활성태그\"}"))
                 .andDo(print());
 
-        // 복구 요청 (이미 활성화되어 있으므로 예외 발생)
         mvc.perform(patch("/api/pins/" + pin.getId() + "/tags/" + tag.getId() + "/restore"))
                 .andDo(print())
-                .andExpect(jsonPath("$.errorCode").value("500"))
-                .andExpect(jsonPath("$.msg").value("태그 복구 중 오류가 발생했습니다."));
+                .andExpect(jsonPath("$.errorCode").value("3004"))
+                .andExpect(jsonPath("$.msg").value("이미 이 핀에 연결된 태그입니다."));
     }
-
 }

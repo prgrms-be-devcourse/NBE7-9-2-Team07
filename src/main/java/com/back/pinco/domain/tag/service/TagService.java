@@ -2,6 +2,8 @@ package com.back.pinco.domain.tag.service;
 
 import com.back.pinco.domain.tag.entity.Tag;
 import com.back.pinco.domain.tag.repository.TagRepository;
+import com.back.pinco.global.exception.ErrorCode;
+import com.back.pinco.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,32 +16,36 @@ public class TagService {
 
     private final TagRepository tagRepository;
 
-    // 태그 생성 또는 조회
     @Transactional
     public Tag getOrCreateTag(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new ServiceException(ErrorCode.INVALID_TAG_KEYWORD);
+        }
         return tagRepository.findByKeyword(keyword)
                 .orElseGet(() -> tagRepository.save(new Tag(keyword)));
     }
 
-    // 모든 태그 조회
     public List<Tag> getAllTags() {
         return tagRepository.findAll();
     }
 
-    // 특정 키워드로 검색
-    public List<Tag> searchTags(String keyword) {
-        return tagRepository.findByKeywordContainingIgnoreCase(keyword);
-    }
-
-    @Transactional
+    @Transactional(readOnly = true)
     public boolean existsByKeyword(String keyword) {
         return tagRepository.existsByKeyword(keyword);
     }
 
     @Transactional
     public Tag createTag(String keyword) {
-        Tag tag = new Tag(keyword.trim());
-        return tagRepository.save(tag);
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new ServiceException(ErrorCode.INVALID_TAG_KEYWORD);
+        }
+        if (tagRepository.existsByKeyword(keyword)) {
+            throw new ServiceException(ErrorCode.TAG_ALREADY_EXISTS);
+        }
+        try {
+            return tagRepository.save(new Tag(keyword.trim()));
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.TAG_CREATE_FAILED);
+        }
     }
 }
-

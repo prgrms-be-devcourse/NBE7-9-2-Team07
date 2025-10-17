@@ -6,114 +6,112 @@ import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.tag.entity.Tag;
 import com.back.pinco.domain.tag.repository.PinTagRepository;
 import com.back.pinco.domain.tag.repository.TagRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.back.pinco.global.exception.ErrorCode;
+import com.back.pinco.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class PinTagService {
+
     private final TagService tagService;
     private final TagRepository tagRepository;
     private final PinTagRepository pinTagRepository;
-    private final PinRepository pinRepository; // 이미 존재한다고 가정
+    private final PinRepository pinRepository;
 
     // 핀에 태그 연결
     @Transactional
     public PinTag addTagToPin(Long pinId, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new ServiceException(ErrorCode.INVALID_TAG_KEYWORD);
+        }
 
-        // 핀 존재 여부 확인
         Pin pin = pinRepository.findById(pinId)
-                .orElseThrow(() -> new EntityNotFoundException("핀을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ServiceException(ErrorCode.TAG_PIN_NOT_FOUND));
 
-        // 태그 존재 여부 확인 (없으면 생성)
         Tag tag = tagRepository.findByKeyword(keyword)
                 .orElseGet(() -> tagRepository.save(new Tag(keyword)));
 
-        // 이미 이 핀에 연결된 태그인지 확인
-        Optional<PinTag> existing = pinTagRepository.findByPin_IdAndTag_Id(pinId, tag.getId());
-
+        var existing = pinTagRepository.findByPin_IdAndTag_Id(pinId, tag.getId());
         if (existing.isPresent()) {
             PinTag pinTag = existing.get();
-
-            // soft delete된 상태라면 복구
             if (pinTag.getIsDeleted()) {
                 pinTag.restore();
                 return pinTagRepository.save(pinTag);
             }
-
-            // 이미 활성 상태로 존재하면 중복 추가 방지
-            throw new IllegalStateException("이미 이 핀에 연결된 태그입니다.");
+            throw new ServiceException(ErrorCode.TAG_ALREADY_LINKED);
         }
 
-        // 새로운 핀-태그 연결 생성
-        PinTag newPinTag = new PinTag(pin, tag, false);
-        return pinTagRepository.save(newPinTag);
+        try {
+            return pinTagRepository.save(new PinTag(pin, tag, false));
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.TAG_CREATE_FAILED);
+        }
     }
 
     // 핀에 연결된 태그 조회
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Tag> getTagsByPin(Long pinId) {
-        return pinTagRepository.findAllByPin_IdAndIsDeletedFalse(pinId)
+        if (!pinRepository.existsById(pinId)) {
+            throw new ServiceException(ErrorCode.TAG_PIN_NOT_FOUND);
+        }
+
+        List<Tag> tags = pinTagRepository.findAllByPin_IdAndIsDeletedFalse(pinId)
                 .stream()
                 .map(PinTag::getTag)
                 .toList();
+
+        if (tags.isEmpty()) {
+            throw new ServiceException(ErrorCode.PIN_TAG_LIST_EMPTY);
+        }
+
+        return tags;
     }
 
-    // 핀에서 태그 삭제 (Soft Delete)
+    // 태그 삭제
     @Transactional
     public void removeTagFromPin(Long pinId, Long tagId) {
         PinTag pinTag = pinTagRepository.findByPin_IdAndTag_Id(pinId, tagId)
-                .orElseThrow(() -> new RuntimeException("태그 연결이 없습니다."));
-        pinTag.setIsDeleted();
+                .orElseThrow(() -> new ServiceException(ErrorCode.TAG_LINK_NOT_FOUND));
+        try {
+            pinTag.setIsDeleted();
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.PIN_TAG_DELETE_FAILED);
+        }
     }
 
-    // 삭제된 핀 복구
+    // 태그 복구
     @Transactional
     public void restoreTagFromPin(Long pinId, Long tagId) {
         PinTag pinTag = pinTagRepository.findByPin_IdAndTag_Id(pinId, tagId)
-                .orElseThrow(() -> new RuntimeException("복구할 태그 연결이 없습니다."));
+                .orElseThrow(() -> new ServiceException(ErrorCode.TAG_LINK_NOT_FOUND));
 
         if (!pinTag.getIsDeleted()) {
-            throw new RuntimeException("이미 활성화된 태그입니다.");
+            throw new ServiceException(ErrorCode.TAG_ALREADY_LINKED);
         }
 
-        pinTag.restore();
+        try {
+            pinTag.restore();
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.PIN_TAG_RESTORE_FAILED);
+        }
     }
 
     // 태그 키워드로 핀 조회
     @Transactional(readOnly = true)
     public List<Pin> getPinsByTagKeyword(String keyword) {
-        // 우선 태그가 존재하는지 확인 (없으면 404)
-        if (tagRepository.findByKeyword(keyword).isEmpty()) {
-            throw new EntityNotFoundException("존재하지 않는 태그입니다.");
+        Tag tag = tagRepository.findByKeyword(keyword)
+                .orElseThrow(() -> new ServiceException(ErrorCode.TAG_NOT_FOUND));
+
+        List<Pin> pins = pinTagRepository.findPinsByTagKeyword(keyword);
+        if (pins.isEmpty()) {
+            throw new ServiceException(ErrorCode.TAG_POSTS_NOT_FOUND);
         }
 
-        // 태그에 연결된 핀 목록 조회 (fetch join으로 lazy 문제 방지)
-        return pinTagRepository.findPinsByTagKeyword(keyword);
-    }
-
-    // 여러 태그를 핀에 연결(핀 만들때 사용하시면 됩니다!)
-    @Transactional
-    public void linkTagsToPin(Long pinId, List<String> tagKeywords) {
-        // 핀 존재 확인
-        Pin pin = pinRepository.findById(pinId)
-                .orElseThrow(() -> new EntityNotFoundException("핀을 찾을 수 없습니다."));
-
-        // 태그 리스트 순회
-        for (String keyword : tagKeywords) {
-            if (keyword == null || keyword.trim().isEmpty()) continue;
-
-            // 태그가 존재하지 않으면 새로 생성
-            Tag tag = tagService.getOrCreateTag(keyword);
-
-            // 새로운 연결 생성
-            PinTag newPinTag = new PinTag(pin, tag, false);
-            pinTagRepository.save(newPinTag);
-        }
+        return pins;
     }
 }
