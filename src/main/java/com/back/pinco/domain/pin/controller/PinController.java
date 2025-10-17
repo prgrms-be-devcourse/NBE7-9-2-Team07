@@ -77,7 +77,6 @@ public class PinController {
     @GetMapping("/{pinId}")
     public RsData<PinDto> getPinById(@PathVariable("pinId") Long pinId){
         Pin pin = pinService.findById(pinId);
-        pin.setLikeCount((int) likesService.getLikesCount(pinId));  // 좋아요 수 설정
 
         PinDto pinDto = new PinDto(pin);
 
@@ -197,18 +196,20 @@ public class PinController {
             @PathVariable("pinId") Long pinId,
             @Valid @RequestBody postLikesStatusReqbody reqbody
     ) {
-        // 좋아요를 누르고 DB에 저장되기 전에 pin이 삭제되는 걸 잡을 수 있는가?
-
         Pin pin = pinService.findById(pinId);
-//                .orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND);
-
         User user = userService.userInform(reqbody.userId())
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_INFO_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND));
+
+        // 좋아요 토글 처리
+        LikesStatusDto likesStatusDto = likesService.toggleLike(pin, user);
+
+        // 핀 객체에 좋아요 수 업데이트
+        pinService.updateLikes(pin, likesStatusDto.likeCount());
 
         return new RsData<LikesStatusDto>(
                 "200",
                 "성공적으로 처리되었습니다",
-                likesService.toggleLike(pin, user)
+                likesStatusDto
         );
 
     }
