@@ -97,5 +97,15 @@ public class PinService {
         pinRepository.save(pin);
     }
 
-
+    /**
+     * 핀 좋아요 수 갱신
+     * @param pin
+     * @param likecount
+     * @return Pin
+     */
+    @Transactional
+    public Pin updateLikes(Pin pin, int likecount) {
+        pin.setLikeCount(likecount);
+        return pinRepository.save(pin);
+    }
 }

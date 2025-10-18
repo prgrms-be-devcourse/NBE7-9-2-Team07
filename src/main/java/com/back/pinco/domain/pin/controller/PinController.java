@@ -1,6 +1,7 @@
 package com.back.pinco.domain.pin.controller;
 
 import com.back.pinco.domain.likes.dto.LikesStatusDto;
+import com.back.pinco.domain.likes.dto.PinLikedUserDto;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
@@ -77,7 +78,8 @@ public class PinController {
     @GetMapping("/{pinId}")
     public RsData<PinDto> getPinById(@PathVariable("pinId") Long pinId){
         Pin pin = pinService.findById(pinId);
-        pin.setLikeCount((int) likesService.getLikesCount(pinId));  // 좋아요 수 설정
+        // pin 좋아요 개수 설정
+        pin.setLikeCount(likesService.getLikesCount(pinId));
 
         PinDto pinDto = new PinDto(pin);
 
@@ -197,20 +199,34 @@ public class PinController {
             @PathVariable("pinId") Long pinId,
             @Valid @RequestBody postLikesStatusReqbody reqbody
     ) {
-        // 좋아요를 누르고 DB에 저장되기 전에 pin이 삭제되는 걸 잡을 수 있는가?
-
         Pin pin = pinService.findById(pinId);
-//                .orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND);
-
         User user = userService.userInform(reqbody.userId())
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_INFO_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND));
+
+        // 좋아요 토글 처리
+        LikesStatusDto likesStatusDto = likesService.toggleLike(pin, user);
+
+        // 핀 객체에 좋아요 수 업데이트
+        pinService.updateLikes(pin, likesStatusDto.likeCount());
 
         return new RsData<LikesStatusDto>(
                 "200",
                 "성공적으로 처리되었습니다",
-                likesService.toggleLike(pin, user)
+                likesStatusDto
         );
 
+    }
+
+    // 해당 핀을 좋아요 누른 유저 ID 목록 전달
+    @GetMapping("{pinId}/likesusers")
+    public RsData<List<PinLikedUserDto>> getUsersWhoLikedPin(
+            @PathVariable("pinId") Long pinId
+    ) {
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다",
+                likesService.getUsersWhoLikedPin(pinId)
+        );
     }
 
 }

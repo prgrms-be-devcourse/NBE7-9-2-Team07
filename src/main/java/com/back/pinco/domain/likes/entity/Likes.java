@@ -69,8 +69,13 @@ public class Likes {
         this.isLiked = true;
     }
 
-    /** 좋아요 상태 토글 메서드 */
+    /** 좋아요 상태 토글 */
     public void toggleLike() {
         this.isLiked = !this.isLiked;
+    }
+
+    /** 사용자 ID 반환 */
+    public Long getUserId() {
+        return this.user.getId();
     }
 }
