@@ -2,6 +2,7 @@ package com.back.pinco.domain.likes.service;
 
 import com.back.pinco.domain.likes.dto.LikesStatusDto;
 import com.back.pinco.domain.likes.dto.PinLikedUserDto;
+import com.back.pinco.domain.likes.dto.UserLikedPinsDto;
 import com.back.pinco.domain.likes.entity.Likes;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
@@ -10,7 +11,6 @@ import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
-import com.back.pinco.global.geometry.GeometryUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LikesService {
 
-    private final GeometryUtil geometryUtil;
     private final PinService pinService;
     private final UserService userService;
     private final LikesRepository likesRepository;
@@ -33,11 +32,11 @@ public class LikesService {
      * @return 좋아요 수
      */
     public int getLikesCount(Long pinId) {
-        if (!likesRepository.existsByPinId(pinId)) {
+        if (!likesRepository.existsByPin_Id(pinId)) {
             return 0;
         }
 
-        return (int) likesRepository.countByPinId(pinId);
+        return (int) likesRepository.countByPin_Id(pinId);
     }
 
 
@@ -49,7 +48,7 @@ public class LikesService {
      * @return 존재하면 true, 없으면 false
      */
     private boolean existByLikes(Long pinId, Long userId) {
-        return likesRepository.existsByPinIdAndUserId(pinId, userId);
+        return likesRepository.existsByPin_IdAndUser_Id(pinId, userId);
     }
 
 
@@ -87,15 +86,25 @@ public class LikesService {
         }
         return likesRepository.findUsersByPinId(pinId)
                 .stream()
-                .distinct() // 구조상 중복될 일이 없는데 사용하는 편이 좋은가?
+//                .distinct() // 구조상 중복될 일이 없는데 사용하는 편이 좋은가?
                 .map(PinLikedUserDto::formEntry)
                 .toList();
     }
 
-
-    // 해당 유저가 좋아요 누른 핀 ID 목록 전달
-    public List<Long> getPinsLikedByUser(Long userId) {
-        return (List.of(90L, 91L, 92L));
+    /**
+     * 특정 사용자가 좋아요 누른 핀 ID 목록 전달
+     *
+     * @param userId 사용자 ID
+     * @return 핀 ID 목록
+     */
+    public List<UserLikedPinsDto> getPinsLikedByUser(Long userId) {
+        // userId로 사용자 확인
+//        if (!userService.checkExist(userId)) throw new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND);
+        return likesRepository.findPinsByUserId(userId)
+                .stream()
+//                .distinct()
+                .map(UserLikedPinsDto::formEntry)
+                .toList();
     }
 
 }

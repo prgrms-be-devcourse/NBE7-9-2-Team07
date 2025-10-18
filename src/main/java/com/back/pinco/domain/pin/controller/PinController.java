@@ -78,6 +78,8 @@ public class PinController {
     @GetMapping("/{pinId}")
     public RsData<PinDto> getPinById(@PathVariable("pinId") Long pinId){
         Pin pin = pinService.findById(pinId);
+        // pin 좋아요 개수 설정
+        pin.setLikeCount(likesService.getLikesCount(pinId));
 
         PinDto pinDto = new PinDto(pin);
 
@@ -215,8 +217,8 @@ public class PinController {
 
     }
 
-
-    @GetMapping("{pinId}/likesUsers")
+    // 해당 핀을 좋아요 누른 유저 ID 목록 전달
+    @GetMapping("{pinId}/likesusers")
     public RsData<List<PinLikedUserDto>> getUsersWhoLikedPin(
             @PathVariable("pinId") Long pinId
     ) {
