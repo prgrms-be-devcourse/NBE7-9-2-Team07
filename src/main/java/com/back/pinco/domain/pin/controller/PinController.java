@@ -1,6 +1,7 @@
 package com.back.pinco.domain.pin.controller;
 
 import com.back.pinco.domain.likes.dto.LikesStatusDto;
+import com.back.pinco.domain.likes.dto.PinLikedUserDto;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
@@ -212,6 +213,18 @@ public class PinController {
                 likesStatusDto
         );
 
+    }
+
+
+    @GetMapping("{pinId}/likesUsers")
+    public RsData<List<PinLikedUserDto>> getUsersWhoLikedPin(
+            @PathVariable("pinId") Long pinId
+    ) {
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다",
+                likesService.getUsersWhoLikedPin(pinId)
+        );
     }
 
 }
