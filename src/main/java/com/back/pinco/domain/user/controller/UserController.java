@@ -1,5 +1,7 @@
 package com.back.pinco.domain.user.controller;
 
+import com.back.pinco.domain.likes.dto.UserLikedPinsDto;
+import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.user.dto.UserDto;
 import com.back.pinco.domain.user.dto.UserReqBody.EditReqBody;
 import com.back.pinco.domain.user.dto.UserReqBody.JoinReqBody;
@@ -11,6 +13,8 @@ import com.back.pinco.global.rsData.RsData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -19,6 +23,7 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
+    private final LikesService likesService;
 
     @PostMapping("/join")
     public RsData<JoinResBody> join(
@@ -104,5 +109,16 @@ public class UserController {
                     "회원 탈퇴에 실패했습니다."
             );
         }
+    }
+
+    @GetMapping("/{userId}/likespins")
+    public RsData<List<UserLikedPinsDto>> getPinsLikedByUser(
+            @PathVariable("userId") Long userId
+    ) {
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다",
+                likesService.getPinsLikedByUser(userId)
+        );
     }
 }

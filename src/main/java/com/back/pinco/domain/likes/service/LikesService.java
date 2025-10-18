@@ -92,10 +92,10 @@ public class LikesService {
     }
 
     /**
-     * 특정 사용자가 좋아요 누른 핀 ID 목록 전달
+     * 특정 사용자가 좋아요 누른 핀 목록 전달
      *
      * @param userId 사용자 ID
-     * @return 핀 ID 목록
+     * @return 핀 목록
      */
     public List<UserLikedPinsDto> getPinsLikedByUser(Long userId) {
         // userId로 사용자 확인

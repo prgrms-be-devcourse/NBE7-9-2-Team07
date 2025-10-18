@@ -42,6 +42,14 @@ public interface LikesRepository extends JpaRepository<Likes, Long> {
     long countByPin_Id(Long pinId);
 
     /**
+     * 특정 사용자가 누른 좋아요 수 조회
+     *
+     * @param userId 사용자 ID
+     * @return 좋아요 누른 핀 수
+     */
+    long countByUser_id(Long userId);
+
+    /**
      * 특정 핀에 대한 좋아요 존재 여부 확인
      *
      * @param pinId
