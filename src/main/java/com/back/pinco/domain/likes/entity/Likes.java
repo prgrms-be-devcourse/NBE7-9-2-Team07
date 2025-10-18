@@ -58,6 +58,11 @@ public class Likes {
     private LocalDateTime deletedAt;    // 삭제일
 
 
+    /**
+     * 좋아요 생성자
+     * @param user 사용자
+     * @param pin 핀
+     */
     public Likes(User user, Pin pin) {
         this.user = user;
         this.pin = pin;

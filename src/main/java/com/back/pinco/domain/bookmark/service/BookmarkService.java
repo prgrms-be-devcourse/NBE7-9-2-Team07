@@ -27,7 +27,13 @@ public class BookmarkService {
 
     // jwt 적용 시 수정 필요
 
-    // 북마크 생성
+    /**
+     * 북마크 생성
+     *
+     * @param userId 사용자 ID
+     * @param pinId 핀 ID
+     * @return 생성된 북마크 DTO
+     */
     public BookmarkDto createBookmark(Long userId, Long pinId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
@@ -47,7 +53,12 @@ public class BookmarkService {
         return new BookmarkDto(bookmark);
     }
 
-    // 나의 북마크 목록 조회
+    /**
+     * 사용자의 북마크 목록 조회
+     *
+     * @param userId 사용자 ID
+     * @return 북마크 DTO 목록
+     */
     public List<BookmarkDto> getMyBookmarks(Long userId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
@@ -60,7 +71,12 @@ public class BookmarkService {
                 .collect(Collectors.toList());
     }
 
-    // 북마크 삭제
+    /**
+     * 북마크 삭제 (소프트 삭제)
+     *
+     * @param userId 사용자 ID
+     * @param bookmarkId 북마크 ID
+     */
     public void deleteBookmark(Long userId, Long bookmarkId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
@@ -82,7 +98,12 @@ public class BookmarkService {
         }
     }
 
-    // 북마크 복원
+    /**
+     * 북마크 복원
+     *
+     * @param userId 사용자 ID
+     * @param bookmarkId 북마크 ID
+     */
     public void restoreBookmark(Long userId, Long bookmarkId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
