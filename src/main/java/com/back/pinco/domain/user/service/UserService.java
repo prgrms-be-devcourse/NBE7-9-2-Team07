@@ -20,7 +20,6 @@ public class UserService {
 
     @Transactional
     public User createUser(String email, String password, String userName) {
-        // 1) 입력 검증(형식/길이)
         if (email == null || email.isBlank() ||
                 !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
             throw new ServiceException(ErrorCode.INVALID_EMAIL_FORMAT);
@@ -31,16 +30,12 @@ public class UserService {
         if (userName == null || userName.isBlank() || userName.length() < 2 || userName.length() > 20) {
             throw new ServiceException(ErrorCode.INVALID_USERNAME_FORMAT);
         }
-
-        // 2) 중복 체크(이메일/닉네임)
         if (userRepository.existsByEmail(email)) {
             throw new ServiceException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
         if (userRepository.existsByUserName(userName)) {
             throw new ServiceException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
-
-        // 3) 저장
         String hashedPwd = passwordEncoder.encode(password);
         User user = new User(email, hashedPwd, userName);
         return userRepository.save(user);
@@ -80,20 +75,25 @@ public class UserService {
 
     // 회원 정보 패스워드 수정
     @Transactional
-    public void editPwd(User user, String pwd) {
-        if (pwd == null || pwd.isBlank() || pwd.length() < 8) {
+    public void editPwd(User user, String newPassword) {
+        if (newPassword == null || newPassword.isBlank() || newPassword.length() < 8) {
             throw new ServiceException(ErrorCode.INVALID_PASSWORD_FORMAT);
-        } else {
-            String hashedPwd = passwordEncoder.encode(pwd);
-            user.setPassword(hashedPwd);
         }
+        String hashedPwd = passwordEncoder.encode(newPassword);
+        user.setPassword(hashedPwd);
     }
 
     // 회원 정보 모두 수정
     @Transactional
-    public void editAll(User user, String username, String pwd) {
-        user.setUserName(username);
-        user.setPassword(passwordEncoder.encode(pwd));
+    public void editAll(User user, String newUserName, String newPassword) {
+        if (userRepository.existsByUserNameAndIdNot(newUserName, user.getId())) {
+            throw new ServiceException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+        }
+        if (newPassword == null || newPassword.isBlank() || newPassword.length() < 8) {
+            throw new ServiceException(ErrorCode.INVALID_PASSWORD_FORMAT);
+        }
+        user.setUserName(newUserName);
+        user.setPassword(passwordEncoder.encode(newPassword));
     }
 
     // 회원 정보 삭제
@@ -102,34 +102,31 @@ public class UserService {
         userRepository.delete(user);
     }
 
+    // 비밀번호 확인
     @Transactional
-    public boolean checkExist(String email) {
-        if (!userRepository.existsByEmail(email)) {
-            return false;
-        } else {
-            return true;
+    public void checkPwd(User user, String pwd) {
+        if(!passwordEncoder.matches(pwd, user.getPassword())) {
+            throw new ServiceException(ErrorCode.PASSWORD_NOT_MATCH);
         }
     }
 
-    // 비밀번호 확인
-    @Transactional
-    public boolean checkPwd(User user, String pwd) {
-        return passwordEncoder.matches(pwd, user.getPassword());
-    }
-
     // 이메일로 사용자 찾기
-    @Transactional
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+    @Transactional(readOnly = true)
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Transactional
-    public Optional<User> findById(Long id) {
-        return userRepository.findById(id);
-    }
-
-    @Transactional
-    public boolean existsUserId(Long id) {
-        return userRepository.existsById(id);
+    public void existsUserId(Long id) {
+        if(!userRepository.existsById(id)) {
+            throw new ServiceException(ErrorCode.USER_NOT_FOUND);
+        }
     }
 }

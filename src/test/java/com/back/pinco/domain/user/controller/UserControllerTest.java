@@ -220,7 +220,7 @@ class UserControllerIntegrationTest {
         String oldRaw = "Password123!";
         String oldHashed = passwordEncoder.encode(oldRaw);
         String oldName = "윤서";
-        String newName = "감자";
+        String newName = "알감자";
         String newRaw = "NewPassword123!";
 
         User saved = userRepository.save(new User(email, oldHashed, oldName));
@@ -278,6 +278,29 @@ class UserControllerIntegrationTest {
 
         // DB에서 실제로 삭제되었는지 확인
         assertThat(userRepository.findById(id)).isEmpty();
+        assertThat(userRepository.findByEmail(email)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("회원가입 실패 - 이메일 형식 오류")
+    @Transactional
+    void t8() throws Exception {
+        String email = "yunseo+" + UUID.randomUUID() + "";
+        String rawPwd = "Password123!";
+        String body = """
+      {"email":"%s","userName":"윤서","password":"%s"}
+      """.formatted(email, rawPwd);
+
+        mvc.perform(post("/api/user/join")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("2001"))
+                .andExpect(jsonPath("$.msg").value("이메일 형식이 올바르지 않습니다."));
+
+        // ✅ DB 검증
         assertThat(userRepository.findByEmail(email)).isEmpty();
     }
 }
