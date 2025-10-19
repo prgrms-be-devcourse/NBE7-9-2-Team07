@@ -3,6 +3,7 @@ package com.back.pinco.domain.pin.entity;
 import com.back.pinco.domain.pin.dto.PutPinReqbody;
 import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.global.geometry.GeometryUtil;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,7 +37,7 @@ public class Pin {
     @Column(name = "pin_id")
     private Long id;    // 고유 ID
 
-    @Column(name = "point", nullable = false, columnDefinition = "geography(Point, 4326)")
+    @Column(name = "point", nullable = false, columnDefinition = "geography(Point, " + GeometryUtil.SRID + ")")
     private Point point;    // 위치
 
     @Column(name = "content", columnDefinition = "TEXT")
