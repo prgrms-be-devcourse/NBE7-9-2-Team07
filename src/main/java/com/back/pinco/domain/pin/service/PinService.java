@@ -19,7 +19,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PinService {
     private final PinRepository pinRepository;
-    private final GeometryUtil geometryUtil;
 
     public long count() {
         return pinRepository.count();
@@ -28,7 +27,7 @@ public class PinService {
 
     public Pin write(User actor, PostPinReqbody pinReqbody) {
         try {
-            Point point = geometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
+            Point point = GeometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
             Pin pin = new Pin(point, actor, pinReqbody.content());
             return pinRepository.save(pin);
         }catch(Exception e){
