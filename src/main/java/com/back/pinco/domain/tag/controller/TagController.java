@@ -74,7 +74,6 @@ public class TagController {
         return new RsData<>("200", "태그 필터링 기반 게시물 목록 조회 성공", pins);
     }
 
-
     // 새로운 태그 생성 (관리자용)
     @PostMapping("/tags")
     public RsData<TagDto> createTag(@RequestBody PostTagRequest request) {
