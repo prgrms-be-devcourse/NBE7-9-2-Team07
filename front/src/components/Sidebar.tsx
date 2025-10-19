@@ -43,45 +43,37 @@ export default function Sidebar({
 
   return (
     <aside className="w-80 bg-white border-r flex flex-col overflow-hidden">
-      {/* 상단 타이틀 */}
-      <div className="p-4 border-b flex items-center justify-between bg-blue-50">
-        <h2 className="font-semibold text-lg text-blue-600">📍 PinCo</h2>
-      </div>
 
       {/* 필터 버튼 영역 */}
       <div className="p-3 border-b flex flex-wrap gap-2">
         <button
           onClick={handleClickAll}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${
-            mode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"
-          }`}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+            }`}
         >
           <Globe size={16} /> 전체 보기
         </button>
 
         <button
           onClick={onClickNearby}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${
-            mode === "nearby" ? "bg-green-600 text-white" : "bg-gray-100 hover:bg-gray-200"
-          }`}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "nearby" ? "bg-green-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+            }`}
         >
           <Compass size={16} /> 내 주변
         </button>
 
         <button
           onClick={onClickLikedPins}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${
-            mode === "liked" ? "bg-pink-600 text-white" : "bg-gray-100 hover:bg-gray-200"
-          }`}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "liked" ? "bg-pink-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+            }`}
         >
           <Heart size={16} /> 좋아요한 핀
         </button>
 
         <button
           onClick={onClickMyBookmarks}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${
-            mode === "bookmark" ? "bg-yellow-400 text-gray-800" : "bg-gray-100 hover:bg-gray-200"
-          }`}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "bookmark" ? "bg-yellow-400 text-gray-800" : "bg-gray-100 hover:bg-gray-200"
+            }`}
         >
           <Star size={16} /> 내 북마크
         </button>
@@ -113,11 +105,10 @@ export default function Sidebar({
                     : [...selectedTags, tag.keyword]
                 )
               }
-              className={`px-2 py-1 rounded-md text-xs border transition ${
-                selectedTags.includes(tag.keyword)
+              className={`px-2 py-1 rounded-md text-xs border transition ${selectedTags.includes(tag.keyword)
                   ? "bg-blue-600 text-white border-blue-600"
                   : "bg-gray-100 hover:bg-gray-200 border-gray-300"
-              }`}
+                }`}
             >
               #{tag.keyword}
             </button>

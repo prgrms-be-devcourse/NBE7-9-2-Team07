@@ -52,6 +52,7 @@ export default function PinCoMainPage() {
             setSelectedPin(withTags);
             setCenter({ lat: withTags.latitude, lng: withTags.longitude });
         },
+        kakaoReady, // ✅ 추가
     });
 
     const [showCreate, setShowCreate] = useState(false);
@@ -123,22 +124,6 @@ export default function PinCoMainPage() {
                             </button>
                         )}
                     </div>
-
-                    {/* ✅ 내가 좋아요한 핀 보기 */}
-                    <button
-                        className="absolute top-24 left-4 bg-pink-500 text-white px-3 py-2 rounded-md shadow hover:bg-pink-600 z-50 flex items-center gap-1"
-                        onClick={() => loadLikedPins()}
-                    >
-                        <Heart size={16} /> 내가 좋아요한 핀
-                    </button>
-
-                    {/* ✅ 내 북마크 보기 */}
-                    <button
-                        className="absolute top-36 left-4 bg-yellow-400 text-gray-800 px-3 py-2 rounded-md shadow hover:bg-yellow-500 z-50 flex items-center gap-1"
-                        onClick={() => loadMyBookmarks()}
-                    >
-                        <Star size={16} /> 내 북마크 보기
-                    </button>
 
                     {selectedPin && (
                         <PostModal
