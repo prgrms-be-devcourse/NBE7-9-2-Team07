@@ -1,175 +1,199 @@
-import { useEffect, useMemo, useState } from "react";
-import { PinDto, TagDto } from "../types/types";
-import {
-  apiFilterByTags,
-  apiGetAllPins,
-  apiGetAllTags,
-  apiGetMyBookmarks,
-  apiGetNearbyPins,
-  apiGetPinTags,
-} from "../lib/pincoApi";
+"use client";
 
-type Mode = "all" | "nearby" | "tag" | "bookmark";
+import { useEffect, useState } from "react";
 
-export function usePins(initialCenter = { lat: 37.5665, lng: 126.978 }) {
-  const [allPins, setAllPins] = useState<PinDto[]>([]);
-  const [displayPins, setDisplayPins] = useState<PinDto[]>([]);
-  const [mode, setMode] = useState<Mode>("all");
+export interface PinDto {
+  id: number;
+  latitude: number;
+  longitude: number;
+  content: string;
+  userId: number;
+  likeCount: number;
+  isPublic: boolean;
+  createdAt: string;
+  modifiedAt: string;
+}
+
+export interface TagDto {
+  id: number;
+  keyword: string;
+  createdAt: string;
+}
+
+export type Mode = "all" | "nearby" | "tag" | "bookmark" | "liked";
+
+interface UsePinsProps {
+  lat: number;
+  lng: number;
+}
+
+export function usePins(initialCenter: UsePinsProps, userId?: number) {
+  const [pins, setPins] = useState<PinDto[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // 검색/필터
-  const [search, setSearch] = useState("");
+  const [mode, setMode] = useState<Mode>("all");
+  const [center, setCenter] = useState(initialCenter);
+  const [selectedPin, setSelectedPin] = useState<PinDto | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<TagDto[]>([]);
 
-  // 위치
-  const [center, setCenter] = useState<{ lat: number; lng: number }>(initialCenter);
-
-  // 선택
-  const [selectedPin, setSelectedPin] = useState<PinDto | null>(null);
-
-  // 북마크용 (로그인 유저 아이디가 있으면 사용)
-  const [userIdForBookmark, setUserIdForBookmark] = useState<number | null>(1); // TODO: useAuth에서 가져오면 교체
-
-  // 초기 태그 전체
+  /** ✅ 모든 태그 자동 로드 */
   useEffect(() => {
-    (async () => {
+    const fetchTags = async () => {
       try {
-        const tags = await apiGetAllTags();
-        setAllTags(tags);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags`);
+        const data = await res.json();
+        if (data.errorCode === "200") {
+          setAllTags(data.data);
+        } else {
+          setAllTags([]);
+        }
       } catch (e) {
-        console.error("태그 목록 조회 실패", e);
+        console.error("태그 목록 로드 실패", e);
+        setAllTags([]);
       }
-    })();
+    };
+    fetchTags();
   }, []);
 
-  // 전체 핀
+  /** ✅ 모든 핀 조회 */
   const loadAllPins = async () => {
     setLoading(true);
     try {
-      const pins = await apiGetAllPins();
-      setAllPins(pins);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/all`);
+      const data = await res.json();
+      if (data.errorCode === "200") setPins(data.data);
+      else setPins([]);
       setMode("all");
     } catch (e) {
-      console.error("전체 핀 조회 실패", e);
+      console.error("전체 핀 로드 실패", e);
+      setPins([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 주변 1km
+  /** ✅ 주변 핀 조회 */
   const loadNearbyPins = async (lat?: number, lng?: number) => {
     setLoading(true);
     try {
-      const targetLat = lat ?? center.lat;
-      const targetLng = lng ?? center.lng;
-      const pins = await apiGetNearbyPins(targetLat, targetLng);
-      setAllPins(pins);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}`
+      );
+      const data = await res.json();
+      if (data.errorCode === "200") setPins(data.data);
+      else setPins([]);
       setMode("nearby");
-      setCenter({ lat: targetLat, lng: targetLng });
     } catch (e) {
-      console.error("주변 핀 조회 실패", e);
+      console.error("주변 핀 로드 실패", e);
+      setPins([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 태그 필터 (서버 사이드 필터 활용)
+  /** ✅ 태그 기반 필터링 */
   const applyTagFilter = async (tags: string[]) => {
+    // 선택 상태를 먼저 반영해서 버튼 하이라이트가 즉시 바뀌도록 함
     setSelectedTags(tags);
     if (tags.length === 0) {
-      // 태그 해제 → 전체 모드 유지
-      setMode("all");
-      setAllPins(await apiGetAllPins());
-      return;
+      return clearTagFilter(); // 빈 배열이면 전체 해제 처리로 연결
     }
+
     setLoading(true);
     try {
-      const pins = await apiFilterByTags(tags);
-      setAllPins(pins);
+      const query = tags.map((t) => `keywords=${encodeURIComponent(t)}`).join("&");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags/filter?${query}`);
+      const data = await res.json();
+      if (data.errorCode === "200") setPins(data.data);
+      else setPins([]);
       setMode("tag");
     } catch (e) {
       console.error("태그 필터 실패", e);
+      setPins([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 내 북마크
+  /** ✅ 태그 전체 해제 + 전체 보기로 전환 */
+  const clearTagFilter = async () => {
+    setSelectedTags([]);      // 버튼 하이라이트 즉시 해제
+    setMode("all");           // 상단 필터 버튼 상태도 전체보기로
+    await loadAllPins();      // 리스트/지도도 전체로 갱신
+  };
+
+  /** ✅ 내 북마크 핀 로드 */
   const loadMyBookmarks = async () => {
-    if (!userIdForBookmark) return;
+    if (!userId) return;
     setLoading(true);
     try {
-      const bookmarks = await apiGetMyBookmarks(userIdForBookmark);
-      const pins = bookmarks.map((b) => b.pin);
-      setAllPins(pins);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookmarks?userId=${userId}`);
+      const data = await res.json();
+      if (data.errorCode === "200") {
+        const pinsOnly = data.data.map((b: any) => b.pin);
+        setPins(pinsOnly);
+      } else {
+        setPins([]);
+      }
       setMode("bookmark");
     } catch (e) {
-      console.error("북마크 조회 실패", e);
+      console.error("북마크 핀 로드 실패", e);
+      setPins([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 리스트 검색 필터 (클라이언트 사이드)
-  const filtered = useMemo(() => {
-    if (!search.trim()) return allPins;
-    const q = search.toLowerCase();
-    return allPins.filter((p) => p.content.toLowerCase().includes(q));
-  }, [allPins, search]);
-
-  useEffect(() => {
-    setDisplayPins(filtered);
-  }, [filtered]);
-
-  // 초기 로드: 전체 핀
-  useEffect(() => {
-    loadAllPins();
-  }, []);
-
-  // 카드/마커에 태그가 필요할 때 on-demand 로딩
-  const ensurePinTagsLoaded = async (pin: PinDto) => {
-    if (pin._tagsLoaded) return pin;
+  /** ✅ 내가 좋아요한 핀 로드 */
+  const loadLikedPins = async () => {
+    if (!userId) return;
+    setLoading(true);
     try {
-      const tags = await apiGetPinTags(pin.id);
-      const next: PinDto = {
-        ...pin,
-        tags: tags.map((t) => t.keyword),
-        _tagsLoaded: true,
-      };
-      // allPins, displayPins 둘 다 업데이트
-      setAllPins((prev) => prev.map((p) => (p.id === pin.id ? next : p)));
-      setDisplayPins((prev) => prev.map((p) => (p.id === pin.id ? next : p)));
-      return next;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${userId}/likespins`);
+      const data = await res.json();
+      if (data.errorCode === "200") setPins(data.data);
+      else setPins([]);
+      setMode("liked");
     } catch (e) {
-      console.error("핀 태그 로딩 실패", e);
-      return pin;
+      console.error("좋아요 핀 로드 실패", e);
+      setPins([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  /** ✅ 핀 클릭 시 태그 로드 */
+  const ensurePinTagsLoaded = async (pin: PinDto) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pin.id}/tags`);
+      const data = await res.json();
+      if (data.errorCode === "200" && Array.isArray(data.data)) {
+        return { ...pin, tags: data.data.map((t: any) => t.keyword) as string[] };
+      }
+    } catch (e) {
+      console.error("핀 태그 로드 실패", e);
+    }
+    return { ...pin, tags: [] as string[] };
   };
 
   return {
-    // 상태
-    pins: displayPins,
+    pins,
     loading,
     mode,
     center,
     selectedPin,
     selectedTags,
     allTags,
-
-    // 상태 set
-    setSearch,
     setCenter,
     setSelectedPin,
 
-    // 동작
+    // 노출 함수들
     loadAllPins,
     loadNearbyPins,
     applyTagFilter,
+    clearTagFilter,     // 👈 추가
     loadMyBookmarks,
+    loadLikedPins,
     ensurePinTagsLoaded,
-
-    // 유저아이디 설정(북마크용)
-    setUserIdForBookmark,
   };
 }

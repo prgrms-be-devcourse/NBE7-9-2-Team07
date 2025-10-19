@@ -1,109 +1,36 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Lock, Mail } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
+  const [email, setEmail] = useState("user1@example.com");
+  const [password, setPassword] = useState("12345678");
 
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
-  });
-  const [error, setError] = useState("");
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
-    if (!form.username || !form.password) {
-      setError("아이디와 비밀번호를 모두 입력해주세요.");
-      return;
+    const ok = await login(email, password);
+    if (ok) {
+      alert("로그인 성공 🎉");
+      router.push("/home");
+    } else {
+      alert("로그인 실패 ❌");
     }
-
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (form.username.includes("@") && !emailPattern.test(form.username)) {
-      setError("이메일 형식이 올바르지 않습니다.");
-      return;
-    }
-
-    // ✅ 가짜 유저 검증
-    const mockUser = { username: "testuser", password: "12345678" };
-    if (form.username !== mockUser.username) {
-      setError("존재하지 않는 아이디입니다.");
-      return;
-    }
-    if (form.password !== mockUser.password) {
-      setError("비밀번호가 올바르지 않습니다.");
-      return;
-    }
-
-    // ✅ 가짜 JWT 생성
-    const mockToken = "fake-jwt-token-for-now";
-
-    // ✅ 쿠키에 저장 (1시간 유효)
-    document.cookie = `accessToken=${mockToken}; path=/; max-age=3600; SameSite=Strict; Secure`;
-
-    alert("로그인 성공 🎉");
-    router.push("/home");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white shadow-md rounded-xl p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">로그인</h1>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-80 mx-auto mt-40">
+      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" className="border rounded p-2" />
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호" className="border rounded p-2" />
+      <button className="bg-blue-600 text-white rounded p-2">로그인</button>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 아이디 / 이메일 */}
-          <div className="relative">
-            <User className="absolute left-3 top-3 text-gray-400" size={18} />
-            <input
-              name="username"
-              placeholder="아이디 또는 이메일"
-              value={form.username}
-              onChange={handleChange}
-              className="w-full border rounded-md pl-10 pr-3 py-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* 비밀번호 */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
-            <input
-              type="password"
-              name="password"
-              placeholder="비밀번호"
-              value={form.password}
-              onChange={handleChange}
-              className="w-full border rounded-md pl-10 pr-3 py-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* 에러 메시지 */}
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-          {/* 로그인 버튼 */}
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md mt-4 hover:bg-blue-700 transition"
-          >
-            로그인
-          </button>
-        </form>
-
-        <p className="text-sm text-gray-500 text-center mt-4">
-          아직 회원이 아니신가요?{" "}
-          <a href="/user/join" className="text-blue-600 hover:underline">
-            회원가입
-          </a>
-        </p>
+      <div className="text-sm text-gray-500 text-center mt-2">
+        <p>기본 계정:</p>
+        <p>user1@example.com / 12345678</p>
+        <p>user2@example.com / 12341234</p>
       </div>
-    </div>
+    </form>
   );
 }

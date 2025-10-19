@@ -1,24 +1,21 @@
-import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
-import { PinDto, TagDto } from "../types/types";
-import TagFilter from "./TagFilter";
-import PostCard from "./PostCard";
+"use client";
 
-type Props = {
+import { TagDto, PinDto } from "@/hooks/usePins";
+import { Loader2, MapPin, Star, Heart, Compass, Globe, X } from "lucide-react";
+
+interface SidebarProps {
   pins: PinDto[];
   loading: boolean;
-  mode: "all" | "nearby" | "tag" | "bookmark";
-
+  mode: string;
   allTags: TagDto[];
   selectedTags: string[];
   onChangeTags: (next: string[]) => void;
-
   onClickNearby: () => void;
   onClickAll: () => void;
   onClickMyBookmarks: () => void;
-
+  onClickLikedPins: () => void;
   onSelectPin: (pin: PinDto) => void;
-};
+}
 
 export default function Sidebar({
   pins,
@@ -30,61 +27,131 @@ export default function Sidebar({
   onClickNearby,
   onClickAll,
   onClickMyBookmarks,
+  onClickLikedPins,
   onSelectPin,
-}: Props) {
-  const [search, setSearch] = useState("");
+}: SidebarProps) {
+  // ✅ 전체 보기 클릭 시 태그 상태도 초기화
+  const handleClickAll = () => {
+    if (selectedTags.length > 0) onChangeTags([]); // 태그 선택 해제
+    onClickAll(); // 전체 보기 로직 실행
+  };
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return pins.filter((p) => p.content.toLowerCase().includes(q));
-  }, [pins, search]);
+  // ✅ 전체 해제 버튼 클릭 시 태그 해제
+  const handleClearTags = () => {
+    onChangeTags([]);
+  };
 
   return (
-    <aside className="bg-white border-r w-80 p-4 flex flex-col gap-4 overflow-y-auto">
-      <div className="flex items-center justify-between">
-        <h3 className="text-gray-800 font-semibold">📍 핀 목록</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={onClickNearby}
-            className={`px-2 py-1 text-xs rounded-md ${mode === "nearby" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}`}
-          >
-            주변 보기
-          </button>
-          <button
-            onClick={onClickAll}
-            className={`px-2 py-1 text-xs rounded-md ${mode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}`}
-          >
-            모두 보기
-          </button>
+    <aside className="w-80 bg-white border-r flex flex-col overflow-hidden">
+      {/* 상단 타이틀 */}
+      <div className="p-4 border-b flex items-center justify-between bg-blue-50">
+        <h2 className="font-semibold text-lg text-blue-600">📍 PinCo</h2>
+      </div>
+
+      {/* 필터 버튼 영역 */}
+      <div className="p-3 border-b flex flex-wrap gap-2">
+        <button
+          onClick={handleClickAll}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${
+            mode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+          }`}
+        >
+          <Globe size={16} /> 전체 보기
+        </button>
+
+        <button
+          onClick={onClickNearby}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${
+            mode === "nearby" ? "bg-green-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+          }`}
+        >
+          <Compass size={16} /> 내 주변
+        </button>
+
+        <button
+          onClick={onClickLikedPins}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${
+            mode === "liked" ? "bg-pink-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+          }`}
+        >
+          <Heart size={16} /> 좋아요한 핀
+        </button>
+
+        <button
+          onClick={onClickMyBookmarks}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${
+            mode === "bookmark" ? "bg-yellow-400 text-gray-800" : "bg-gray-100 hover:bg-gray-200"
+          }`}
+        >
+          <Star size={16} /> 내 북마크
+        </button>
+      </div>
+
+      {/* 태그 필터 섹션 */}
+      <div className="p-3 border-b">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-gray-600">🧩 태그 필터</h3>
+          {selectedTags.length > 0 && (
+            <button
+              onClick={handleClearTags}
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-black"
+            >
+              <X size={12} /> 전체 해제
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {allTags.length === 0 && <p className="text-xs text-gray-400">불러오는 중...</p>}
+          {allTags.map((tag) => (
+            <button
+              key={tag.id}
+              onClick={() =>
+                onChangeTags(
+                  selectedTags.includes(tag.keyword)
+                    ? selectedTags.filter((t) => t !== tag.keyword)
+                    : [...selectedTags, tag.keyword]
+                )
+              }
+              className={`px-2 py-1 rounded-md text-xs border transition ${
+                selectedTags.includes(tag.keyword)
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-gray-100 hover:bg-gray-200 border-gray-300"
+              }`}
+            >
+              #{tag.keyword}
+            </button>
+          ))}
         </div>
       </div>
 
-      <TagFilter
-        allTags={allTags}
-        selectedTags={selectedTags}
-        onChange={onChangeTags}
-        onBookmarkClick={onClickMyBookmarks}
-        currentMode={mode}
-      />
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="게시글 검색..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 w-full border rounded-md p-2 text-sm"
-        />
-      </div>
-
-      <div className="space-y-2">
+      {/* 핀 목록 */}
+      <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
-          <p className="text-gray-400 text-sm text-center py-6">불러오는 중입니다... ⏳</p>
-        ) : filtered.length > 0 ? (
-          filtered.map((pin) => <PostCard key={pin.id} pin={pin} onClick={() => onSelectPin(pin)} />)
+          <div className="flex flex-col items-center justify-center text-gray-500 mt-10">
+            <Loader2 className="animate-spin mb-2" size={20} />
+            <p className="text-sm">불러오는 중...</p>
+          </div>
+        ) : pins.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center mt-10">표시할 핀이 없습니다 💤</p>
         ) : (
-          <p className="text-gray-400 text-sm text-center py-6">게시글이 없습니다 😢</p>
+          <ul className="space-y-2">
+            {pins.map((pin) => (
+              <li
+                key={pin.id}
+                onClick={() => onSelectPin(pin)}
+                className="p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer border border-gray-200 transition"
+              >
+                <div className="flex items-start justify-between">
+                  <p className="text-sm text-gray-700 line-clamp-2">{pin.content}</p>
+                  <span className="text-xs text-gray-400">{pin.likeCount ?? 0} ❤️</span>
+                </div>
+                <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                  <MapPin size={12} /> {pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)}
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </aside>

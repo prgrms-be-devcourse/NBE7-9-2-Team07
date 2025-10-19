@@ -14,18 +14,35 @@ export type PinDto = {
   isPublic: boolean;
   createdAt: string;
   modifiedAt: string;
-  // 아래는 프론트에서 보강 (옵션)
-  tags?: string[];         // /api/tags/filter 결과에 포함 (문자열 배열)
-  _tagsLoaded?: boolean;   // 개별 핀 태그를 /pins/{id}/tags로 가져왔는지 표시
+  // 프론트에서 보강
+  tags?: string[];        // /api/tags/filter 결과나 /pins/{id}/tags 로 채움
+  _tagsLoaded?: boolean;
 };
 
-export type LikeToggleResponse = {
+export type LikesStatusDto = {
   isLiked: boolean;
   likeCount: number;
+};
+
+export type PinLikedUserDto = {
+  id: number;
+  userName: string;
 };
 
 export type BookmarkDto = {
   id: number;
   pin: PinDto;
   createdAt: string;
+};
+
+export type GetFilteredPinResponse = {
+  id: number;
+  latitude: number;
+  longitude: number;
+  content: string;
+  likeCount: number;
+  userNickname: string;
+  tags: string[];
+  createdAt: string;
+  modifiedAt: string;
 };

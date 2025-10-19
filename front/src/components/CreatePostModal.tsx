@@ -1,11 +1,12 @@
 import { useState } from "react";
 
-type Props = {
+export default function CreatePostModal({
+  onSubmit,
+  onClose,
+}: {
   onSubmit: (content: string) => void;
   onClose: () => void;
-};
-
-export default function CreatePostModal({ onSubmit, onClose }: Props) {
+}) {
   const [content, setContent] = useState("");
 
   return (
