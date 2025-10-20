@@ -37,6 +37,13 @@ export default function PostModal({
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(pin.content);
+  const [currentPin, setCurrentPin] = useState(pin);
+
+  // pin이 바뀌면 모달 내부도 동기화 (content까지)
+  useEffect(() => {
+    setCurrentPin(pin);
+    setContent(pin.content);
+  }, [pin.id, pin.content]);
 
   // ✅ 공개 상태는 즉시 반영 위해 로컬 상태 따로 유지
   const [localPublic, setLocalPublic] = useState(pin.isPublic);
@@ -201,9 +208,33 @@ export default function PostModal({
 
   // ✅ 내용 수정 저장
   const saveEdit = async () => {
-    await apiUpdatePin(pin.id, pin.latitude, pin.longitude, content);
-    setEditing(false);
-    onChanged?.();
+    try {
+      await apiUpdatePin(currentPin.id, currentPin.latitude, currentPin.longitude, content);
+
+      // 서버에서 최신 핀 가져오기
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${currentPin.id}`);
+      const json = await res.json();
+
+      setEditing(false);
+
+      if (json?.data) {
+        const updated = json.data as PinDto;
+        // ✅ 모달 내부 즉시 반영
+        setCurrentPin(updated);
+        setContent(updated.content);
+        // ✅ 부모 리스트도 갱신
+        onChanged?.(updated);
+      } else {
+        // 혹시 실패하면 내용만 반영
+        setCurrentPin({ ...currentPin, content });
+        onChanged?.({ ...currentPin, content });
+      }
+
+      alert("게시글이 수정되었습니다 ✅");
+    } catch (err) {
+      console.error("게시글 수정 실패:", err);
+      alert("게시글 수정 중 오류가 발생했습니다.");
+    }
   };
 
   // ✅ 삭제
@@ -234,12 +265,23 @@ export default function PostModal({
               onChange={(e) => setContent(e.target.value)}
             />
           ) : (
-            <p className="text-gray-800 leading-relaxed">{pin.content}</p>
+            <p className="text-gray-800 leading-relaxed">{currentPin.content}</p>
           )}
 
+          {/* 날짜: 상세 포맷으로 */}
           <div className="text-xs text-gray-500 flex justify-between">
-            <span>작성: {pin.createdAt.slice(0, 10)}</span>
-            <span>수정: {pin.modifiedAt.slice(0, 10)}</span>
+            <span>
+              작성: {new Date(currentPin.createdAt).toLocaleString("ko-KR", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </span>
+            <span>
+              수정: {new Date(currentPin.modifiedAt).toLocaleString("ko-KR", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </span>
           </div>
 
           {/* ✅ 태그 섹션 */}
@@ -309,33 +351,30 @@ export default function PostModal({
               <>
                 <button
                   onClick={toggleLike}
-                  className={`px-3 py-1 rounded-md border transition ${
-                    isLiked
-                      ? "bg-red-100 text-red-600 border-red-300"
-                      : "border-gray-300"
-                  }`}
+                  className={`px-3 py-1 rounded-md border transition ${isLiked
+                    ? "bg-red-100 text-red-600 border-red-300"
+                    : "border-gray-300"
+                    }`}
                 >
                   {isLiked ? "💔 좋아요 취소" : "👍 좋아요"} ({likeCount})
                 </button>
 
                 <button
                   onClick={togglePublic}
-                  className={`px-3 py-1 rounded-md border transition ${
-                    localPublic
-                      ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
-                      : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                  }`}
+                  className={`px-3 py-1 rounded-md border transition ${localPublic
+                    ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
+                    : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                    }`}
                 >
                   {localPublic ? "🔓 공개 중" : "🔒 비공개"}
                 </button>
 
                 <button
                   onClick={toggleBookmark}
-                  className={`px-3 py-1 rounded-md border transition ${
-                    isBookmarked
-                      ? "bg-blue-100 text-blue-600 border-blue-300"
-                      : "border-gray-300"
-                  }`}
+                  className={`px-3 py-1 rounded-md border transition ${isBookmarked
+                    ? "bg-blue-100 text-blue-600 border-blue-300"
+                    : "border-gray-300"
+                    }`}
                 >
                   {isBookmarked ? "🔖 북마크됨" : "📌 북마크"}
                 </button>
