@@ -18,7 +18,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,14 +29,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/pins")
 public class PinController {
 
-    @Autowired
-    private PinService pinService;
+    private final PinService pinService;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private LikesService likesService;
+    private final LikesService likesService;
 
     //생성
     @PostMapping
