@@ -127,7 +127,7 @@ public class PinTagService {
 
     // 삭제 상태 검증
     private void validateDeletedState(PinTag pinTag) {
-        if (Boolean.FALSE.equals(pinTag.getIsDeleted())) {
+        if (Boolean.FALSE.equals(pinTag.getDeleted())) {
             throw new ServiceException(ErrorCode.TAG_ALREADY_LINKED);
         }
     }
@@ -193,7 +193,7 @@ public class PinTagService {
         var existing = pinTagRepository.findByPin_IdAndTag_Id(pinId, tag.getId());
         if (existing.isPresent()) {
             PinTag pinTag = existing.get();
-            if (pinTag.getIsDeleted()) {
+            if (pinTag.getDeleted()) {
                 pinTag.restore();
                 pinTagRepository.save(pinTag);
             } else {
@@ -214,7 +214,7 @@ public class PinTagService {
     // 핀-태그 연결 삭제
     private void deletePinTag(PinTag pinTag) {
         try {
-            pinTag.setIsDeleted();
+            pinTag.setDeleted();
         } catch (Exception e) {
             throw new ServiceException(ErrorCode.PIN_TAG_DELETE_FAILED);
         }
@@ -246,7 +246,7 @@ public class PinTagService {
         pinTagRepository.findByPin_IdAndTag_Id(pin.getId(), tag.getId())
                 .ifPresentOrElse(
                         existing -> {
-                            if (Boolean.TRUE.equals(existing.getIsDeleted())) existing.restore();
+                            if (Boolean.TRUE.equals(existing.getDeleted())) existing.restore();
                         },
                         () -> pinTagRepository.save(new PinTag(pin, tag, false))
                 );

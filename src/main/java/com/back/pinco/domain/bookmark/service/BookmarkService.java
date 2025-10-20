@@ -91,7 +91,7 @@ public class BookmarkService {
         }
 
         try {
-            bookmark.setIsDeleted();
+            bookmark.setDeleted();
             bookmarkRepository.save(bookmark);
         } catch (Exception e) {
             throw new ServiceException(ErrorCode.BOOKMARK_DELETE_FAILED);

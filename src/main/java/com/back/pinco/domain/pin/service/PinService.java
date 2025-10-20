@@ -37,7 +37,7 @@ public class PinService {
 
     public Pin findById(long id) {
         Pin pin = pinRepository.findById(id).orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        if(pin.getIsDeleted()){
+        if(pin.getDeleted()){
             throw new ServiceException(ErrorCode.PIN_NOT_FOUND);
         }
         return pin;
@@ -48,7 +48,7 @@ public class PinService {
     }
 
     public List<Pin> findAll() {
-        List<Pin> pins = pinRepository.findAll().stream().filter(pin -> !pin.getIsDeleted()).toList();
+        List<Pin> pins = pinRepository.findAll().stream().filter(pin -> !pin.getDeleted()).toList();
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
@@ -88,7 +88,7 @@ public class PinService {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
         // TODO: 인증 추가
         try {
-            pin.setIsDeleted();
+            pin.setDeleted();
         }catch(Exception e){
             throw new ServiceException(ErrorCode.PIN_DELETE_FAILED);
         }

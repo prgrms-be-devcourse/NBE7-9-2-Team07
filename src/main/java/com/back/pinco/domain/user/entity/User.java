@@ -1,14 +1,11 @@
 package com.back.pinco.domain.user.entity;
 
+import com.back.pinco.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
@@ -25,7 +22,7 @@ import java.time.LocalDateTime;
         initialValue = 1,
         allocationSize = 50
 )
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_id_gen")
@@ -40,14 +37,6 @@ public class User {
 
     @Column(name = "username", nullable = false, length = 50)
     private String userName;    // 사용자명
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    @CreatedDate
-    private LocalDateTime createdAt;    // 생성일
-
-    @Column(name = "modified_at")
-    @LastModifiedDate
-    private LocalDateTime modifiedAt;    // 수정일
 
 
     public User(String email, String password, String userName) {

@@ -2,14 +2,11 @@ package com.back.pinco.domain.bookmark.entity;
 
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
@@ -31,7 +28,7 @@ import java.time.LocalDateTime;
         sequenceName = "BOOKMARK_SEQ",
         initialValue = 1,
         allocationSize = 50
-)public class Bookmark {
+)public class Bookmark extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bookmark_id_gen")
@@ -46,16 +43,8 @@ import java.time.LocalDateTime;
     @JoinColumn(name = "pin_id", nullable = false)
     private Pin pin;    // 핀 ID
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    @CreatedDate
-    private LocalDateTime createdAt;    // 생성일
-
     @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = Boolean.FALSE; // 삭제 여부
-
-    @Column(name = "deleted_at")
-    @LastModifiedDate
-    private LocalDateTime deletedAt;    // 삭제일
+    private Boolean deleted = false; // 삭제 여부
 
     /**
      * 북마크 생성자
@@ -68,15 +57,13 @@ import java.time.LocalDateTime;
     }
 
     // 소프트 삭제
-    public void setIsDeleted() {
-        this.isDeleted = Boolean.TRUE;
-        this.deletedAt = LocalDateTime.now();
+    public void setDeleted() {
+        this.deleted = true;
     }
 
     // 북마크 복구
     public void restore() {
-        this.isDeleted = Boolean.FALSE;
-        this.deletedAt = null;
+        this.deleted = false;
     }
 
 }
