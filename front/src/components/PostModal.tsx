@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { PinDto, PinLikedUserDto, TagDto } from "../types/types";
@@ -7,7 +9,8 @@ import {
   apiDeletePin,
   apiGetLikeUsers,
   apiGetPinTags,
-  apiToggleLike,
+  apiAddLike,
+  apiRemoveLike,
   apiTogglePublic,
   apiUpdatePin,
   apiCreateBookmark,
@@ -30,14 +33,26 @@ export default function PostModal({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(pin.likeCount ?? 0);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isPublic, setIsPublic] = useState(pin.isPublic);
+  const [bookmarkId, setBookmarkId] = useState<number | null>(null);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(pin.content);
+  const [currentPin, setCurrentPin] = useState(pin);
+
+  // pin이 바뀌면 모달 내부도 동기화 (content까지)
+  useEffect(() => {
+    setCurrentPin(pin);
+    setContent(pin.content);
+  }, [pin.id, pin.content]);
+
+  // ✅ 공개 상태는 즉시 반영 위해 로컬 상태 따로 유지
+  const [localPublic, setLocalPublic] = useState(pin.isPublic);
+  useEffect(() => {
+    setLocalPublic(pin.isPublic);
+  }, [pin.isPublic]);
 
   /** ✅ 어떤 응답이 와도 태그 배열로 변환 */
   const parseTags = (resp: any): TagDto[] => {
-    // 신구 구조 모두 대응
     if (Array.isArray(resp?.data?.tags)) return resp.data.tags as TagDto[];
     if (Array.isArray(resp?.data)) return resp.data as TagDto[];
     if (Array.isArray(resp)) return resp as TagDto[];
@@ -48,7 +63,7 @@ export default function PostModal({
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
+    const loadData = async () => {
       try {
         // 태그
         const t = await apiGetPinTags(pin.id);
@@ -66,43 +81,50 @@ export default function PostModal({
         if (mounted) {
           setLikeUsers(likeUserList);
           setIsLiked(likeUserList.some((usr) => usr.id === userId));
-          if (Array.isArray(likeUserList) && likeUserList.length !== likeCount) {
-            setLikeCount(likeUserList.length);
-          }
+          setLikeCount(likeUserList.length);
         }
       } catch (err) {
         console.error("좋아요 로드 실패:", err);
       }
 
       try {
-        // 북마크 상태
+        // 북마크 상태 불러오기
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookmarks?userId=${userId}`
         );
         const data = await res.json();
-        if (mounted) {
-          if (data.errorCode === "200" && Array.isArray(data.data)) {
-            setIsBookmarked(data.data.some((b: any) => b.pin?.id === pin.id));
+
+        if (mounted && data.errorCode === "200" && Array.isArray(data.data)) {
+          const found = data.data.find((b: any) => b.pin?.id === pin.id);
+          if (found) {
+            setIsBookmarked(true);
+            setBookmarkId(found.id); // ✅ bookmarkId 저장
           } else {
             setIsBookmarked(false);
+            setBookmarkId(null);
           }
         }
       } catch {
-        if (mounted) setIsBookmarked(false);
+        if (mounted) {
+          setIsBookmarked(false);
+          setBookmarkId(null);
+        }
       }
-    })();
+    };
+
+    loadData();
 
     return () => {
       mounted = false;
     };
-  }, [pin.id, userId]); // pin이 바뀌면 다시 로드
+  }, [pin.id, userId]);
 
   // ✅ 태그 추가
   const addTag = async () => {
     if (!newTag.trim()) return;
     await apiAddTagToPin(pin.id, newTag.trim());
     const res = await apiGetPinTags(pin.id);
-    setTags(parseTags(res)); // ✅ RsData.data.tags 대응
+    setTags(parseTags(res));
     setNewTag("");
     onChanged?.();
   };
@@ -111,51 +133,49 @@ export default function PostModal({
   const removeTag = async (tagId: number) => {
     await apiRemoveTagFromPin(pin.id, tagId);
     const res = await apiGetPinTags(pin.id);
-    setTags(parseTags(res)); // ✅ 동일하게
+    setTags(parseTags(res));
     onChanged?.();
   };
 
-  // ✅ 좋아요 토글 (낙관적 업데이트 + 보정)
+  // ✅ 좋아요 토글
   const toggleLike = async () => {
     try {
-      setIsLiked((prev) => !prev);
-      setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
-
-      const res = await apiToggleLike(pin.id, userId);
-
-      if (res && typeof res.likeCount === "number") {
-        setLikeCount(res.likeCount);
-        setIsLiked(res.isLiked);
+      let res;
+      if (!isLiked) {
+        res = await apiAddLike(pin.id, userId);
       } else {
-        const updatedUsers = await apiGetLikeUsers(pin.id);
-        const list = Array.isArray(updatedUsers)
-          ? updatedUsers
-          : updatedUsers?.data ?? [];
-        setLikeUsers(list);
-        setIsLiked(list.some((u) => u.id === userId));
-        setLikeCount(list.length);
+        res = await apiRemoveLike(pin.id, userId);
       }
 
-      onChanged?.();
+      const updated = res?.data;
+      if (updated) {
+        setIsLiked(updated.isLiked);
+        setLikeCount(updated.likeCount);
+      }
+
+      onChanged?.({ ...pin, likeCount: updated?.likeCount ?? likeCount });
     } catch (err) {
-      console.error("좋아요 토글 실패:", err);
-      // 롤백
-      setIsLiked((prev) => !prev);
-      setLikeCount((prev) => (isLiked ? prev + 1 : prev - 1));
+      console.error("좋아요 요청 실패:", err);
     }
   };
 
   // ✅ 북마크 토글
   const toggleBookmark = async () => {
     try {
-      if (isBookmarked) {
-        await apiDeleteBookmark(pin.id, userId);
+      if (isBookmarked && bookmarkId) {
+        await apiDeleteBookmark(bookmarkId, userId);
         setIsBookmarked(false);
+        setBookmarkId(null);
+        console.log("🔖 북마크 해제 완료");
       } else {
-        await apiCreateBookmark(userId, pin.id);
-        setIsBookmarked(true);
-        alert("북마크되었습니다 ✅");
+        const res = await apiCreateBookmark(userId, pin.id);
+        if (res?.data) {
+          setBookmarkId(res.data.id);
+          setIsBookmarked(true);
+          console.log("📌 북마크 생성 완료");
+        }
       }
+
       onChanged?.();
     } catch (err) {
       console.error("북마크 토글 실패:", err);
@@ -164,33 +184,57 @@ export default function PostModal({
 
   // ✅ 공개 토글
   const togglePublic = async () => {
+    const next = !localPublic;
+    setLocalPublic(next);
+
     try {
-      // UI 즉시 반영
-      setIsPublic((prev) => !prev);
       const res = await apiTogglePublic(pin.id);
+      const updatedPin =
+        res?.data && res.data.isPublic !== undefined ? res.data : res;
+      const confirmed = updatedPin?.isPublic ?? next;
+      setLocalPublic(confirmed);
 
-      // 서버 응답 우선
-      if (res?.data?.isPublic !== undefined) {
-        setIsPublic(res.data.isPublic);
-        alert(res.data.isPublic ? "🌍 공개로 전환되었습니다" : "🔒 비공개로 전환되었습니다");
-      } else {
-        alert(isPublic ? "🔒 비공개로 전환되었습니다" : "🌍 공개로 전환되었습니다");
-      }
+      alert(
+        confirmed ? "🌍 공개로 전환되었습니다" : "🔒 비공개로 전환되었습니다"
+      );
 
-      onChanged?.();
+      await onChanged?.();
     } catch (err) {
       console.error("공개 토글 실패:", err);
-      // 롤백
-      setIsPublic((prev) => !prev);
+      setLocalPublic(!next);
       alert("공개 설정 변경 중 오류가 발생했습니다.");
     }
   };
 
   // ✅ 내용 수정 저장
   const saveEdit = async () => {
-    await apiUpdatePin(pin.id, pin.latitude, pin.longitude, content);
-    setEditing(false);
-    onChanged?.();
+    try {
+      await apiUpdatePin(currentPin.id, currentPin.latitude, currentPin.longitude, content);
+
+      // 서버에서 최신 핀 가져오기
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${currentPin.id}`);
+      const json = await res.json();
+
+      setEditing(false);
+
+      if (json?.data) {
+        const updated = json.data as PinDto;
+        // ✅ 모달 내부 즉시 반영
+        setCurrentPin(updated);
+        setContent(updated.content);
+        // ✅ 부모 리스트도 갱신
+        onChanged?.(updated);
+      } else {
+        // 혹시 실패하면 내용만 반영
+        setCurrentPin({ ...currentPin, content });
+        onChanged?.({ ...currentPin, content });
+      }
+
+      alert("게시글이 수정되었습니다 ✅");
+    } catch (err) {
+      console.error("게시글 수정 실패:", err);
+      alert("게시글 수정 중 오류가 발생했습니다.");
+    }
   };
 
   // ✅ 삭제
@@ -221,12 +265,23 @@ export default function PostModal({
               onChange={(e) => setContent(e.target.value)}
             />
           ) : (
-            <p className="text-gray-800 leading-relaxed">{pin.content}</p>
+            <p className="text-gray-800 leading-relaxed">{currentPin.content}</p>
           )}
 
+          {/* 날짜: 상세 포맷으로 */}
           <div className="text-xs text-gray-500 flex justify-between">
-            <span>작성: {pin.createdAt.slice(0, 10)}</span>
-            <span>수정: {pin.modifiedAt.slice(0, 10)}</span>
+            <span>
+              작성: {new Date(currentPin.createdAt).toLocaleString("ko-KR", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </span>
+            <span>
+              수정: {new Date(currentPin.modifiedAt).toLocaleString("ko-KR", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </span>
           </div>
 
           {/* ✅ 태그 섹션 */}
@@ -235,9 +290,7 @@ export default function PostModal({
 
             <div className="flex flex-wrap gap-2">
               {(!Array.isArray(tags) || tags.length === 0) && (
-                <span className="text-xs text-gray-400">
-                  등록된 태그 없음
-                </span>
+                <span className="text-xs text-gray-400">등록된 태그 없음</span>
               )}
 
               {Array.isArray(tags) &&
@@ -308,12 +361,12 @@ export default function PostModal({
 
                 <button
                   onClick={togglePublic}
-                  className={`px-3 py-1 rounded-md border transition ${isPublic
+                  className={`px-3 py-1 rounded-md border transition ${localPublic
                     ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
                     : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
                     }`}
                 >
-                  {isPublic ? "🔓 공개 중" : "🔒 비공개"}
+                  {localPublic ? "🔓 공개 중" : "🔒 비공개"}
                 </button>
 
                 <button

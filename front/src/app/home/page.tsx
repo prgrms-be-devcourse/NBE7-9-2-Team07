@@ -141,7 +141,20 @@ export default function PinCoMainPage() {
                     )}
 
                     {showCreate && (
-                        <CreatePostModal onSubmit={handleCreate} onClose={() => setShowCreate(false)} />
+                        <CreatePostModal
+                            lat={center.lat}        // ✅ 중심 좌표 전달
+                            lng={center.lng}
+                            userId={user?.id ?? 1}
+                            onClose={() => setShowCreate(false)}
+                            onCreated={async () => {
+                                // 새로 등록한 핀 반영
+                                if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
+                                else if (mode === "tag") await applyTagFilter(selectedTags);
+                                else if (mode === "bookmark") await loadMyBookmarks();
+                                else if (mode === "liked") await loadLikedPins();
+                                else await loadAllPins();
+                            }}
+                        />
                     )}
 
                     {/* ✅ 핀 추가 버튼 */}

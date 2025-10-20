@@ -29,7 +29,7 @@ export default function LoginPage() {
       <div className="text-sm text-gray-500 text-center mt-2">
         <p>기본 계정:</p>
         <p>user1@example.com / 12345678</p>
-        <p>user2@example.com / 12341234</p>
+        <p>mock 데이터로 user1만 로그인 됩니다.</p>
       </div>
     </form>
   );
