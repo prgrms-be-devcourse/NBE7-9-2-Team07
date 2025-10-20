@@ -69,9 +69,9 @@ public class InitData {
 
 
         // 좋아요 등록 (user1이 pin1, pin2 좋아요 / user2가 pin1 좋아요)
-        likesService.toggleLike(pinA, user1);
-        likesService.toggleLike(pinB, user1);
-        likesService.toggleLike(pinA, user2);
+        likesService.toggleLikesPin(pinA.getId(), user2.getId());
+        likesService.toggleLikesPin(pinA.getId(), user1.getId());
+        likesService.toggleLikesPin(pinB.getId(), user1.getId());
 
         // 샘플 태그 등록
         Tag t1 = tagService.createTag("카페");

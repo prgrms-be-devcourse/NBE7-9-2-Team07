@@ -1,6 +1,6 @@
 package com.back.pinco.domain.user.controller;
 
-import com.back.pinco.domain.likes.dto.UserLikedPinsDto;
+import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.user.dto.UserDto;
 import com.back.pinco.domain.user.dto.UserReqBody.EditReqBody;
@@ -112,7 +112,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/likespins")
-    public RsData<List<UserLikedPinsDto>> getPinsLikedByUser(
+    public RsData<List<PinsLikedByUserResponse>> getPinsLikedByUser(
             @PathVariable("userId") Long userId
     ) {
         return new RsData<>(

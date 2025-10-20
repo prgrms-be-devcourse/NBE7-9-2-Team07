@@ -48,7 +48,7 @@ public class Likes {
     private Pin pin;    // 핀 ID
 
     @Column(name = "is_liked", nullable = false)
-    private Boolean isLiked = true;    // 좋아요 여부
+    private Boolean liked = true;    // 좋아요 여부
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreatedDate
@@ -59,22 +59,20 @@ public class Likes {
 
 
     /**
-     * 좋아요 생성자
      * @param user 사용자
-     * @param pin 핀
+     * @param pin  핀
      */
     public Likes(User user, Pin pin) {
         this.user = user;
         this.pin = pin;
-        this.isLiked = true;
+        this.liked = true;
     }
 
-    /** 좋아요 상태 토글 */
-    public void toggleLike() {
-        this.isLiked = !this.isLiked;
+    public Likes toggleLike() {
+        this.liked = !this.liked;
+        return this;
     }
 
-    /** 사용자 ID 반환 */
     public Long getUserId() {
         return this.user.getId();
     }

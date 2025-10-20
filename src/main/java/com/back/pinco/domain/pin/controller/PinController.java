@@ -1,7 +1,7 @@
 package com.back.pinco.domain.pin.controller;
 
-import com.back.pinco.domain.likes.dto.LikesStatusDto;
-import com.back.pinco.domain.likes.dto.PinLikedUserDto;
+import com.back.pinco.domain.likes.dto.LikesStatusResponse;
+import com.back.pinco.domain.likes.dto.PinLikedUserResponse;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
@@ -11,7 +11,6 @@ import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
-import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rsData.RsData;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -194,32 +193,22 @@ public class PinController {
             Long userId
     ) {
     }
-    @PostMapping("/{pinId}/likes")
-    public RsData<LikesStatusDto> toggleLike(
+    @PutMapping("/{pinId}/likes")
+    public RsData<LikesStatusResponse> togglePinLike(
             @PathVariable("pinId") Long pinId,
             @Valid @RequestBody postLikesStatusReqbody reqbody
     ) {
-        Pin pin = pinService.findById(pinId);
-        User user = userService.userInform(reqbody.userId())
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND));
-
-        // 좋아요 토글 처리
-        LikesStatusDto likesStatusDto = likesService.toggleLike(pin, user);
-
-        // 핀 객체에 좋아요 수 업데이트
-        pinService.updateLikes(pin, likesStatusDto.likeCount());
-
-        return new RsData<LikesStatusDto>(
+        return new RsData<LikesStatusResponse>(
                 "200",
                 "성공적으로 처리되었습니다",
-                likesStatusDto
+                likesService.toggleLikesPin(pinId, reqbody.userId())
         );
 
     }
 
     // 해당 핀을 좋아요 누른 유저 ID 목록 전달
     @GetMapping("{pinId}/likesusers")
-    public RsData<List<PinLikedUserDto>> getUsersWhoLikedPin(
+    public RsData<List<PinLikedUserResponse>> getUsersWhoLikedPin(
             @PathVariable("pinId") Long pinId
     ) {
         return new RsData<>(

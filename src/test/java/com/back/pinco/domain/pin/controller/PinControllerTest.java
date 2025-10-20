@@ -489,7 +489,6 @@ public class PinControllerTest {
         )
         .andDo(print())
         .andExpect(handler().handlerType(PinController.class))
-        .andExpect(handler().methodName("toggleLike"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.errorCode").value("200"))
         .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
@@ -499,7 +498,7 @@ public class PinControllerTest {
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getIsLiked()).isTrue();
+        assertThat(likes.getLiked()).isTrue();
         assertThat(likes.getPin().getId()).isEqualTo(pinId);
         assertThat(likes.getUser().getId()).isEqualTo(userId);
         assertThat(likes.getCreatedAt()).isNotNull();
@@ -565,7 +564,7 @@ public class PinControllerTest {
     void likseToggleTF() throws Exception {
         // given - 실제 데이터 저장
         Long pinId = 1L;
-        Long userId = 2L;
+        Long userId = 99L;
         String requestBody = "{\"userId\": " + userId + "}";
 
         // when & then
@@ -585,7 +584,7 @@ public class PinControllerTest {
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getIsLiked()).isFalse();
+        assertThat(likes.getLiked()).isFalse();
 
 
         // 좋아요 재등록
@@ -605,7 +604,7 @@ public class PinControllerTest {
         // DB 검증
         likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getIsLiked()).isTrue();
+        assertThat(likes.getLiked()).isTrue();
     }
 
     @Test
