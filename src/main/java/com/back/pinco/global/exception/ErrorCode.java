@@ -8,6 +8,7 @@ public enum ErrorCode {
 
     // 공통 0000번대
     SUCCESS(200, HttpStatus.OK, "성공적으로 처리되었습니다."),
+    INVALID_VALUE(400, HttpStatus.BAD_REQUEST, "입력값이 잘못되었습니다."),
 
     // PIN 도메인_1000번대
     INVALID_PIN_INPUT(1001, HttpStatus.BAD_REQUEST, "잘못된 핀 입력값입니다."),

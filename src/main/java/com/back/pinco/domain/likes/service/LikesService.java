@@ -1,9 +1,8 @@
 package com.back.pinco.domain.likes.service;
 
-import com.back.pinco.domain.likes.dto.PinLikedUserResponse;
-import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
-import com.back.pinco.domain.likes.dto.createPinLikesResponse;
-import com.back.pinco.domain.likes.dto.deletePinLikesResponse;
+import com.back.pinco.domain.likes.dto.LikesStatusDto;
+import com.back.pinco.domain.likes.dto.PinLikedUserDto;
+import com.back.pinco.domain.likes.dto.UserLikedPinsDto;
 import com.back.pinco.domain.likes.entity.Likes;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
