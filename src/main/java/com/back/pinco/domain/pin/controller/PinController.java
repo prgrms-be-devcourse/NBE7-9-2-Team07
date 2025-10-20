@@ -8,6 +8,10 @@ import com.back.pinco.domain.pin.dto.CreatePinRequest;
 import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
+import com.back.pinco.domain.tag.entity.PinTag;
+import com.back.pinco.domain.tag.entity.Tag;
+import com.back.pinco.domain.tag.service.PinTagService;
+import com.back.pinco.domain.tag.service.TagService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
@@ -35,6 +39,8 @@ public class PinController {
 
     private final LikesService likesService;
 
+    private final PinTagService pinTagService;
+
     //생성
     @PostMapping
     public RsData<PinDto> createPin(@Valid @RequestBody CreatePinRequest pinReqbody) {
@@ -57,7 +63,10 @@ public class PinController {
         // pin 좋아요 개수 설정
         pin.setLikeCount(likesService.getLikesCount(pinId));
 
+        //태그 가져오기
+        List<Tag> tags = pinTagService.getTagsByPin(pinId);
         PinDto pinDto = new PinDto(pin);
+
 
         return new RsData<>(
                 "200",
@@ -80,7 +89,12 @@ public class PinController {
         List<Pin> pins = pinService.findNearPins(latitude, longitude);
 
         List<PinDto> pinDtos = pins.stream()
-                .map(PinDto::new)
+                .map((pin)->{
+                    pin.setLikeCount(likesService.getLikesCount(pin.getId()));
+                    List<Tag> tags = pinTagService.getTagsByPin(pin.getId());
+
+                    return new PinDto(pin);
+                })
                 .collect(Collectors.toList());
 
         if (pinDtos.isEmpty()) {
@@ -103,7 +117,12 @@ public class PinController {
         List<Pin> pins = pinService.findAll();
 
         List<PinDto> pinDtos = pins.stream()
-                .map(PinDto::new)
+                .map((pin)->{
+                    pin.setLikeCount(likesService.getLikesCount(pin.getId()));
+                    List<Tag> tags = pinTagService.getTagsByPin(pin.getId());
+
+                    return new PinDto(pin);
+                })
                 .toList();
 
         if (pins.isEmpty()) {

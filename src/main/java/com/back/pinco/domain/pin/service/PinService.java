@@ -1,9 +1,13 @@
 package com.back.pinco.domain.pin.service;
 
+import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.CreatePinRequest;
+import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
+import com.back.pinco.domain.tag.entity.Tag;
+import com.back.pinco.domain.tag.service.PinTagService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
@@ -19,6 +23,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PinService {
     private final PinRepository pinRepository;
+    private final LikesService likesService;
+    private final PinTagService pinTagService;
 
     public long count() {
         return pinRepository.count();
@@ -105,5 +111,14 @@ public class PinService {
     public Pin updateLikes(Pin pin, int likecount) {
         pin.setLikeCount(likecount);
         return pinRepository.save(pin);
+    }
+
+    public PinDto getPinDto(Pin pin) {
+        // pin 좋아요 개수 설정
+        pin.setLikeCount(likesService.getLikesCount(pin.getId()));
+
+        //태그 가져오기
+        List<Tag> tags = pinTagService.getTagsByPin(pin.getId());
+        return new PinDto(pin);
     }
 }
