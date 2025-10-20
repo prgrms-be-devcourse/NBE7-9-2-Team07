@@ -161,7 +161,7 @@ public class PinTagService {
 
     // 활성 태그 조회
     private List<Tag> findActiveTagsByPin(Long pinId) {
-        return pinTagRepository.findAllByPin_IdAndIsDeletedFalse(pinId)
+        return pinTagRepository.findAllByPin_IdAndDeletedFalse(pinId)
                 .stream()
                 .map(PinTag::getTag)
                 .toList();
