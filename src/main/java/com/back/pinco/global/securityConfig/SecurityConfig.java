@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 회원 관련 API는 인증 없이 허용
                         .requestMatchers(HttpMethod.POST, "/api/user/join", "/api/user/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/user/check/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/getInfo/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/user/edit/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/user/delete/**").permitAll()
                         // 나머지는 인증 필요
