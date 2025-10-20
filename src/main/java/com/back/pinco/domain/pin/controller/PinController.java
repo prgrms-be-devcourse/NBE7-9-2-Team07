@@ -1,7 +1,6 @@
 package com.back.pinco.domain.pin.controller;
 
-import com.back.pinco.domain.likes.dto.LikesStatusResponse;
-import com.back.pinco.domain.likes.dto.PinLikedUserResponse;
+import com.back.pinco.domain.likes.dto.*;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
@@ -187,23 +186,31 @@ public class PinController {
     }
 
 
-    // 좋아요 토글
-    public record postLikesStatusReqbody(
-            @NotNull
-            Long userId
-    ) {
-    }
-    @PutMapping("/{pinId}/likes")
-    public RsData<LikesStatusResponse> togglePinLike(
+    // 좋아요 등록
+    @PostMapping("/{pinId}/likes")
+    public RsData<createPinLikesResponse> createPinLikes(
             @PathVariable("pinId") Long pinId,
-            @Valid @RequestBody postLikesStatusReqbody reqbody
+            @Valid @RequestBody createPinLikesRequest reqbody
     ) {
-        return new RsData<LikesStatusResponse>(
+        return new RsData<createPinLikesResponse>(
                 "200",
-                "성공적으로 처리되었습니다",
-                likesService.toggleLikesPin(pinId, reqbody.userId())
+                "",
+                likesService.createPinLikes(pinId, reqbody.userId())
         );
 
+    }
+
+    // 좋아요 삭제
+    @DeleteMapping("/{pinId}/likes")
+    public RsData<deletePinLikesResponse> deletePinLikes(
+            @PathVariable("pinId") Long pinId,
+            @Valid @RequestBody deletePinLikesRequest reqbody
+    ) {
+        return new RsData<deletePinLikesResponse>(
+                "200",
+                "",
+                likesService.deletePinLikes(pinId, reqbody.userId())
+        );
     }
 
     // 해당 핀을 좋아요 누른 유저 ID 목록 전달

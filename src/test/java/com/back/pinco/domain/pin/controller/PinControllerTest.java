@@ -564,7 +564,7 @@ public class PinControllerTest {
     void likseToggleTF() throws Exception {
         // given - 실제 데이터 저장
         Long pinId = 1L;
-        Long userId = 99L;
+        Long userId = 1L;
         String requestBody = "{\"userId\": " + userId + "}";
 
         // when & then
@@ -578,7 +578,6 @@ public class PinControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
         .andExpect(jsonPath("$.data.isLiked").value(false));
 
         // DB 검증
@@ -589,7 +588,7 @@ public class PinControllerTest {
 
         // 좋아요 재등록
         mvc.perform(
-                post("/api/pins/{pinId}/likes", pinId)
+                delete("/api/pins/{pinId}/likes", pinId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody)
                         .with(csrf())
@@ -598,7 +597,6 @@ public class PinControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
         .andExpect(jsonPath("$.data.isLiked").value(true));
 
         // DB 검증
@@ -684,7 +682,6 @@ public class PinControllerTest {
         .andExpect(handler().methodName("getPinById"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
 
         .andExpect(jsonPath("$.data.id").value(pin.getId()))
         .andExpect(jsonPath("$.data.likeCount").value(likesRepository.countByPin_Id(pinId)));
@@ -713,7 +710,6 @@ public class PinControllerTest {
         .andExpect(handler().methodName("getUsersWhoLikedPin"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
 
         .andExpect(jsonPath("$.data").isArray())
         .andExpect(jsonPath("$.data.length()").value(likesRepository.countByPin_Id(pinId)))

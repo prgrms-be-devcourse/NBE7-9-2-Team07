@@ -1,8 +1,9 @@
 package com.back.pinco.domain.likes.service;
 
-import com.back.pinco.domain.likes.dto.LikesStatusResponse;
 import com.back.pinco.domain.likes.dto.PinLikedUserResponse;
 import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
+import com.back.pinco.domain.likes.dto.createPinLikesResponse;
+import com.back.pinco.domain.likes.dto.deletePinLikesResponse;
 import com.back.pinco.domain.likes.entity.Likes;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
@@ -59,7 +60,7 @@ public class LikesService {
      * @param userId 좋아요를 토글할 사용자 ID
      * @return 토글 후의 좋아요 상태와 총 좋아요 수 DTO
      */
-    public LikesStatusResponse toggleLikesPin(Long pinId, Long userId) {
+    public createPinLikesResponse createPinLikes(Long pinId, Long userId) {
 
         Pin pin = pinService.findById(pinId);
         User user = userService.userInform(userId)
@@ -68,11 +69,35 @@ public class LikesService {
         return likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
                 .map(likes -> {
                     likesRepository.save(likes.toggleLike());
-                    return new LikesStatusResponse(likes.getLiked(), getLikesCount(pin.getId()));
+                    return new createPinLikesResponse(likes.getLiked(), getLikesCount(pin.getId()));
                 })
                 .orElseGet(() -> {
                     likesRepository.save(new Likes(user, pin));
-                    return new LikesStatusResponse(true, getLikesCount(pin.getId()));
+                    return new createPinLikesResponse(true, getLikesCount(pin.getId()));
+                });
+    }
+
+    /**
+     * 좋아요 상태 변경
+     *
+     * @param pinId
+     * @param userId
+     * @return 토글 후의 좋아요 상태와 총 좋아요 수 DTO
+     */
+    public deletePinLikesResponse deletePinLikes(Long pinId, Long userId) {
+
+        Pin pin = pinService.findById(pinId);
+        User user = userService.userInform(userId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND));
+
+        return likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
+                .map(likes -> {
+                    likesRepository.save(likes.toggleLike());
+                    return new deletePinLikesResponse(likes.getLiked(), getLikesCount(pin.getId()));
+                })
+                .orElseGet(() -> {
+                    likesRepository.save(new Likes(user, pin));
+                    return new deletePinLikesResponse(true, getLikesCount(pin.getId()));
                 });
     }
 

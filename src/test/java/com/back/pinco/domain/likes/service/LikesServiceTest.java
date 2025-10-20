@@ -42,9 +42,9 @@ public class LikesServiceTest {
         Pin pin2 = pinService.write(user1, new PostPinReqbody(  baseLat - 1, baseLng + 3,"핀2"));
 
         // when
-        likesService.toggleLikesPin(pin1.getId(), user1.getId());
-        likesService.toggleLikesPin(pin2.getId(), user1.getId());
-        likesService.toggleLikesPin(pin1.getId(), user2.getId());
+        likesService.createPinLikes(pin1.getId(), user1.getId());
+        likesService.createPinLikes(pin2.getId(), user1.getId());
+        likesService.createPinLikes(pin1.getId(), user2.getId());
 
 
         // then
