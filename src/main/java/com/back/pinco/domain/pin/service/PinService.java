@@ -1,7 +1,7 @@
 package com.back.pinco.domain.pin.service;
 
-import com.back.pinco.domain.pin.dto.PostPinReqbody;
-import com.back.pinco.domain.pin.dto.PutPinReqbody;
+import com.back.pinco.domain.pin.dto.CreatePinRequest;
+import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.user.entity.User;
@@ -25,7 +25,7 @@ public class PinService {
     }
 
 
-    public Pin write(User actor, PostPinReqbody pinReqbody) {
+    public Pin write(User actor, CreatePinRequest pinReqbody) {
         try {
             Point point = GeometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
             Pin pin = new Pin(point, actor, pinReqbody.content());
@@ -61,11 +61,11 @@ public class PinService {
     }
 
     @Transactional
-    public Pin update(User actor, Long pinId, PutPinReqbody putPinReqbody) {
+    public Pin update(User actor, Long pinId, UpdatePinContentRequest updatePinContentRequest) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        //근데 이제 인증 들어가긴 해야함
+        //
         try {
-            pin.update(putPinReqbody);
+            pin.update(updatePinContentRequest);
         }catch(Exception e){
             throw new ServiceException(ErrorCode.PIN_UPDATE_FAILED);
         }

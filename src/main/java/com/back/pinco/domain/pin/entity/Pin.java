@@ -1,6 +1,6 @@
 package com.back.pinco.domain.pin.entity;
 
-import com.back.pinco.domain.pin.dto.PutPinReqbody;
+import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.geometry.GeometryUtil;
@@ -74,8 +74,8 @@ public class Pin extends BaseEntity{
         this.isPublic = !this.isPublic;
     }
 
-    public void update(PutPinReqbody putPinReqbody) {
-        this.content=putPinReqbody.content();
+    public void update(UpdatePinContentRequest updatePinContentRequest) {
+        this.content= updatePinContentRequest.content();
         //추가로 수정 할 수 있는 필드가 있다면 여기 추가
     }
 
