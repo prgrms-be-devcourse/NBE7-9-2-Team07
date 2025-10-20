@@ -1,7 +1,6 @@
 package com.back.pinco.domain.bookmark.controller;
 
 import com.back.pinco.domain.bookmark.dto.BookmarkDto;
-import com.back.pinco.domain.bookmark.dto.createBookmarkRequest;
 import com.back.pinco.domain.bookmark.service.BookmarkService;
 import com.back.pinco.global.rsData.RsData;
 import lombok.RequiredArgsConstructor;
@@ -15,18 +14,6 @@ import java.util.List;
 public class BookmarkController {
     private final BookmarkService bookmarkService;
 
-    // 북마크 생성 API
-    @PostMapping
-    public RsData<BookmarkDto> createBookmark(
-            @RequestBody createBookmarkRequest requestDto
-    ) {
-        BookmarkDto bookmarkDto = bookmarkService.addBookmark(requestDto.userId(), requestDto.pinId());
-        return new RsData<>(
-                "200",
-                "성공적으로 처리되었습니다.",
-                bookmarkDto
-        );
-    }
 
     // 나의 북마크 목록 조회
     @GetMapping

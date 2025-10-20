@@ -5,7 +5,7 @@ package com.back.pinco.domain.bookmark.dto;
  * @param userId 사용자 ID
  * @param pinId 핀 ID
  */
-public record BookmarkRequestDto(
+public record addBookmarkRequest(
         Long userId,
         Long pinId
 ) {}
