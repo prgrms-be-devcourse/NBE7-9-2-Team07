@@ -1,4 +1,4 @@
-package com.back.pinco.domain.user.controller;
+ackage com.back.pinco.domain.user.controller;
 
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;

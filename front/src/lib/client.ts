@@ -24,9 +24,15 @@ export async function fetchApi<T>(url: string, options?: RequestInit): Promise<T
   }
 
   // ✅ HTTP 상태 코드 확인 (ex. 404, 500 등)
-  if (!res.ok) {
-    throw new Error(rsData?.msg || "API 요청 실패");
+if (!res.ok) {
+  // ✅ 409(중복), 404(데이터 없음) 등은 비즈니스 로직 오류로 간주
+  if (res.status === 409 || res.status === 404) {
+    console.warn(`[Business Warning ${res.status}] ${rsData?.msg}`);
+    return rsData as unknown as T;
   }
+  throw new Error(rsData?.msg || "API 요청 실패");
+}
+
 
   // ✅ 백엔드의 resultCode / errorCode 대응
   const code = rsData.resultCode || rsData.errorCode;

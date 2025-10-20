@@ -1,5 +1,8 @@
 package com.back.pinco.domain.pin.controller;
 
+import com.back.pinco.domain.likes.dto.LikesStatusDto;
+import com.back.pinco.domain.likes.dto.PinLikedUserDto;
+import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
 import com.back.pinco.domain.pin.dto.PutPinReqbody;
@@ -7,17 +10,23 @@ import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
+import com.back.pinco.global.exception.ErrorCode;
+import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rsData.RsData;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-import java.awt.*;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -30,9 +39,29 @@ public class PinController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private LikesService likesService;
+
+    //검증 예외처리 핸들러
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<RsData<Void>> handlePinValidationException(MethodArgumentNotValidException e) {
+        FieldError firstError = e.getBindingResult().getFieldError();
+
+        ErrorCode errorCode = ErrorCode.INVALID_PIN_CONTENT;
+        if(firstError.getField().equals("latitude")) {errorCode = ErrorCode.INVALID_PIN_LATITUDE;}
+        else if(firstError.getField().equals("longitude")) {errorCode = ErrorCode.INVALID_PIN_LONGITUDE;}
+
+        return ResponseEntity
+                .status(errorCode.getStatus()) // HTTP 400 Bad Request
+                .body(new RsData<>(
+                        String.valueOf(errorCode.getCode()),
+                        errorCode.getMessage()
+                ));
+    }
+
     //생성
     @PostMapping
-    public RsData<PinDto> createPin(@RequestBody PostPinReqbody pinReqbody) {
+    public RsData<PinDto> createPin(@Valid @RequestBody PostPinReqbody pinReqbody) {
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
         User actor = userService.findByEmail("user1@example.com").get();
         Pin pin = pinService.write(actor, pinReqbody);
@@ -48,7 +77,9 @@ public class PinController {
     //id로 조회
     @GetMapping("/{pinId}")
     public RsData<PinDto> getPinById(@PathVariable("pinId") Long pinId){
-        Pin pin = pinService.findById(pinId).get();
+        Pin pin = pinService.findById(pinId);
+        // pin 좋아요 개수 설정
+        pin.setLikeCount(likesService.getLikesCount(pinId));
 
         PinDto pinDto = new PinDto(pin);
 
@@ -118,10 +149,10 @@ public class PinController {
     @PutMapping(("/{pinId}"))
     public RsData<PinDto> updatePinContent(
             @PathVariable("pinId") Long pinId,
-            @RequestBody PutPinReqbody putPinReqbody
+            @Valid @RequestBody PutPinReqbody putPinReqbody
             ){
-        //User actor = rq.getActor(); jwt 구현 후 변경 예정. 일단 null 넣음
-        User actor = null;
+        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
+        User actor = userService.findByEmail("user1@example.com").get();
         Pin pin = pinService.update(actor, pinId, putPinReqbody);
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
@@ -132,13 +163,12 @@ public class PinController {
     }
     //공개 여부 갱신
     @PutMapping(("/{pinId}/public"))
-    public RsData<PinDto> chagePinPublic(
-            @PathVariable("pinId") Long pinId,
-            @RequestBody PutPinReqbody putPinReqbody
+    public RsData<PinDto> changePinPublic(
+            @PathVariable("pinId") Long pinId
     ){
-        //User actor = rq.getActor(); jwt 구현 후 변경 예정. 일단 null 넣음
-        User actor = null;
-        Pin pin = pinService.changePublic(actor, pinId, putPinReqbody);
+        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
+        User actor = userService.findByEmail("user1@example.com").get();
+        Pin pin = pinService.changePublic(actor, pinId);
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
                 "200",
@@ -158,5 +188,45 @@ public class PinController {
     }
 
 
+    // 좋아요 토글
+    public record postLikesStatusReqbody(
+            @NotNull
+            Long userId
+    ) {
+    }
+    @PostMapping("/{pinId}/likes")
+    public RsData<LikesStatusDto> toggleLike(
+            @PathVariable("pinId") Long pinId,
+            @Valid @RequestBody postLikesStatusReqbody reqbody
+    ) {
+        Pin pin = pinService.findById(pinId);
+        User user = userService.userInform(reqbody.userId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND));
+
+        // 좋아요 토글 처리
+        LikesStatusDto likesStatusDto = likesService.toggleLike(pin, user);
+
+        // 핀 객체에 좋아요 수 업데이트
+        pinService.updateLikes(pin, likesStatusDto.likeCount());
+
+        return new RsData<LikesStatusDto>(
+                "200",
+                "성공적으로 처리되었습니다",
+                likesStatusDto
+        );
+
+    }
+
+    // 해당 핀을 좋아요 누른 유저 ID 목록 전달
+    @GetMapping("{pinId}/likesusers")
+    public RsData<List<PinLikedUserDto>> getUsersWhoLikedPin(
+            @PathVariable("pinId") Long pinId
+    ) {
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다",
+                likesService.getUsersWhoLikedPin(pinId)
+        );
+    }
 
 }

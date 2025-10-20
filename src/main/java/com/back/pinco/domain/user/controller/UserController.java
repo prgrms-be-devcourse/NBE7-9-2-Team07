@@ -1,5 +1,8 @@
 package com.back.pinco.domain.user.controller;
 
+import com.back.pinco.domain.likes.dto.UserLikedPinsDto;
+import com.back.pinco.domain.likes.service.LikesService;
+import java.util.List;
 import com.back.pinco.domain.user.dto.UserDto;
 import com.back.pinco.domain.user.dto.UserReqBody.DeleteRequest;
 import com.back.pinco.domain.user.dto.UserReqBody.EditRequest;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final LikesService likesService;
 
     @PostMapping("/join")
     public RsData<JoinResponse> join(
@@ -83,6 +87,17 @@ public class UserController {
         return new RsData<>(
                 "200",
                 "회원 탈퇴가 완료되었습니다."
+        );
+    }
+
+    @GetMapping("/{userId}/likespins")
+    public RsData<List<UserLikedPinsDto>> getPinsLikedByUser(
+            @PathVariable("userId") Long userId
+    ) {
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다",
+                likesService.getPinsLikedByUser(userId)
         );
     }
 }

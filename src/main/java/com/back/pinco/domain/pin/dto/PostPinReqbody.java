@@ -21,6 +21,6 @@ public record PostPinReqbody(
         Double longitude,
         @NotBlank
         String content
-        //List<Tag> tags 태그 부분 완성 후 요청 받고->태그 서비스단에 넘겨서->최종 태그 받아서 -> 수정 및 생성하면 될듯
+
 ){
 }

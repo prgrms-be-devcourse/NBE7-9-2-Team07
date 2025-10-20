@@ -1,54 +1,110 @@
 package com.back.pinco.domain.likes.service;
 
-import com.back.pinco.global.geometry.GeometryUtil;
+import com.back.pinco.domain.likes.dto.LikesStatusDto;
+import com.back.pinco.domain.likes.dto.PinLikedUserDto;
+import com.back.pinco.domain.likes.dto.UserLikedPinsDto;
+import com.back.pinco.domain.likes.entity.Likes;
+import com.back.pinco.domain.likes.repository.LikesRepository;
+import com.back.pinco.domain.pin.entity.Pin;
+import com.back.pinco.domain.pin.service.PinService;
+import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.domain.user.service.UserService;
+import com.back.pinco.global.exception.ErrorCode;
+import com.back.pinco.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class LikesService {
 
-    private final GeometryUtil geometryUtil;
+    private final PinService pinService;
+    private final UserService userService;
+    private final LikesRepository likesRepository;
 
 
-    // 해당 pin의 좋아요 개수 전달
+    /**
+     * 특정 핀에 대한 좋아요 수 조회
+     *
+     * @param pinId 핀 ID
+     * @return 좋아요 수
+     */
     public int getLikesCount(Long pinId) {
-        // 전달 받은 ID를 key로 사용하여 개수 조회
-        return 2;
+        if (!likesRepository.existsByPin_Id(pinId)) {
+            return 0;
+        }
+
+        return (int) likesRepository.countByPin_Id(pinId);
     }
 
 
-    // 좋아요 여부 확인
-    private boolean isLikedByUser(Long pinId, Long userId) {
-        return true;
-    }
-
-    // 좋아요 상태 전달 DTO
-    record LikesStatusDto(
-            boolean isLiked,    // 사용자의 좋아요 여부
-            int likeCount       // 해당 포스트의 총 좋아요 개수
-    ) {};
-
-    // 좋아요 토글
-    public LikesStatusDto toggleLike(Long pinId, Long userId) {
-        // 좋아요 등록 로직 구현
-
-        return new LikesStatusDto(true,4);
+    /**
+     * 특정 (핀, 사용자)에 대한 좋아요 존재 여부 확인
+     *
+     * @param pinId  핀 ID
+     * @param userId 사용자 ID
+     * @return 존재하면 true, 없으면 false
+     */
+    private boolean existByLikes(Long pinId, Long userId) {
+        return likesRepository.existsByPin_IdAndUser_Id(pinId, userId);
     }
 
 
-    // 해당 핀에 좋아요 누른 유저 ID 목록 전달
-    public Optional<List<Long>> getUsersWhoLikedPin(Long pinId) {
-        return Optional.of (List.of(80L, 81L, 82L));
+    /**
+     * 특정 핀에 대해 사용자의 좋아요 상태를 토글
+     * 좋아요 없으면 생성, 있으면 상태 변경
+     *
+     * @param pin  좋아요를 토글할 핀 엔티티
+     * @param user 좋아요를 토글할 사용자 엔티티
+     * @return 토글 후의 좋아요 상태와 총 좋아요 수 DTO
+     */
+    public LikesStatusDto toggleLike(Pin pin, User user) {
+        if (!existByLikes(pin.getId(), user.getId())) {
+            likesRepository.save(new Likes(user, pin));
+            return new LikesStatusDto(true, 1);
+        }
+
+        Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId()).get();
+        likes.toggleLike();
+        likesRepository.save(likes);
+
+        return new LikesStatusDto(likes.getLiked(), getLikesCount(pin.getId()));
     }
 
 
-    // 해당 유저가 좋아요 누른 핀 ID 목록 전달
-    public Optional<List<Long>> getPinsLikedByUser(Long userId) {
-        return Optional.of(List.of(90L, 91L, 92L));
+    /**
+     * 해당 핀을 좋아요 누른 유저 ID 목록 전달
+     *
+     * @param pinId 핀 ID
+     * @return 유저 ID 목록
+     */
+    public List<PinLikedUserDto> getUsersWhoLikedPin(Long pinId) {
+        if (!pinService.checkId(pinId)) {
+            throw new ServiceException(ErrorCode.LIKES_PIN_NOT_FOUND);
+        }
+        return likesRepository.findUsersByPinId(pinId)
+                .stream()
+//                .distinct() // 구조상 중복될 일이 없는데 사용하는 편이 좋은가?
+                .map(PinLikedUserDto::formEntry)
+                .toList();
+    }
+
+    /**
+     * 특정 사용자가 좋아요 누른 핀 목록 전달
+     *
+     * @param userId 사용자 ID
+     * @return 핀 목록
+     */
+    public List<UserLikedPinsDto> getPinsLikedByUser(Long userId) {
+        // userId로 사용자 확인
+//        if (!userService.checkExist(userId)) throw new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND);
+        return likesRepository.findPinsByUserId(userId)
+                .stream()
+//                .distinct()
+                .map(UserLikedPinsDto::formEntry)
+                .toList();
     }
 
 }
