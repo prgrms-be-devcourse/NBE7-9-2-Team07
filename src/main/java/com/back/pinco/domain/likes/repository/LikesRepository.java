@@ -14,64 +14,26 @@ import java.util.Optional;
 @Repository
 public interface LikesRepository extends JpaRepository<Likes, Long> {
 
-    /**
-     * 특정 (핀, 사용자)에 대한 레코드 존재 여부 확인
-     *
-     * @param pinId  핀 ID
-     * @param userId 사용자 ID
-     * @return 존재하면 true, 없으면 false
-     */
-    boolean existsByPin_IdAndUser_Id(Long pinId, Long userId);
-
-    /**
-     * 특정 핀에 대해 특정 사용자의 좋아요 엔티티 조회
-     *
-     * @param pinId  핀 ID
-     * @param userId 사용자 ID
-     * @return 좋아요 엔티티가 존재하면 Optional에 담아 반환, 없으면 빈 Optional 반환
-     */
+    /** 특정 핀에 대해 특정 사용자의 좋아요 엔티티 조회 */
     @Query("SELECT l FROM Likes l WHERE l.pin.id = :pinId AND l.user.id = :userId")
     Optional<Likes> findByPinIdAndUserId(@Param("pinId") Long pinId, @Param("userId") Long userId);
 
-    /**
-     * 특정 핀에 대한 좋아요 수 조회
-     *
-     * @param pinId 핀 ID
-     * @return 좋아요 수
-     */
-    long countByPin_Id(Long pinId);
+    /** 특정 핀에 대한 좋아요 수 조회(liked = true) */
+    long countByPin_IdAndLikedTrue(Long pinId);
 
-    /**
-     * 특정 사용자가 누른 좋아요 수 조회
-     *
-     * @param userId 사용자 ID
-     * @return 좋아요 누른 핀 수
-     */
-    long countByUser_id(Long userId);
+    /** 특정 사용자가 누른 좋아요 수 조회(liked = true) */
+    long countByUser_idAndLikedTrue(Long userId);
 
-    /**
-     * 특정 핀에 대한 좋아요 존재 여부 확인
-     *
-     * @param pinId
-     * @return boolean
-     */
-    boolean existsByPin_Id(Long pinId);
 
-    /**
-     * 특정 핀에 좋아요를 누른 모든 사용자 조회
-     *
-     * @param pinId 핀 ID
-     * @return 사용자들 정보
-     */
-    @Query("SELECT DISTINCT l.user FROM Likes l WHERE l.pin.id = :pinId")
-    List<User> findUsersByPinId(@Param("pinId") Long pinId);
+    /** 특정 핀에 좋아요를 누른 모든 사용자 조회(liked = true) */
+    @Query("SELECT DISTINCT l.user FROM Likes l WHERE l.pin.id = :pinId AND l.liked = true")
+    List<User> findUsersByPinIdAndLikedTrue(@Param("pinId") Long pinId);
 
-    /**
-     * 특정 사용자가 좋아요한 모든 핀 엔티티 조회
+    /** 특정 사용자가 좋아요한 모든 핀 엔티티 조회
      *
      * @param userId 사용자 ID
      * @return 핀들 정보
      */
-    @Query("SELECT DISTINCT l.pin FROM Likes l WHERE l.user.id = :userId")
-    List<Pin> findPinsByUserId(@Param("userId") Long userId);
+    @Query("SELECT DISTINCT l.pin FROM Likes l WHERE l.user.id = :userId AND l.liked = true")
+    List<Pin> findPinsByUserIdAndLikedTrue(@Param("userId") Long userId);
 }

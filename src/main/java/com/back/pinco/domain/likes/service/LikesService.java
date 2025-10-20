@@ -1,8 +1,9 @@
 package com.back.pinco.domain.likes.service;
 
-import com.back.pinco.domain.likes.dto.LikesStatusDto;
-import com.back.pinco.domain.likes.dto.PinLikedUserDto;
-import com.back.pinco.domain.likes.dto.UserLikedPinsDto;
+import com.back.pinco.domain.likes.dto.PinLikedUserResponse;
+import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
+import com.back.pinco.domain.likes.dto.createPinLikesResponse;
+import com.back.pinco.domain.likes.dto.deletePinLikesResponse;
 import com.back.pinco.domain.likes.entity.Likes;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
@@ -25,85 +26,57 @@ public class LikesService {
     private final LikesRepository likesRepository;
 
 
-    /**
-     * 특정 핀에 대한 좋아요 수 조회
-     *
-     * @param pinId 핀 ID
-     * @return 좋아요 수
-     */
+    /** 특정 핀에 대한 좋아요 수 조회 */
     public int getLikesCount(Long pinId) {
-        if (!likesRepository.existsByPin_Id(pinId)) {
-            return 0;
+        return (int) likesRepository.countByPin_IdAndLikedTrue(pinId);
+    }
+
+
+    /** 좋아요 있으면 상태변경, 없으면 신규 생성 */
+    private Likes teoggleLike(Long pinId, Long userId) {
+        Pin pin = pinService.findById(pinId);
+        User user = userService.userInform(userId);
+
+        // 받아온 객체에서 꺼내써야하는지, 그냥 전달 받은 값으로 사용해도 되는지?
+        Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
+                .map(Likes::toggleLike)
+                .orElse(new Likes(user, pin));
+
+        try {
+            return likesRepository.save(likes);
+        } catch (Exception e){  // TODO : DataAccessException?
+            throw new ServiceException(ErrorCode.LIKES_CHANGE_FAILED);
         }
+    }
 
-        return (int) likesRepository.countByPin_Id(pinId);
+    public createPinLikesResponse createPinLikes(Long pinId, Long userId) {
+        Likes rt_like = teoggleLike(pinId, userId);
+        return new createPinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
+    }
+
+    public deletePinLikesResponse togglePinLikes(Long pinId, Long userId) {
+        Likes rt_like = teoggleLike(pinId, userId);
+        return new deletePinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
     }
 
 
-    /**
-     * 특정 (핀, 사용자)에 대한 좋아요 존재 여부 확인
-     *
-     * @param pinId  핀 ID
-     * @param userId 사용자 ID
-     * @return 존재하면 true, 없으면 false
-     */
-    private boolean existByLikes(Long pinId, Long userId) {
-        return likesRepository.existsByPin_IdAndUser_Id(pinId, userId);
-    }
-
-
-    /**
-     * 특정 핀에 대해 사용자의 좋아요 상태를 토글
-     * 좋아요 없으면 생성, 있으면 상태 변경
-     *
-     * @param pin  좋아요를 토글할 핀 엔티티
-     * @param user 좋아요를 토글할 사용자 엔티티
-     * @return 토글 후의 좋아요 상태와 총 좋아요 수 DTO
-     */
-    public LikesStatusDto toggleLike(Pin pin, User user) {
-        if (!existByLikes(pin.getId(), user.getId())) {
-            likesRepository.save(new Likes(user, pin));
-            return new LikesStatusDto(true, 1);
-        }
-
-        Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId()).get();
-        likes.toggleLike();
-        likesRepository.save(likes);
-
-        return new LikesStatusDto(likes.getLiked(), getLikesCount(pin.getId()));
-    }
-
-
-    /**
-     * 해당 핀을 좋아요 누른 유저 ID 목록 전달
-     *
-     * @param pinId 핀 ID
-     * @return 유저 ID 목록
-     */
-    public List<PinLikedUserDto> getUsersWhoLikedPin(Long pinId) {
+    /** 해당 핀을 좋아요 누른 유저 ID 목록 전달 */
+    public List<PinLikedUserResponse> getUsersWhoLikedPin(Long pinId) {
         if (!pinService.checkId(pinId)) {
             throw new ServiceException(ErrorCode.LIKES_PIN_NOT_FOUND);
         }
-        return likesRepository.findUsersByPinId(pinId)
+        return likesRepository.findUsersByPinIdAndLikedTrue(pinId)
                 .stream()
-//                .distinct() // 구조상 중복될 일이 없는데 사용하는 편이 좋은가?
-                .map(PinLikedUserDto::formEntry)
+                .map(PinLikedUserResponse::formEntry)
                 .toList();
     }
 
-    /**
-     * 특정 사용자가 좋아요 누른 핀 목록 전달
-     *
-     * @param userId 사용자 ID
-     * @return 핀 목록
-     */
-    public List<UserLikedPinsDto> getPinsLikedByUser(Long userId) {
-        // userId로 사용자 확인
-//        if (!userService.checkExist(userId)) throw new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND);
-        return likesRepository.findPinsByUserId(userId)
+    /** 특정 사용자가 좋아요 누른 핀 목록 전달 */
+    public List<PinsLikedByUserResponse> getPinsLikedByUser(Long userId) {
+        userService.existsUserId(userId);
+        return likesRepository.findPinsByUserIdAndLikedTrue(userId)
                 .stream()
-//                .distinct()
-                .map(UserLikedPinsDto::formEntry)
+                .map(PinsLikedByUserResponse::formEntry)
                 .toList();
     }
 
