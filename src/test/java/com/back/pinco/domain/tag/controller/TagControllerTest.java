@@ -68,7 +68,7 @@ class TagControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errorCode").value("200"))
                 .andExpect(jsonPath("$.msg").value("태그 목록 조회 성공"))
-                .andExpect(jsonPath("$.data", hasSize(2)));
+                .andExpect(jsonPath("$.data.tags", hasSize(2)));
     }
 
     // t2: 태그 생성 - 성공
@@ -82,7 +82,7 @@ class TagControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errorCode").value("200"))
                 .andExpect(jsonPath("$.msg").value("새로운 태그가 생성되었습니다."))
-                .andExpect(jsonPath("$.data.keyword").value("야경"));
+                .andExpect(jsonPath("$.data.tag.keyword").value("야경"));
     }
 
     // t3: 태그 생성 - 중복 예외
@@ -254,8 +254,8 @@ class TagControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errorCode").value("200"))
                 .andExpect(jsonPath("$.msg").value("태그 필터링 기반 게시물 목록 조회 성공"))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data[0].id").value(pin1.getId()));
+                .andExpect(jsonPath("$.data.pins").isArray())
+                .andExpect(jsonPath("$.data.pins[0].pin.id").value(pin1.getId()));
     }
 
     // t12: 여러 태그 기반 핀 교집합 조회 - 존재하지 않는 태그 요청 시
