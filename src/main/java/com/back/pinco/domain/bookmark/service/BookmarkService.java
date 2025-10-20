@@ -39,7 +39,7 @@ public class BookmarkService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
         Pin pin = pinService.findById(pinId);
 
-        Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndPinAndIsDeletedFalse(user, pin);
+        Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndPinAndDeletedFalse(user, pin);
         if (existingBookmark.isPresent()) {
             throw new ServiceException(ErrorCode.BOOKMARK_ALREADY_EXISTS);
         }
@@ -64,7 +64,7 @@ public class BookmarkService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
 
         // 삭제되지 않은 북마크 목록만 조회
-        List<Bookmark> bookmarks = bookmarkRepository.findByUserAndIsDeletedFalse(user);
+        List<Bookmark> bookmarks = bookmarkRepository.findByUserAndDeletedFalse(user);
 
         return bookmarks.stream()
                 .map(BookmarkDto::new)
