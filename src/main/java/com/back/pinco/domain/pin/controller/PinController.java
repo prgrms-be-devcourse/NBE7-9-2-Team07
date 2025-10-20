@@ -2,11 +2,13 @@ package com.back.pinco.domain.pin.controller;
 
 import com.back.pinco.domain.likes.dto.*;
 import com.back.pinco.domain.likes.service.LikesService;
+import com.back.pinco.domain.pin.dto.CreatePinRequest;
 import com.back.pinco.domain.pin.dto.PinDto;
-import com.back.pinco.domain.pin.dto.PostPinReqbody;
-import com.back.pinco.domain.pin.dto.PutPinReqbody;
+import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
+import com.back.pinco.domain.tag.entity.Tag;
+import com.back.pinco.domain.tag.service.PinTagService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
@@ -57,9 +59,11 @@ public class PinController {
                 ));
     }
 
+    private final PinTagService pinTagService;
+
     //생성
     @PostMapping
-    public RsData<PinDto> createPin(@Valid @RequestBody PostPinReqbody pinReqbody) {
+    public RsData<PinDto> createPin(@Valid @RequestBody CreatePinRequest pinReqbody) {
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
         User actor = userService.findByEmail("user1@example.com");
         Pin pin = pinService.write(actor, pinReqbody);
@@ -78,8 +82,10 @@ public class PinController {
         Pin pin = pinService.findById(pinId);
         // pin 좋아요 개수 설정
         pin.setLikeCount(likesService.getLikesCount(pinId));
+        List<Tag> pinTags= pinTagService.getTagsByPin(pin.getId());
 
         PinDto pinDto = new PinDto(pin);
+
 
         return new RsData<>(
                 "200",
@@ -102,7 +108,10 @@ public class PinController {
         List<Pin> pins = pinService.findNearPins(latitude, longitude);
 
         List<PinDto> pinDtos = pins.stream()
-                .map(PinDto::new)
+                .map((pin)->{
+                    pin.setLikeCount(likesService.getLikesCount(pin.getId()));
+                    return new PinDto(pin);
+                })
                 .collect(Collectors.toList());
 
         if (pinDtos.isEmpty()) {
@@ -125,7 +134,10 @@ public class PinController {
         List<Pin> pins = pinService.findAll();
 
         List<PinDto> pinDtos = pins.stream()
-                .map(PinDto::new)
+                .map((pin)->{
+                    pin.setLikeCount(likesService.getLikesCount(pin.getId()));
+                    return new PinDto(pin);
+                })
                 .toList();
 
         if (pins.isEmpty()) {
@@ -147,7 +159,7 @@ public class PinController {
     @PutMapping(("/{pinId}"))
     public RsData<PinDto> updatePinContent(
             @PathVariable("pinId") Long pinId,
-            @Valid @RequestBody PutPinReqbody putPinReqbody
+            @Valid @RequestBody UpdatePinContentRequest putPinReqbody
             ){
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
         User actor = userService.findByEmail("user1@example.com");

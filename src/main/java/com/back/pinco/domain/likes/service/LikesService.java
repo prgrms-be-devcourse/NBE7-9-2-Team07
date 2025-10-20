@@ -1,9 +1,8 @@
 package com.back.pinco.domain.likes.service;
 
-import com.back.pinco.domain.likes.dto.PinLikedUserResponse;
-import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
-import com.back.pinco.domain.likes.dto.createPinLikesResponse;
-import com.back.pinco.domain.likes.dto.deletePinLikesResponse;
+import com.back.pinco.domain.likes.dto.LikesStatusDto;
+import com.back.pinco.domain.likes.dto.PinLikedUserDto;
+import com.back.pinco.domain.likes.dto.UserLikedPinsDto;
 import com.back.pinco.domain.likes.entity.Likes;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
@@ -54,49 +53,24 @@ public class LikesService {
 
 
     /**
+     * 특정 핀에 대해 사용자의 좋아요 상태를 토글
      * 좋아요 없으면 생성, 있으면 상태 변경
      *
-     * @param pinId  좋아요를 토글할 핀 ID
-     * @param userId 좋아요를 토글할 사용자 ID
+     * @param pin  좋아요를 토글할 핀 엔티티
+     * @param user 좋아요를 토글할 사용자 엔티티
      * @return 토글 후의 좋아요 상태와 총 좋아요 수 DTO
      */
-    public createPinLikesResponse createPinLikes(Long pinId, Long userId) {
+    public LikesStatusDto toggleLike(Pin pin, User user) {
+        if (!existByLikes(pin.getId(), user.getId())) {
+            likesRepository.save(new Likes(user, pin));
+            return new LikesStatusDto(true, 1);
+        }
 
-        Pin pin = pinService.findById(pinId);
-        User user = userService.userInform(userId);
+        Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId()).get();
+        likes.toggleLike();
+        likesRepository.save(likes);
 
-        return likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
-                .map(likes -> {
-                    likesRepository.save(likes.toggleLike());
-                    return new createPinLikesResponse(likes.getLiked(), getLikesCount(pin.getId()));
-                })
-                .orElseGet(() -> {
-                    likesRepository.save(new Likes(user, pin));
-                    return new createPinLikesResponse(true, getLikesCount(pin.getId()));
-                });
-    }
-
-    /**
-     * 좋아요 상태 변경
-     *
-     * @param pinId
-     * @param userId
-     * @return 토글 후의 좋아요 상태와 총 좋아요 수 DTO
-     */
-    public deletePinLikesResponse deletePinLikes(Long pinId, Long userId) {
-
-        Pin pin = pinService.findById(pinId);
-        User user = userService.userInform(userId);
-
-        return likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
-                .map(likes -> {
-                    likesRepository.save(likes.toggleLike());
-                    return new deletePinLikesResponse(likes.getLiked(), getLikesCount(pin.getId()));
-                })
-                .orElseGet(() -> {
-                    likesRepository.save(new Likes(user, pin));
-                    return new deletePinLikesResponse(true, getLikesCount(pin.getId()));
-                });
+        return new LikesStatusDto(likes.getLiked(), getLikesCount(pin.getId()));
     }
 
 
@@ -106,14 +80,14 @@ public class LikesService {
      * @param pinId 핀 ID
      * @return 유저 ID 목록
      */
-    public List<PinLikedUserResponse> getUsersWhoLikedPin(Long pinId) {
+    public List<PinLikedUserDto> getUsersWhoLikedPin(Long pinId) {
         if (!pinService.checkId(pinId)) {
             throw new ServiceException(ErrorCode.LIKES_PIN_NOT_FOUND);
         }
         return likesRepository.findUsersByPinId(pinId)
                 .stream()
 //                .distinct() // 구조상 중복될 일이 없는데 사용하는 편이 좋은가?
-                .map(PinLikedUserResponse::formEntry)
+                .map(PinLikedUserDto::formEntry)
                 .toList();
     }
 
@@ -123,13 +97,13 @@ public class LikesService {
      * @param userId 사용자 ID
      * @return 핀 목록
      */
-    public List<PinsLikedByUserResponse> getPinsLikedByUser(Long userId) {
+    public List<UserLikedPinsDto> getPinsLikedByUser(Long userId) {
         // userId로 사용자 확인
 //        if (!userService.checkExist(userId)) throw new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND);
         return likesRepository.findPinsByUserId(userId)
                 .stream()
 //                .distinct()
-                .map(PinsLikedByUserResponse::formEntry)
+                .map(UserLikedPinsDto::formEntry)
                 .toList();
     }
 

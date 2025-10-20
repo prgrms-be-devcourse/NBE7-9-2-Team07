@@ -1,9 +1,13 @@
 package com.back.pinco.domain.pin.service;
 
-import com.back.pinco.domain.pin.dto.PostPinReqbody;
-import com.back.pinco.domain.pin.dto.PutPinReqbody;
+import com.back.pinco.domain.likes.service.LikesService;
+import com.back.pinco.domain.pin.dto.CreatePinRequest;
+import com.back.pinco.domain.pin.dto.PinDto;
+import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
+import com.back.pinco.domain.tag.entity.Tag;
+import com.back.pinco.domain.tag.service.PinTagService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
@@ -20,20 +24,20 @@ import java.util.List;
 public class PinService {
     private final PinRepository pinRepository;
 
+
     public long count() {
         return pinRepository.count();
     }
 
 
-    public Pin write(User actor, PostPinReqbody pinReqbody) {
+    public Pin write(User actor, CreatePinRequest pinReqbody) {
+        Point point = GeometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
         try {
-            Point point = GeometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
             Pin pin = new Pin(point, actor, pinReqbody.content());
             return pinRepository.save(pin);
         }catch(Exception e){
             throw new ServiceException(ErrorCode.PIN_CREATE_FAILED);
         }
-
     }
 
     public Pin findById(long id) {
@@ -61,11 +65,11 @@ public class PinService {
     }
 
     @Transactional
-    public Pin update(User actor, Long pinId, PutPinReqbody putPinReqbody) {
+    public Pin update(User actor, Long pinId, UpdatePinContentRequest updatePinContentRequest) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        //근데 이제 인증 들어가긴 해야함
+        // TODO: 인증 추가
         try {
-            pin.update(putPinReqbody);
+            pin.update(updatePinContentRequest);
         }catch(Exception e){
             throw new ServiceException(ErrorCode.PIN_UPDATE_FAILED);
         }
@@ -76,7 +80,7 @@ public class PinService {
     @Transactional
     public Pin changePublic(User actor, Long pinId) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        //여기에 이제 인증 들어가긴 해야함
+        // TODO: 인증 추가
         try {
         pin.togglePublic();
         }catch(Exception e){
@@ -87,7 +91,7 @@ public class PinService {
 
     public void deleteById(Long pinId) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        //여기에 이제 인증 들어가긴 해야함
+        // TODO: 인증 추가
         try {
             pin.setDeleted();
         }catch(Exception e){
@@ -107,4 +111,5 @@ public class PinService {
         pin.setLikeCount(likecount);
         return pinRepository.save(pin);
     }
+
 }

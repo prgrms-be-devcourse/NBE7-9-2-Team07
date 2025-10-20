@@ -1,10 +1,11 @@
 package com.back.pinco.domain.pin.entity;
 
-import com.back.pinco.domain.pin.dto.PutPinReqbody;
+import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.geometry.GeometryUtil;
 import com.back.pinco.global.jpa.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,6 +47,7 @@ public class Pin extends BaseEntity{
     private User user;    // 작성자
 
     @OneToMany(mappedBy = "pin", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<PinTag> pinTags = new ArrayList<>();
 
     @Column(name = "like_count", nullable = false)
@@ -74,8 +76,8 @@ public class Pin extends BaseEntity{
         this.isPublic = !this.isPublic;
     }
 
-    public void update(PutPinReqbody putPinReqbody) {
-        this.content=putPinReqbody.content();
+    public void update(UpdatePinContentRequest updatePinContentRequest) {
+        this.content= updatePinContentRequest.content();
         //추가로 수정 할 수 있는 필드가 있다면 여기 추가
     }
 
