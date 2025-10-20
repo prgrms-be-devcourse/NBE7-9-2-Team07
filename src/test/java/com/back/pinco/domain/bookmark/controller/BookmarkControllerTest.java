@@ -77,7 +77,7 @@ class BookmarkControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("200"));
 
         // ✅ DB 검증
-        assertThat(bookmarkRepository.findByUserAndPinAndIsDeletedFalse(user1, pinC)).isPresent();
+        assertThat(bookmarkRepository.findByUserAndPinAndDeletedFalse(user1, pinC)).isPresent();
     }
 
     @Test
@@ -223,7 +223,7 @@ class BookmarkControllerTest {
         Pin pinA = pinRepository.findAll().stream()
                 .filter(p -> "서울 시청 근처 카페 ☕".equals(p.getContent()))
                 .findFirst().orElseThrow();
-        Bookmark bookmark1A = bookmarkRepository.findByUserAndPinAndIsDeletedFalse(user1, pinA).orElseThrow();
+        Bookmark bookmark1A = bookmarkRepository.findByUserAndPinAndDeletedFalse(user1, pinA).orElseThrow();
 
         Long targetUserId = user1.getId();
         Long targetBookmarkId = bookmark1A.getId();
@@ -244,7 +244,7 @@ class BookmarkControllerTest {
 
         // isDeleted가 true인지 확인
         Bookmark deletedBookmark = bookmarkRepository.findById(targetBookmarkId).orElseThrow();
-        assertThat(deletedBookmark.getIsDeleted()).isTrue();
+        assertThat(deletedBookmark.getDeleted()).isTrue();
     }
 
     @Test
@@ -278,7 +278,7 @@ class BookmarkControllerTest {
         Pin pinA = pinRepository.findAll().stream()
                 .filter(p -> "서울 시청 근처 카페 ☕".equals(p.getContent()))
                 .findFirst().orElseThrow();
-        Bookmark bookmark1A = bookmarkRepository.findByUserAndPinAndIsDeletedFalse(user1, pinA).orElseThrow();
+        Bookmark bookmark1A = bookmarkRepository.findByUserAndPinAndDeletedFalse(user1, pinA).orElseThrow();
 
         Long otherUserId = user2.getId(); // user2가 삭제 시도
         Long targetBookmarkId = bookmark1A.getId(); // user1 소유

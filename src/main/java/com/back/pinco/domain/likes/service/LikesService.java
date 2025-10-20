@@ -70,7 +70,7 @@ public class LikesService {
         likes.toggleLike();
         likesRepository.save(likes);
 
-        return new LikesStatusDto(likes.getIsLiked(), getLikesCount(pin.getId()));
+        return new LikesStatusDto(likes.getLiked(), getLikesCount(pin.getId()));
     }
 
 
