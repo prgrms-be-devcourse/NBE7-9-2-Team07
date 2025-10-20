@@ -28,13 +28,13 @@ public class BookmarkService {
     // jwt 적용 시 수정 필요
 
     /**
-     * 북마크 생성
+     * 북마크 추가
      *
      * @param userId 사용자 ID
      * @param pinId 핀 ID
      * @return 생성된 북마크 DTO
      */
-    public BookmarkDto createBookmark(Long userId, Long pinId) {
+    public BookmarkDto addBookmark(Long userId, Long pinId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
         Pin pin = pinService.findById(pinId);
