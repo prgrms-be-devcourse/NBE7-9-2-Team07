@@ -34,6 +34,7 @@ public class BookmarkService {
      * @param pinId 핀 ID
      * @return 생성된 북마크 DTO
      */
+    @Transactional
     public BookmarkDto addBookmark(Long userId, Long pinId) {
         User user = userService.findById(userId);
         Pin pin = pinService.findById(pinId);
@@ -75,6 +76,7 @@ public class BookmarkService {
      * @param userId 사용자 ID
      * @param bookmarkId 북마크 ID
      */
+    @Transactional
     public void deleteBookmark(Long userId, Long bookmarkId) {
         User user = userService.findById(userId);
 
@@ -101,6 +103,7 @@ public class BookmarkService {
      * @param userId 사용자 ID
      * @param bookmarkId 북마크 ID
      */
+    @Transactional
     public void restoreBookmark(Long userId, Long bookmarkId) {
         User user = userService.findById(userId);
 
