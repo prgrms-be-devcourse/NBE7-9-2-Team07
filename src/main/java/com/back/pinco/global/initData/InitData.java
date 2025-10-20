@@ -68,10 +68,21 @@ public class InitData {
         bookmarkService.createBookmark(user2.getId(), pinB.getId());
 
 
-        // 좋아요 등록 (user1이 pin1, pin2 좋아요 / user2가 pin1 좋아요)
-        likesService.createPinLikes(pinA.getId(), user2.getId());
+        // 좋아요 등록
+        // A(2), B(1), C(1), D(0)
         likesService.createPinLikes(pinA.getId(), user1.getId());
+        likesService.createPinLikes(pinA.getId(), user2.getId());
+
         likesService.createPinLikes(pinB.getId(), user1.getId());
+
+        likesService.createPinLikes(pinC.getId(), user1.getId());
+        likesService.createPinLikes(pinC.getId(), user2.getId());
+        likesService.togglePinLikes(pinC.getId(), user1.getId());   // 취소
+
+        likesService.createPinLikes(pinD.getId(), user1.getId());
+        likesService.togglePinLikes(pinD.getId(), user1.getId());
+
+
 
         // 샘플 태그 등록
         Tag t1 = tagService.createTag("카페");

@@ -188,28 +188,28 @@ public class PinController {
 
     // 좋아요 등록
     @PostMapping("/{pinId}/likes")
-    public RsData<createPinLikesResponse> createPinLikes(
+    public RsData<createPinLikesResponse> togglePinLikes(
             @PathVariable("pinId") Long pinId,
             @Valid @RequestBody createPinLikesRequest reqbody
     ) {
         return new RsData<createPinLikesResponse>(
                 "200",
-                "",
+                "성공적으로 처리되었습니다",
                 likesService.createPinLikes(pinId, reqbody.userId())
         );
 
     }
 
-    // 좋아요 삭제
+    // 좋아요 취소
     @DeleteMapping("/{pinId}/likes")
-    public RsData<deletePinLikesResponse> deletePinLikes(
+    public RsData<deletePinLikesResponse> togglePinLikes(
             @PathVariable("pinId") Long pinId,
             @Valid @RequestBody deletePinLikesRequest reqbody
     ) {
         return new RsData<deletePinLikesResponse>(
                 "200",
-                "",
-                likesService.deletePinLikes(pinId, reqbody.userId())
+                "성공적으로 처리되었습니다",
+                likesService.togglePinLikes(pinId, reqbody.userId())
         );
     }
 
