@@ -7,12 +7,12 @@ import com.back.pinco.domain.user.entity.User;
  * @param id 사용자 ID
  * @param userName 사용자명
  */
-public record PinLikedUserDto(
+public record PinLikedUserResponse(
         Long id,
         String userName
 ) {
-    public static PinLikedUserDto formEntry(User user) {
-        return new PinLikedUserDto(
+    public static PinLikedUserResponse formEntry(User user) {
+        return new PinLikedUserResponse(
                 user.getId(),
                 user.getUserName()
         );

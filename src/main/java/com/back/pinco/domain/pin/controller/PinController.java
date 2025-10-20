@@ -1,7 +1,6 @@
 package com.back.pinco.domain.pin.controller;
 
-import com.back.pinco.domain.likes.dto.LikesStatusDto;
-import com.back.pinco.domain.likes.dto.PinLikedUserDto;
+import com.back.pinco.domain.likes.dto.*;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
@@ -11,7 +10,6 @@ import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
-import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rsData.RsData;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -63,7 +61,7 @@ public class PinController {
     @PostMapping
     public RsData<PinDto> createPin(@Valid @RequestBody PostPinReqbody pinReqbody) {
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
-        User actor = userService.findByEmail("user1@example.com").get();
+        User actor = userService.findByEmail("user1@example.com");
         Pin pin = pinService.write(actor, pinReqbody);
         PinDto pinDto= new PinDto(pin);
         return new RsData<>(
@@ -152,7 +150,7 @@ public class PinController {
             @Valid @RequestBody PutPinReqbody putPinReqbody
             ){
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
-        User actor = userService.findByEmail("user1@example.com").get();
+        User actor = userService.findByEmail("user1@example.com");
         Pin pin = pinService.update(actor, pinId, putPinReqbody);
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
@@ -167,7 +165,7 @@ public class PinController {
             @PathVariable("pinId") Long pinId
     ){
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
-        User actor = userService.findByEmail("user1@example.com").get();
+        User actor = userService.findByEmail("user1@example.com");
         Pin pin = pinService.changePublic(actor, pinId);
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
@@ -188,38 +186,36 @@ public class PinController {
     }
 
 
-    // 좋아요 토글
-    public record postLikesStatusReqbody(
-            @NotNull
-            Long userId
-    ) {
-    }
+    // 좋아요 등록
     @PostMapping("/{pinId}/likes")
-    public RsData<LikesStatusDto> toggleLike(
+    public RsData<createPinLikesResponse> createPinLikes(
             @PathVariable("pinId") Long pinId,
-            @Valid @RequestBody postLikesStatusReqbody reqbody
+            @Valid @RequestBody createPinLikesRequest reqbody
     ) {
-        Pin pin = pinService.findById(pinId);
-        User user = userService.userInform(reqbody.userId())
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND));
-
-        // 좋아요 토글 처리
-        LikesStatusDto likesStatusDto = likesService.toggleLike(pin, user);
-
-        // 핀 객체에 좋아요 수 업데이트
-        pinService.updateLikes(pin, likesStatusDto.likeCount());
-
-        return new RsData<LikesStatusDto>(
+        return new RsData<createPinLikesResponse>(
                 "200",
-                "성공적으로 처리되었습니다",
-                likesStatusDto
+                "",
+                likesService.createPinLikes(pinId, reqbody.userId())
         );
 
     }
 
+    // 좋아요 삭제
+    @DeleteMapping("/{pinId}/likes")
+    public RsData<deletePinLikesResponse> deletePinLikes(
+            @PathVariable("pinId") Long pinId,
+            @Valid @RequestBody deletePinLikesRequest reqbody
+    ) {
+        return new RsData<deletePinLikesResponse>(
+                "200",
+                "",
+                likesService.deletePinLikes(pinId, reqbody.userId())
+        );
+    }
+
     // 해당 핀을 좋아요 누른 유저 ID 목록 전달
     @GetMapping("{pinId}/likesusers")
-    public RsData<List<PinLikedUserDto>> getUsersWhoLikedPin(
+    public RsData<List<PinLikedUserResponse>> getUsersWhoLikedPin(
             @PathVariable("pinId") Long pinId
     ) {
         return new RsData<>(

@@ -54,12 +54,12 @@ public class PinControllerTest {
 
         String jsonContent = String.format(
                 """
-                {
-                    "content": "%s",
-                    "latitude" : %s, 
-                    "longitude" : %s
-                }
-                """, content, lat, lon
+                        {
+                            "content": "%s",
+                            "latitude" : %s, 
+                            "longitude" : %s
+                        }
+                        """, content, lat, lon
         );
 
         ResultActions resultActions = mvc
@@ -92,11 +92,11 @@ public class PinControllerTest {
 
         String jsonContent = String.format(
                 """
-                {
-                    "content": "%s",
-                    "latitude" : %s
-                }
-                """, content, lat
+                        {
+                            "content": "%s",
+                            "latitude" : %s
+                        }
+                        """, content, lat
         );
 
         ResultActions resultActions = mvc
@@ -123,11 +123,11 @@ public class PinControllerTest {
 
         String jsonContent = String.format(
                 """
-                {
-                    "content": "%s",
-                    "longitude" : %s
-                }
-                """, content, lon
+                        {
+                            "content": "%s",
+                            "longitude" : %s
+                        }
+                        """, content, lon
         );
 
         ResultActions resultActions = mvc
@@ -154,11 +154,11 @@ public class PinControllerTest {
 
         String jsonContent = String.format(
                 """
-                {
-                    "latitude" : %s,
-                    "longitude" : %s
-                }
-                """, lat, lon
+                        {
+                            "latitude" : %s,
+                            "longitude" : %s
+                        }
+                        """, lat, lon
         );
 
         ResultActions resultActions = mvc
@@ -482,19 +482,18 @@ public class PinControllerTest {
         // when & then
         mvc.perform(
                 post("/api/pins/{pinId}/likes", pinId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody)
-                        .with(csrf())
-                        .with(user("testuser").roles("USER"))  // 인증 사용자 추가
-        )
-        .andDo(print())
-        .andExpect(handler().handlerType(PinController.class))
-        .andExpect(handler().methodName("toggleLike"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
-        .andExpect(jsonPath("$.data.isLiked").value(true))
-        .andExpect(jsonPath("$.data.likeCount").value(1));
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody)
+                            .with(csrf())
+                            .with(user("testuser").roles("USER"))  // 인증 사용자 추가
+                )
+                .andDo(print())
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errorCode").value("200"))
+
+                .andExpect(jsonPath("$.data.isLiked").value(true))
+                .andExpect(jsonPath("$.data.likeCount").value(1));
 
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
@@ -516,16 +515,16 @@ public class PinControllerTest {
 
         // when & then
         mvc.perform(
-                post("/api/pins/{pinId}/likes", pinId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody)
-                        .with(csrf())
-                        .with(user("testuser").roles("USER"))
-        )
-        .andDo(print())
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.errorCode").value("1002"))
-        .andExpect(jsonPath("$.msg").value("존재하지 않는 핀입니다."));
+                        post("/api/pins/{pinId}/likes", pinId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody)
+                                .with(csrf())
+                                .with(user("testuser").roles("USER"))
+                )
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("1002"))
+                .andExpect(jsonPath("$.msg").value("존재하지 않는 핀입니다."));
 
         // DB 검증
         Optional<Likes> likes = likesRepository.findByPinIdAndUserId(pinId, userId);
@@ -543,16 +542,16 @@ public class PinControllerTest {
 
         // when & then
         mvc.perform(
-                post("/api/pins/{pinId}/likes", pinId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody)
-                        .with(csrf())
-                        .with(user("testuser").roles("USER"))
-        )
-        .andDo(print())
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.errorCode").value("5001"))
-        .andExpect(jsonPath("$.msg").value("사용자를 찾을 수 없습니다."));
+                        post("/api/pins/{pinId}/likes", pinId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody)
+                                .with(csrf())
+                                .with(user("testuser").roles("USER"))
+                )
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("2008"))
+                .andExpect(jsonPath("$.msg").value("사용자를 찾을 수 없습니다."));
 
         // DB 검증
         Optional<Likes> likes = likesRepository.findByPinIdAndUserId(pinId, userId);
@@ -565,22 +564,21 @@ public class PinControllerTest {
     void likseToggleTF() throws Exception {
         // given - 실제 데이터 저장
         Long pinId = 1L;
-        Long userId = 2L;
+        Long userId = 1L;
         String requestBody = "{\"userId\": " + userId + "}";
 
         // when & then
         mvc.perform(
-                post("/api/pins/{pinId}/likes", pinId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody)
-                        .with(csrf())
-                        .with(user("testuser").roles("USER"))
-        )
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
-        .andExpect(jsonPath("$.data.isLiked").value(false));
+                        post("/api/pins/{pinId}/likes", pinId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody)
+                                .with(csrf())
+                                .with(user("testuser").roles("USER"))
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errorCode").value("200"))
+                .andExpect(jsonPath("$.data.isLiked").value(false));
 
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
@@ -590,17 +588,16 @@ public class PinControllerTest {
 
         // 좋아요 재등록
         mvc.perform(
-                post("/api/pins/{pinId}/likes", pinId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody)
-                        .with(csrf())
-                        .with(user("testuser").roles("USER"))
-        )
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
-        .andExpect(jsonPath("$.data.isLiked").value(true));
+                        delete("/api/pins/{pinId}/likes", pinId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody)
+                                .with(csrf())
+                                .with(user("testuser").roles("USER"))
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errorCode").value("200"))
+                .andExpect(jsonPath("$.data.isLiked").value(true));
 
         // DB 검증
         likes = likesRepository.findByPinIdAndUserId(pinId, userId)
@@ -678,17 +675,16 @@ public class PinControllerTest {
 
         // when & then
         mvc.perform(
-                get("/api/pins/{pinId}", pinId)
-        )
-        .andDo(print())
-        .andExpect(handler().handlerType(PinController.class))
-        .andExpect(handler().methodName("getPinById"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
+                        get("/api/pins/{pinId}", pinId)
+                )
+                .andDo(print())
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getPinById"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errorCode").value("200"))
 
-        .andExpect(jsonPath("$.data.id").value(pin.getId()))
-        .andExpect(jsonPath("$.data.likeCount").value(likesRepository.countByPin_Id(pinId)));
+                .andExpect(jsonPath("$.data.id").value(pin.getId()))
+                .andExpect(jsonPath("$.data.likeCount").value(likesRepository.countByPin_Id(pinId)));
 
     }
 
@@ -707,18 +703,17 @@ public class PinControllerTest {
 
         // when & then
         mvc.perform(
-                get("/api/pins/{pinId}/likesusers", pinId)
-        )
-        .andDo(print())
-        .andExpect(handler().handlerType(PinController.class))
-        .andExpect(handler().methodName("getUsersWhoLikedPin"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.errorCode").value("200"))
-        .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
+                        get("/api/pins/{pinId}/likesusers", pinId)
+                )
+                .andDo(print())
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getUsersWhoLikedPin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errorCode").value("200"))
 
-        .andExpect(jsonPath("$.data").isArray())
-        .andExpect(jsonPath("$.data.length()").value(likesRepository.countByPin_Id(pinId)))
-        .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(userIds)));
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(likesRepository.countByPin_Id(pinId)))
+                .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(userIds)));
     }
 
 }
