@@ -55,8 +55,9 @@ public class Likes extends BaseEntity {
         this.liked = true;
     }
 
-    public void toggleLike() {
+    public Likes toggleLike() {
         this.liked = !this.liked;
+        return this;
     }
 
 }

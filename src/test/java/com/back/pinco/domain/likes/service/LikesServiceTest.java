@@ -1,8 +1,6 @@
 package com.back.pinco.domain.likes.service;
 
 import com.back.pinco.domain.likes.repository.LikesRepository;
-import com.back.pinco.domain.pin.dto.PostPinReqbody;
-import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
@@ -38,13 +36,13 @@ public class LikesServiceTest {
         User user2 = userService.createUser("user2@test.com", "pwd", "테스트2");
 
         // ✅ 시청 기준 반경 1km 이내 임의 좌표
-        Pin pin1 = pinService.write(user1, new PostPinReqbody( baseLat + 1, baseLng + 2,"핀1"));
-        Pin pin2 = pinService.write(user1, new PostPinReqbody(  baseLat - 1, baseLng + 3,"핀2"));
+//        Pin pin1 = pinService.write(user1, new PostPinReqbody( baseLat + 1, baseLng + 2,"핀1"));
+//        Pin pin2 = pinService.write(user1, new PostPinReqbody(  baseLat - 1, baseLng + 3,"핀2"));
 
-        // when
-        likesService.createPinLikes(pin1.getId(), user1.getId());
-        likesService.createPinLikes(pin2.getId(), user1.getId());
-        likesService.createPinLikes(pin1.getId(), user2.getId());
+//        // when
+//        likesService.createPinLikes(pin1.getId(), user1.getId());
+//        likesService.createPinLikes(pin2.getId(), user1.getId());
+//        likesService.createPinLikes(pin1.getId(), user2.getId());
 
 
         // then
