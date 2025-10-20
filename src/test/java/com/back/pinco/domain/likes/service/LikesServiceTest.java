@@ -3,11 +3,9 @@ package com.back.pinco.domain.likes.service;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.dto.PostPinReqbody;
 import com.back.pinco.domain.pin.entity.Pin;
-import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
-import com.back.pinco.global.geometry.GeometryUtil;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,13 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 public class LikesServiceTest {
 
-    @Autowired private GeometryUtil geometryUtil;
-
     @Autowired private PinService pinService;
     @Autowired private UserService userService;
     @Autowired private LikesService likesService;
 
-    @Autowired private PinRepository pinRepository;
     @Autowired private LikesRepository likesRepository;
 
 
@@ -47,9 +42,9 @@ public class LikesServiceTest {
         Pin pin2 = pinService.write(user1, new PostPinReqbody(  baseLat - 1, baseLng + 3,"핀2"));
 
         // when
-        likesService.toggleLike(pin1, user1);
-        likesService.toggleLike(pin2, user1);
-        likesService.toggleLike(pin1, user2);
+        likesService.createPinLikes(pin1.getId(), user1.getId());
+        likesService.createPinLikes(pin2.getId(), user1.getId());
+        likesService.createPinLikes(pin1.getId(), user2.getId());
 
 
         // then

@@ -8,6 +8,7 @@ public enum ErrorCode {
 
     // 공통 0000번대
     SUCCESS(200, HttpStatus.OK, "성공적으로 처리되었습니다."),
+    INVALID_VALUE(400, HttpStatus.BAD_REQUEST, "입력값이 잘못되었습니다."),
 
     // PIN 도메인_1000번대
     INVALID_PIN_INPUT(1001, HttpStatus.BAD_REQUEST, "잘못된 핀 입력값입니다."),
@@ -22,15 +23,16 @@ public enum ErrorCode {
 
     // User 도메인_2000번대
     INVALID_EMAIL_FORMAT(2001, HttpStatus.BAD_REQUEST, "이메일 형식이 올바르지 않습니다."),
-    WEAK_PASSWORD(2002, HttpStatus.BAD_REQUEST, "비밀번호 정책을 만족하지 않습니다."),
-    EMAIL_ALREADY_EXISTS(2003, HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
-    NICKNAME_ALREADY_EXISTS(2004, HttpStatus.CONFLICT, "이미 존재하는 회원이름입니다."),
-    USER_NOT_FOUND(2005, HttpStatus.NOT_FOUND, "존재하지 않는 이메일입니다."),
-    PASSWORD_NOT_MATCH(2006, HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
-    USER_INFO_NOT_FOUND(2007, HttpStatus.NOT_FOUND, "회원 정보를 찾을 수 없습니다."),
-    CURRENT_PASSWORD_REQUIRED(2008, HttpStatus.BAD_REQUEST, "현재 비밀번호가 필요합니다."),
-    CURRENT_PASSWORD_NOT_MATCH(2009, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 일치하지 않습니다."),
-    NO_FIELDS_TO_UPDATE(2010, HttpStatus.BAD_REQUEST, "변경할 내용이 없습니다."),
+    INVALID_PASSWORD_FORMAT(2002, HttpStatus.BAD_REQUEST, "비밀번호 형식을 만족하지 않습니다."),
+    INVALID_USERNAME_FORMAT(2003, HttpStatus.BAD_REQUEST, "회원 이름 형식을 만족하지 않습니다."),
+    EMAIL_ALREADY_EXISTS(2004, HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
+    NICKNAME_ALREADY_EXISTS(2005, HttpStatus.CONFLICT, "이미 존재하는 회원이름입니다."),
+    USER_NOT_FOUND(2006, HttpStatus.NOT_FOUND, "존재하지 않는 이메일입니다."),
+    PASSWORD_NOT_MATCH(2007, HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
+    USER_INFO_NOT_FOUND(2008, HttpStatus.NOT_FOUND, "회원 정보를 찾을 수 없습니다."),
+    CURRENT_PASSWORD_REQUIRED(2009, HttpStatus.BAD_REQUEST, "현재 비밀번호가 필요합니다."),
+    CURRENT_PASSWORD_NOT_MATCH(2010, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 일치하지 않습니다."),
+    NO_FIELDS_TO_UPDATE(2011, HttpStatus.BAD_REQUEST, "변경할 내용이 없습니다."),
 
     // Tag 도메인_3000번대
     TAG_NOT_FOUND(3001, HttpStatus.NOT_FOUND, "존재하지 않는 태그입니다."),

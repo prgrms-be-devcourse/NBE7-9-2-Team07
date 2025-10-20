@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  * @param createdAt 생성일
  * @param modifiedAt 수정일
  */
-public record UserLikedPinsDto(
+public record PinsLikedByUserResponse(
         Long id,
         Double latitude,
         Double longitude,
@@ -29,8 +29,8 @@ public record UserLikedPinsDto(
         LocalDateTime createdAt,
         LocalDateTime modifiedAt
 ) {
-    public static UserLikedPinsDto formEntry(Pin pin) {
-        return new UserLikedPinsDto(
+    public static PinsLikedByUserResponse formEntry(Pin pin) {
+        return new PinsLikedByUserResponse(
                 pin.getId(),
                 pin.getPoint().getY(),
                 pin.getPoint().getX(),

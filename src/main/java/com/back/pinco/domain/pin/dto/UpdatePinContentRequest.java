@@ -1,26 +1,23 @@
 package com.back.pinco.domain.pin.dto;
 
-import com.back.pinco.domain.tag.entity.Tag;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
-
-public record PostPinReqbody(
+public record UpdatePinContentRequest(
         @NotNull
         @Min(-90)
         @Max(90)
-        Double latitude,
+        @RequestParam double latitude,
 
         @NotNull
         @Min(-180)
         @Max(180)
-        Double longitude,
+        @RequestParam double longitude,
         @NotBlank
         String content
-
 ){
 }
