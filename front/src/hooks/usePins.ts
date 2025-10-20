@@ -45,14 +45,14 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
         typeof p.likeCount === "number"
           ? p.likeCount
           : p.likeCount != null
-            ? Number(p.likeCount) || 0
-            : 0,
+          ? Number(p.likeCount) || 0
+          : 0,
       isPublic:
         typeof p.isPublic === "boolean"
           ? p.isPublic
           : p.isPublic == null
-            ? true
-            : Boolean(p.isPublic),
+          ? true
+          : Boolean(p.isPublic),
     }));
   };
 
@@ -62,13 +62,24 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags`);
         const data = await res.json();
-        if (data.errorCode === "200") setAllTags(data.data);
-        else setAllTags([]);
+
+        // ✅ 백엔드 구조: { resultCode, msg, data: { tags: [...] } }
+        if (data.errorCode === "200") {
+          const tagsArray = Array.isArray(data.data)
+            ? data.data // 구버전(배열 직접 반환)
+            : Array.isArray(data.data?.tags)
+            ? data.data.tags // 신규 구조({ tags: [...] })
+            : [];
+          setAllTags(tagsArray);
+        } else {
+          setAllTags([]);
+        }
       } catch (e) {
         console.error("태그 목록 로드 실패", e);
         setAllTags([]);
       }
     };
+
     fetchTags();
   }, []);
 
@@ -78,8 +89,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/all`);
       const data = await res.json();
-      console.log("📡 전체 핀 응답", data);
-      console.log("📡 정규화 후", normalizePins(data?.data));
       setPins(normalizePins(data?.data));
       setMode("all");
     } catch (e) {
@@ -123,7 +132,7 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
       const query = tags.map((t) => `keywords=${encodeURIComponent(t)}`).join("&");
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags/filter?${query}`);
       const data = await res.json();
-      setPins(normalizePins(data?.data));
+      setPins(normalizePins(data?.data?.pins ?? data?.data)); // 구조 유연하게 대응
       setMode("tag");
     } catch (e) {
       console.error("태그 필터 실패", e);
