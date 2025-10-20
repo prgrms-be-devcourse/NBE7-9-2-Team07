@@ -3,12 +3,16 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 type User = { id: number; email: string; name?: string } | null;
 
-const AuthContext = createContext<{
+type AuthContextType = {
   user: User;
+  isLoggedIn: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-}>({
+};
+
+const AuthContext = createContext<AuthContextType>({
   user: null,
+  isLoggedIn: false,
   login: async () => false,
   logout: () => {},
 });
@@ -35,7 +39,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/check/1`);
         const userData = await userRes.json();
 
-        const loggedUser = { id: userData.id ?? 1, email, name: userData.userName ?? "User" };
+        const loggedUser = {
+          id: userData.id ?? 1,
+          email,
+          name: userData.userName ?? "User",
+        };
+
         localStorage.setItem("user", JSON.stringify(loggedUser));
         setUser(loggedUser);
         return true;
@@ -51,8 +60,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
   };
 
+  // ✅ 로그인 상태 추가
+  const isLoggedIn = !!user;
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
