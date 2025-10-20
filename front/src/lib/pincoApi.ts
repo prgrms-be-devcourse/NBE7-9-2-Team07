@@ -12,8 +12,22 @@ import {
 export const apiGetAllTags = () =>
   fetchApi<TagDto[]>("/api/tags", { method: "GET" });
 
-export const apiGetPinTags = (pinId: number) =>
-  fetchApi<TagDto[]>(`/api/pins/${pinId}/tags`, { method: "GET" });
+export const apiGetPinTags = async (pinId: number): Promise<TagDto[]> => {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/tags`);
+  const data = await res.json();
+
+  // ✅ 새 구조 대응
+  if (Array.isArray(data?.data?.tags)) {
+    return data.data.tags;
+  }
+
+  // ✅ 예전 구조 fallback
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  return [];
+};
 
 export const apiAddTagToPin = (pinId: number, keyword: string) =>
   fetchApi(`/api/pins/${pinId}/tags`, {
@@ -50,12 +64,27 @@ export const apiGetNearbyPins = (lat: number, lng: number) =>
 export const apiGetAllPins = () =>
   fetchApi<PinDto[] | null>("/api/pins/all", { method: "GET" });
 
-export const apiUpdatePin = (id: number, latitude: number, longitude: number, content: string) =>
-  fetchApi<PinDto>(`/api/pins/${id}`, {
+export const apiUpdatePin = async (
+  id: number,
+  latitude: number,
+  longitude: number,
+  content: string
+): Promise<PinDto> => {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ latitude, longitude, content }),
   });
+
+  const json = await res.json();
+
+  // ✅ RsData 구조에 대응 (data 필드 추출)
+  if (json?.data) {
+    return json.data as PinDto;
+  } else {
+    throw new Error("핀 수정 실패: 서버 응답에 data가 없습니다");
+  }
+};
 
 // 컨트롤러가 PUT 으로 공개 토글
 export const apiTogglePublic = (id: number) =>
