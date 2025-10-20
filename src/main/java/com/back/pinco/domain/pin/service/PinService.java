@@ -1,13 +1,9 @@
 package com.back.pinco.domain.pin.service;
 
-import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.CreatePinRequest;
-import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
-import com.back.pinco.domain.tag.entity.Tag;
-import com.back.pinco.domain.tag.service.PinTagService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
@@ -41,8 +37,9 @@ public class PinService {
     }
 
     public Pin findById(long id) {
-        Pin pin = pinRepository.findById(id).orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        if(pin.getDeleted()){
+        // TODO: 인증 추가하여 공개/비공개 열람 범위 정하고, 삭제된 것도 필요한지 확인
+        Pin pin = pinRepository.findByIdWithConditions(id,true,false);
+        if(pin==null){
             throw new ServiceException(ErrorCode.PIN_NOT_FOUND);
         }
         return pin;
@@ -53,13 +50,14 @@ public class PinService {
     }
 
     public List<Pin> findAll() {
-        List<Pin> pins = pinRepository.findAll().stream().filter(pin -> !pin.getDeleted()).toList();
+        List<Pin> pins = pinRepository.findByIsPublicAndDeleted(true, false);
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
 
     public List<Pin> findNearPins(double latitude,double longitude) {
-        List<Pin> pins = pinRepository.findPinsWithinRadius(latitude,longitude,1000.0);
+        // TODO: 인증 추가하여 공개/비공개 열람 범위 정하고, 삭제된 것도 필요한지 확인
+        List<Pin> pins = pinRepository.findPinsWithinRadius(latitude,longitude,1000.0, true,false);
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
@@ -112,4 +110,10 @@ public class PinService {
         return pinRepository.save(pin);
     }
 
+    public List<Pin> findByUserId(User actor, User writer) {
+        //TODO: 인증 추가해서 비공개-남이 작성한 건 걸러주기
+        List<Pin> pins = pinRepository.findByUserAndIsPublicAndDeleted(writer, true, false);
+        if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
+        return pins;
+    }
 }

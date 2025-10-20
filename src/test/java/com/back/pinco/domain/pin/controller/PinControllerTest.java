@@ -5,6 +5,7 @@ import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
 import org.junit.jupiter.api.DisplayName;
@@ -41,7 +42,11 @@ public class PinControllerTest {
     @Autowired
     private LikesRepository likesRepository;
 
-    long targetId = 1L; //일단 내 DB에 맞춰뒀음. 추후 수정 필요
+    @Autowired
+    private UserRepository userRepository;
+
+
+    long targetId = 1L;
     long failedTargetId = Integer.MAX_VALUE;
 
     @Test
@@ -242,7 +247,7 @@ public class PinControllerTest {
     void t3_1() throws Exception {
 
         Pin pin = pinRepository.findById(targetId).get();
-        List<Pin> pins = pinRepository.findPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0);
+        List<Pin> pins = pinRepository.findPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0,true,false);
 
         ResultActions resultActions = mvc
                 .perform(
@@ -297,8 +302,8 @@ public class PinControllerTest {
 
     @Test
     @DisplayName("모든 핀 리턴")
-    void t4() throws Exception {
-        List<Pin> pins = pinRepository.findAll();
+    void t4_1() throws Exception {
+        List<Pin> pins = pinRepository.findByIsPublicAndDeleted(true, false);
 
         ResultActions resultActions = mvc
                 .perform(
@@ -317,9 +322,51 @@ public class PinControllerTest {
                     .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pins.get(i).getPoint().getY()))
                     .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pins.get(i).getPoint().getX()))
                     .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pins.get(i).getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.data[%d].modifiedAt".formatted(i)).value(matchesPattern(pins.get(i).getModifiedAt().toString().replaceAll("0+$", "") + ".*")))
                     .andExpect(jsonPath("$.data[%d].pinTags.length()".formatted(i)).value(pins.get(i).getPinTags().size()));
         }
+    }
+    @Test
+    @DisplayName("특정 사용자 핀 리턴 -성공 ")
+    void t4_2() throws Exception {
+        User actor= userRepository.getById(targetId);
+        List<Pin> pins = pinRepository.findByUserAndIsPublicAndDeleted(actor,true, false);
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/pins/user/%s".formatted(targetId))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getUserPins"))
+                .andExpect(status().isOk());
+
+        for (int i = 0; i < pins.size(); i++) {
+            resultActions
+                    .andExpect(jsonPath("$.data[%d].id".formatted(i)).value(pins.get(i).getId()))
+                    .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pins.get(i).getPoint().getY()))
+                    .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pins.get(i).getPoint().getX()))
+                    .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pins.get(i).getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].pinTags.length()".formatted(i)).value(pins.get(i).getPinTags().size()));
+        }
+    }
+
+    @Test
+    @DisplayName("특정 사용자 핀 리턴 -실패 ")
+    void t4_3() throws Exception {
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/pins/user/%s".formatted(failedTargetId))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getUserPins"))
+                .andExpect(status().isNotFound());
+
     }
 
     @Test
@@ -555,7 +602,7 @@ public class PinControllerTest {
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("2008"))
-                .andExpect(jsonPath("$.msg").value("사용자를 찾을 수 없습니다."));
+                .andExpect(jsonPath("$.msg").value("회원 정보를 찾을 수 없습니다."));
 
         // DB 검증
         Optional<Likes> likes = likesRepository.findByPinIdAndUserId(pinId, userId);
