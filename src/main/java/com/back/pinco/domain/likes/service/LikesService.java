@@ -63,8 +63,7 @@ public class LikesService {
     public createPinLikesResponse createPinLikes(Long pinId, Long userId) {
 
         Pin pin = pinService.findById(pinId);
-        User user = userService.userInform(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND));
+        User user = userService.userInform(userId);
 
         return likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
                 .map(likes -> {
@@ -87,8 +86,7 @@ public class LikesService {
     public deletePinLikesResponse deletePinLikes(Long pinId, Long userId) {
 
         Pin pin = pinService.findById(pinId);
-        User user = userService.userInform(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_USER_NOT_FOUND));
+        User user = userService.userInform(userId);
 
         return likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
                 .map(likes -> {
