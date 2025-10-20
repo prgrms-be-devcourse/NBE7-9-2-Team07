@@ -2,9 +2,9 @@ package com.back.pinco.domain.pin.controller;
 
 import com.back.pinco.domain.likes.dto.*;
 import com.back.pinco.domain.likes.service.LikesService;
+import com.back.pinco.domain.pin.dto.CreatePinRequest;
 import com.back.pinco.domain.pin.dto.PinDto;
-import com.back.pinco.domain.pin.dto.PostPinReqbody;
-import com.back.pinco.domain.pin.dto.PutPinReqbody;
+import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.tag.entity.Tag;
@@ -63,7 +63,7 @@ public class PinController {
 
     //생성
     @PostMapping
-    public RsData<PinDto> createPin(@Valid @RequestBody PostPinReqbody pinReqbody) {
+    public RsData<PinDto> createPin(@Valid @RequestBody CreatePinRequest pinReqbody) {
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
         User actor = userService.findByEmail("user1@example.com");
         Pin pin = pinService.write(actor, pinReqbody);
@@ -159,7 +159,7 @@ public class PinController {
     @PutMapping(("/{pinId}"))
     public RsData<PinDto> updatePinContent(
             @PathVariable("pinId") Long pinId,
-            @Valid @RequestBody PutPinReqbody putPinReqbody
+            @Valid @RequestBody UpdatePinContentRequest putPinReqbody
             ){
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
         User actor = userService.findByEmail("user1@example.com");
