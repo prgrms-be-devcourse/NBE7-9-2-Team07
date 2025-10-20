@@ -242,7 +242,7 @@ public class PinControllerTest {
     void t3_1() throws Exception {
 
         Pin pin = pinRepository.findById(targetId).get();
-        List<Pin> pins = pinRepository.findPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0);
+        List<Pin> pins = pinRepository.findPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0,true,false);
 
         ResultActions resultActions = mvc
                 .perform(
@@ -298,7 +298,7 @@ public class PinControllerTest {
     @Test
     @DisplayName("모든 핀 리턴")
     void t4() throws Exception {
-        List<Pin> pins = pinRepository.findAll();
+        List<Pin> pins = pinRepository.findByIsPublicAndDeleted(true, false);
 
         ResultActions resultActions = mvc
                 .perform(
@@ -555,7 +555,7 @@ public class PinControllerTest {
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("2008"))
-                .andExpect(jsonPath("$.msg").value("사용자를 찾을 수 없습니다."));
+                .andExpect(jsonPath("$.msg").value("회원 정보를 찾을 수 없습니다."));
 
         // DB 검증
         Optional<Likes> likes = likesRepository.findByPinIdAndUserId(pinId, userId);
