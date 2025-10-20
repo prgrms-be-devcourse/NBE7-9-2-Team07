@@ -217,4 +217,77 @@ class BookmarkControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("4001"))
                 .andExpect(jsonPath("$.msg").exists());
     }
+
+    @Test
+    @DisplayName("t3_4. 북마크 복원 성공")
+    void t3_4() throws Exception {
+        User user1 = userRepository.findByEmail("user1@example.com").orElseThrow();
+        Pin pinA = pinRepository.findAll().stream()
+                .filter(p -> "서울 시청 근처 카페 ☕".equals(p.getContent()))
+                .findFirst().orElseThrow();
+        // 기존 북마크를 t삭제 상태로 만들어 놓기
+        Bookmark bookmark1A = bookmarkRepository.findByUserAndPinAndDeletedFalse(user1, pinA).orElseThrow();
+        bookmark1A.setDeleted();
+        bookmarkRepository.save(bookmark1A);
+
+        Long targetUserId = user1.getId();
+        Long targetBookmarkId = bookmark1A.getId();
+
+        ResultActions resultActions = mvc.perform(
+                patch("/api/bookmarks/{bookmarkId}", targetBookmarkId)
+                        .with(csrf())
+                        .param("userId", String.valueOf(targetUserId))
+        ).andDo(print());
+
+        resultActions.andExpect(status().isOk())
+                .andExpect(jsonPath("$.errorCode").value("200"));
+
+        Bookmark restored = bookmarkRepository.findById(targetBookmarkId).orElseThrow();
+        assertThat(restored.getDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("t3_5. 북마크 복원 실패 (존재하지 않는 북마크 ID)")
+    void t3_5() throws Exception {
+        User user1 = userRepository.findByEmail("user1@example.com").orElseThrow();
+        Long targetUserId = user1.getId();
+
+        ResultActions resultActions = mvc.perform(
+                patch("/api/bookmarks/{bookmarkId}", failedTargetId)
+                        .with(csrf())
+                        .param("userId", String.valueOf(targetUserId))
+        ).andDo(print());
+
+        resultActions.andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("4001"))
+                .andExpect(jsonPath("$.msg").exists());
+    }
+
+    @Test
+    @DisplayName("t3_6. 북마크 복원 실패 (소유자가 아님)")
+    void t3_6() throws Exception {
+        User user1 = userRepository.findByEmail("user1@example.com").orElseThrow();
+        User user2 = userRepository.findByEmail("user2@example.com").orElseThrow();
+        Pin pinA = pinRepository.findAll().stream()
+                .filter(p -> "서울 시청 근처 카페 ☕".equals(p.getContent()))
+                .findFirst().orElseThrow();
+        Bookmark bookmark1A = bookmarkRepository.findByUserAndPinAndDeletedFalse(user1, pinA).orElseThrow();
+
+        // 소유자가 다르도록 북마크를 삭제 상태로 만들어 놓기
+        bookmark1A.setDeleted();
+        bookmarkRepository.save(bookmark1A);
+
+        Long otherUserId = user2.getId();
+        Long targetBookmarkId = bookmark1A.getId();
+
+        ResultActions resultActions = mvc.perform(
+                patch("/api/bookmarks/{bookmarkId}", targetBookmarkId)
+                        .with(csrf())
+                        .param("userId", String.valueOf(otherUserId))
+        ).andDo(print());
+
+        resultActions.andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("4001"))
+                .andExpect(jsonPath("$.msg").exists());
+    }
 }
