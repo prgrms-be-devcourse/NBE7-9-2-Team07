@@ -127,12 +127,26 @@ export const apiDeletePin = (id: number) =>
   fetchApi<void>(`/api/pins/${id}`, { method: "DELETE" });
 
 // ---------- Likes ----------
-export const apiToggleLike = (pinId: number, userId: number) =>
-  fetchApi<LikesStatusDto>(`/api/pins/${pinId}/likes`, {
+
+// ✅ 좋아요 추가
+export const apiAddLike = async (pinId: number, userId: number) => {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId }),
   });
+  return await res.json(); // ✅ { data: { isLiked, likeCount } }
+};
+
+// ✅ 좋아요 취소
+export const apiRemoveLike = async (pinId: number, userId: number) => {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+  return await res.json(); // ✅ { data: { isLiked, likeCount } }
+};
 
 export const apiGetLikeUsers = (pinId: number) =>
   fetchApi<PinLikedUserDto[]>(`/api/pins/${pinId}/likesusers`, { method: "GET" });

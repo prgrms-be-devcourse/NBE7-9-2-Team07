@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { PinDto, PinLikedUserDto, TagDto } from "../types/types";
@@ -7,7 +9,8 @@ import {
   apiDeletePin,
   apiGetLikeUsers,
   apiGetPinTags,
-  apiToggleLike,
+  apiAddLike,
+  apiRemoveLike,
   apiTogglePublic,
   apiUpdatePin,
   apiCreateBookmark,
@@ -30,6 +33,7 @@ export default function PostModal({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(pin.likeCount ?? 0);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkId, setBookmarkId] = useState<number | null>(null);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(pin.content);
@@ -52,7 +56,7 @@ export default function PostModal({
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
+    const loadData = async () => {
       try {
         // 태그
         const t = await apiGetPinTags(pin.id);
@@ -77,22 +81,31 @@ export default function PostModal({
       }
 
       try {
-        // 북마크 상태
+        // 북마크 상태 불러오기
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookmarks?userId=${userId}`
         );
         const data = await res.json();
-        if (mounted) {
-          if (data.errorCode === "200" && Array.isArray(data.data)) {
-            setIsBookmarked(data.data.some((b: any) => b.pin?.id === pin.id));
+
+        if (mounted && data.errorCode === "200" && Array.isArray(data.data)) {
+          const found = data.data.find((b: any) => b.pin?.id === pin.id);
+          if (found) {
+            setIsBookmarked(true);
+            setBookmarkId(found.id); // ✅ bookmarkId 저장
           } else {
             setIsBookmarked(false);
+            setBookmarkId(null);
           }
         }
       } catch {
-        if (mounted) setIsBookmarked(false);
+        if (mounted) {
+          setIsBookmarked(false);
+          setBookmarkId(null);
+        }
       }
-    })();
+    };
+
+    loadData();
 
     return () => {
       mounted = false;
@@ -120,53 +133,52 @@ export default function PostModal({
   // ✅ 좋아요 토글
   const toggleLike = async () => {
     try {
-      setIsLiked((prev) => !prev);
-      setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
-
-      const res = await apiToggleLike(pin.id, userId);
-
-      if (res && typeof res.likeCount === "number") {
-        setLikeCount(res.likeCount);
-        setIsLiked(res.isLiked);
+      let res;
+      if (!isLiked) {
+        res = await apiAddLike(pin.id, userId);
       } else {
-        const updatedUsers = await apiGetLikeUsers(pin.id);
-        const list = Array.isArray(updatedUsers)
-          ? updatedUsers
-          : updatedUsers?.data ?? [];
-        setLikeUsers(list);
-        setIsLiked(list.some((u) => u.id === userId));
-        setLikeCount(list.length);
+        res = await apiRemoveLike(pin.id, userId);
       }
 
-      onChanged?.();
+      const updated = res?.data;
+      if (updated) {
+        setIsLiked(updated.isLiked);
+        setLikeCount(updated.likeCount);
+      }
+
+      onChanged?.({ ...pin, likeCount: updated?.likeCount ?? likeCount });
     } catch (err) {
-      console.error("좋아요 토글 실패:", err);
-      setIsLiked((prev) => !prev);
-      setLikeCount((prev) => (isLiked ? prev + 1 : prev - 1));
+      console.error("좋아요 요청 실패:", err);
     }
   };
 
   // ✅ 북마크 토글
   const toggleBookmark = async () => {
     try {
-      if (isBookmarked) {
-        await apiDeleteBookmark(pin.id, userId);
+      if (isBookmarked && bookmarkId) {
+        await apiDeleteBookmark(bookmarkId, userId);
         setIsBookmarked(false);
+        setBookmarkId(null);
+        console.log("🔖 북마크 해제 완료");
       } else {
-        await apiCreateBookmark(userId, pin.id);
-        setIsBookmarked(true);
-        alert("북마크되었습니다 ✅");
+        const res = await apiCreateBookmark(userId, pin.id);
+        if (res?.data) {
+          setBookmarkId(res.data.id);
+          setIsBookmarked(true);
+          console.log("📌 북마크 생성 완료");
+        }
       }
+
       onChanged?.();
     } catch (err) {
       console.error("북마크 토글 실패:", err);
     }
   };
 
-  // ✅ 공개 토글 (즉시 반영 + 서버 응답 동기화)
+  // ✅ 공개 토글
   const togglePublic = async () => {
     const next = !localPublic;
-    setLocalPublic(next); // UI 즉시 반영
+    setLocalPublic(next);
 
     try {
       const res = await apiTogglePublic(pin.id);
@@ -182,7 +194,7 @@ export default function PostModal({
       await onChanged?.();
     } catch (err) {
       console.error("공개 토글 실패:", err);
-      setLocalPublic(!next); // 실패 시 롤백
+      setLocalPublic(!next);
       alert("공개 설정 변경 중 오류가 발생했습니다.");
     }
   };
