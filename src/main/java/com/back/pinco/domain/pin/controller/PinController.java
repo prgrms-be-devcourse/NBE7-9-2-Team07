@@ -1,5 +1,8 @@
 package com.back.pinco.domain.pin.controller;
 
+import com.back.pinco.domain.bookmark.dto.BookmarkDto;
+import com.back.pinco.domain.bookmark.dto.addBookmarkRequest;
+import com.back.pinco.domain.bookmark.service.BookmarkService;
 import com.back.pinco.domain.likes.dto.*;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.CreatePinRequest;
@@ -12,7 +15,6 @@ import com.back.pinco.domain.tag.service.PinTagService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
-import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rsData.RsData;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;

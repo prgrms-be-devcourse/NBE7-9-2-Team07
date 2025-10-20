@@ -35,8 +35,7 @@ public class BookmarkService {
      * @return 생성된 북마크 DTO
      */
     public BookmarkDto addBookmark(Long userId, Long pinId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.findById(userId);
         Pin pin = pinService.findById(pinId);
 
         Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndPinAndDeletedFalse(user, pin);
@@ -60,8 +59,7 @@ public class BookmarkService {
      * @return 북마크 DTO 목록
      */
     public List<BookmarkDto> getMyBookmarks(Long userId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.findById(userId);
 
         // 삭제되지 않은 북마크 목록만 조회
         List<Bookmark> bookmarks = bookmarkRepository.findByUserAndDeletedFalse(user);
@@ -78,8 +76,7 @@ public class BookmarkService {
      * @param bookmarkId 북마크 ID
      */
     public void deleteBookmark(Long userId, Long bookmarkId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.findById(userId);
 
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND));
@@ -105,8 +102,7 @@ public class BookmarkService {
      * @param bookmarkId 북마크 ID
      */
     public void restoreBookmark(Long userId, Long bookmarkId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.findById(userId);
 
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND));
