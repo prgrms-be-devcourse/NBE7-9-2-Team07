@@ -23,8 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PinService {
     private final PinRepository pinRepository;
-    private final LikesService likesService;
-    private final PinTagService pinTagService;
+
 
     public long count() {
         return pinRepository.count();
@@ -113,12 +112,4 @@ public class PinService {
         return pinRepository.save(pin);
     }
 
-    public PinDto getPinDto(Pin pin) {
-        // pin 좋아요 개수 설정
-        pin.setLikeCount(likesService.getLikesCount(pin.getId()));
-
-        //태그 가져오기
-        List<Tag> tags = pinTagService.getTagsByPin(pin.getId());
-        return new PinDto(pin);
-    }
 }

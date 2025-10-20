@@ -5,6 +5,7 @@ import com.back.pinco.domain.tag.entity.PinTag;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.geometry.GeometryUtil;
 import com.back.pinco.global.jpa.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,6 +47,7 @@ public class Pin extends BaseEntity{
     private User user;    // 작성자
 
     @OneToMany(mappedBy = "pin", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<PinTag> pinTags = new ArrayList<>();
 
     @Column(name = "like_count", nullable = false)
