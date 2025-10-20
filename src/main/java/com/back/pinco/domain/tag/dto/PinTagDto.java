@@ -16,9 +16,9 @@ public record PinTagDto(
                 pinTag.getId(),
                 pinTag.getPin().getId(),
                 new TagDto(pinTag.getTag()),
-                pinTag.getIsDeleted(),
+                pinTag.getDeleted(),
                 pinTag.getCreatedAt(),
-                pinTag.getDeletedAt()
+                pinTag.getModifiedAt()
         );
     }
 }
