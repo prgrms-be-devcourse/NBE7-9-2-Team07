@@ -1,54 +1,61 @@
 "use client";
+import { createContext, useContext, useEffect, useState } from "react";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+type User = { id: number; email: string; name?: string } | null;
 
-type AuthContextType = {
-  isLoggedIn: boolean;
-  login: (token: string) => void;
+const AuthContext = createContext<{
+  user: User;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-};
-
-const AuthContext = createContext<AuthContextType | null>(null);
+}>({
+  user: null,
+  login: async () => false,
+  logout: () => {},
+});
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const router = useRouter();
+  const [user, setUser] = useState<User>(null);
 
-  // ✅ 쿠키 읽기 함수 (전역)
-  const getCookie = (name: string) => {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-    return match ? decodeURIComponent(match[2]) : null;
-  };
-
-  // ✅ 첫 렌더 시 로그인 상태 확인
   useEffect(() => {
-    const token = getCookie("accessToken");
-    setIsLoggedIn(!!token);
+    const saved = localStorage.getItem("user");
+    if (saved) setUser(JSON.parse(saved));
   }, []);
 
-  const login = (token: string) => {
-    document.cookie = `accessToken=${token}; path=/;`;
-    setIsLoggedIn(true);
+  const login = async (email: string, password: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (data.errorCode === "200") {
+        const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/check/1`);
+        const userData = await userRes.json();
+
+        const loggedUser = { id: userData.id ?? 1, email, name: userData.userName ?? "User" };
+        localStorage.setItem("user", JSON.stringify(loggedUser));
+        setUser(loggedUser);
+        return true;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return false;
   };
 
   const logout = () => {
-    document.cookie = "accessToken=; Max-Age=0; path=/;";
-    setIsLoggedIn(false);
-    alert("로그아웃 되었습니다 👋");
-    router.push("/user/login");
+    localStorage.removeItem("user");
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-};
+export const useAuth = () => useContext(AuthContext);
