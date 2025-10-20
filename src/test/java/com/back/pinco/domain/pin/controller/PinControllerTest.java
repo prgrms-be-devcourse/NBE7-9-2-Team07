@@ -499,7 +499,7 @@ public class PinControllerTest {
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getIsLiked()).isTrue();
+        assertThat(likes.getLiked()).isTrue();
         assertThat(likes.getPin().getId()).isEqualTo(pinId);
         assertThat(likes.getUser().getId()).isEqualTo(userId);
         assertThat(likes.getCreatedAt()).isNotNull();
@@ -585,7 +585,7 @@ public class PinControllerTest {
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getIsLiked()).isFalse();
+        assertThat(likes.getLiked()).isFalse();
 
 
         // 좋아요 재등록
@@ -605,7 +605,7 @@ public class PinControllerTest {
         // DB 검증
         likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getIsLiked()).isTrue();
+        assertThat(likes.getLiked()).isTrue();
     }
 
     @Test

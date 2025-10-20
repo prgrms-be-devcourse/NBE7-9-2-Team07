@@ -244,7 +244,7 @@ class BookmarkControllerTest {
 
         // isDeleted가 true인지 확인
         Bookmark deletedBookmark = bookmarkRepository.findById(targetBookmarkId).orElseThrow();
-        assertThat(deletedBookmark.getIsDeleted()).isTrue();
+        assertThat(deletedBookmark.getDeleted()).isTrue();
     }
 
     @Test

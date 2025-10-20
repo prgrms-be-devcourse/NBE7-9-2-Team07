@@ -1,13 +1,11 @@
 package com.back.pinco.domain.tag.entity;
 
 import com.back.pinco.domain.pin.entity.Pin;
+import com.back.pinco.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
@@ -31,7 +29,7 @@ import java.time.LocalDateTime;
         initialValue = 1,
         allocationSize = 50
 )
-public class PinTag {
+public class PinTag extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pin_tag_id_gen")
@@ -47,14 +45,7 @@ public class PinTag {
     private Tag tag;    // 태그 ID
 
     @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;    // 삭제 여부
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    @CreatedDate
-    private LocalDateTime createdAt;    // 생성일
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;    // 삭제일
+    private Boolean deleted = false;    // 삭제 여부
 
 
     public PinTag(Pin pin, Tag tag) {
@@ -63,20 +54,18 @@ public class PinTag {
     }
 
     // 소프트 삭제
-    public void setIsDeleted() {
-        this.isDeleted = true;
-        this.deletedAt = LocalDateTime.now();
+    public void setDeleted() {
+        this.deleted = true;
     }
 
     // 태그 복구
     public void restore() {
-        this.isDeleted = false;
-        this.deletedAt = null;
+        this.deleted = false;
     }
 
-    public PinTag(Pin pin, Tag tag, boolean isDeleted) {
+    public PinTag(Pin pin, Tag tag, boolean deleted) {
         this.pin = pin;
         this.tag = tag;
-        this.isDeleted = isDeleted;
+        this.deleted = deleted;
     }
 }
