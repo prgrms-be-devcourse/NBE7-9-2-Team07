@@ -1,10 +1,12 @@
 package com.back.pinco.domain.user.controller;
 
 import com.back.pinco.domain.user.dto.UserDto;
-import com.back.pinco.domain.user.dto.UserReqBody.EditReqBody;
-import com.back.pinco.domain.user.dto.UserReqBody.JoinReqBody;
-import com.back.pinco.domain.user.dto.UserReqBody.LoginReqBody;
-import com.back.pinco.domain.user.dto.UserResBody.JoinResBody;
+import com.back.pinco.domain.user.dto.UserReqBody.DeleteRequest;
+import com.back.pinco.domain.user.dto.UserReqBody.EditRequest;
+import com.back.pinco.domain.user.dto.UserReqBody.JoinRequest;
+import com.back.pinco.domain.user.dto.UserReqBody.LoginRequest;
+import com.back.pinco.domain.user.dto.UserResBody.GetInfoResponse;
+import com.back.pinco.domain.user.dto.UserResBody.JoinResponse;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.rsData.RsData;
@@ -20,21 +22,21 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/join")
-    public RsData<JoinResBody> join(
-            @RequestBody @Valid JoinReqBody reqBody) {
+    public RsData<JoinResponse> join(
+            @RequestBody @Valid JoinRequest reqBody) {
 
         User user = userService.createUser(reqBody.email(),reqBody.password(),reqBody.userName());
         return new RsData<> (
                 "200",
                 "회원 가입이 완료되었습니다",
-                new JoinResBody(new UserDto(user))
+                new JoinResponse(new UserDto(user))
         );
     }
 
     @PostMapping("/login")
     // 인증인가 추가할 때 반환타입 LoginResBody 로 수정
     public RsData<Void> login(
-            @RequestBody @Valid LoginReqBody reqBody
+            @RequestBody @Valid LoginRequest reqBody
     ) {
        userService.login(reqBody.email(), reqBody.password());
        return new RsData<>(
@@ -43,30 +45,27 @@ public class UserController {
        );
     }
 
-    @GetMapping("/check/{id}")
-    public User check(
+    @GetMapping("/getInfo/{id}")
+    public RsData<GetInfoResponse> getUserInfo(
             @PathVariable Long id
     ) {
-        return userService.userInform(id);
+        User user = userService.userInform(id);
+        return new RsData<>(
+                "200",
+                "회원 정보를 성공적으로 조회했습니다.",
+                new GetInfoResponse(new UserDto(user))
+        );
     }
+
 
     @PutMapping("/edit/{id}")
     public RsData<Void> edit(
-            @RequestBody @Valid EditReqBody reqBody,
+            @RequestBody @Valid EditRequest reqBody,
             @PathVariable Long id
     ) {
         User currentUser = userService.findById(id);
         userService.checkPwd(currentUser, reqBody.password());
-        boolean nameChanged = reqBody.newUserName() != null && !reqBody.newUserName().isBlank();
-        boolean pwdChanged = reqBody.newPassword() != null && !reqBody.newPassword().isBlank();
-
-        if (nameChanged && pwdChanged) {
-            userService.editAll(currentUser, reqBody.newUserName(), reqBody.newPassword());
-        } else if (nameChanged) {
-            userService.editName(currentUser, reqBody.newUserName());
-        } else if (pwdChanged) {
-            userService.editPwd(currentUser, reqBody.newPassword());
-        }
+        userService.editUserInfo(currentUser, reqBody.newUserName(), reqBody.newPassword());
         return new RsData<>(
                 "200",
                 "회원정보 수정 완료"
@@ -75,9 +74,11 @@ public class UserController {
 
     @DeleteMapping("/delete/{id}")
     public RsData<Void> delete(
+            @RequestBody DeleteRequest reqBody,
             @PathVariable Long id
     ) {
         User user = userService.findById(id);
+        userService.checkPwd(user, reqBody.password());
         userService.delete(user);
         return new RsData<>(
                 "200",

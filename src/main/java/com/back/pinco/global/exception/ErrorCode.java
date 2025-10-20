@@ -23,7 +23,7 @@ public enum ErrorCode {
     // User 도메인_2000번대
     INVALID_EMAIL_FORMAT(2001, HttpStatus.BAD_REQUEST, "이메일 형식이 올바르지 않습니다."),
     INVALID_PASSWORD_FORMAT(2002, HttpStatus.BAD_REQUEST, "비밀번호 형식을 만족하지 않습니다."),
-    INVALID_USERNAME_FORMAT(2003, HttpStatus.BAD_REQUEST, "회원 이름 형식을 만족하지 않습니다"),
+    INVALID_USERNAME_FORMAT(2003, HttpStatus.BAD_REQUEST, "회원 이름 형식을 만족하지 않습니다."),
     EMAIL_ALREADY_EXISTS(2004, HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
     NICKNAME_ALREADY_EXISTS(2005, HttpStatus.CONFLICT, "이미 존재하는 회원이름입니다."),
     USER_NOT_FOUND(2006, HttpStatus.NOT_FOUND, "존재하지 않는 이메일입니다."),

@@ -9,8 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -79,6 +77,9 @@ public class UserService {
         if (newPassword == null || newPassword.isBlank() || newPassword.length() < 8) {
             throw new ServiceException(ErrorCode.INVALID_PASSWORD_FORMAT);
         }
+        if (newPassword.equals(user.getPassword())) {
+            return; // 변경 없음
+        }
         String hashedPwd = passwordEncoder.encode(newPassword);
         user.setPassword(hashedPwd);
     }
@@ -86,11 +87,18 @@ public class UserService {
     // 회원 정보 모두 수정
     @Transactional
     public void editAll(User user, String newUserName, String newPassword) {
+        if (newUserName == null || newUserName.isBlank()
+                || newUserName.length() < 2 || newUserName.length() > 20) {
+            throw new ServiceException(ErrorCode.INVALID_USERNAME_FORMAT);
+        }
         if (userRepository.existsByUserNameAndIdNot(newUserName, user.getId())) {
             throw new ServiceException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
         if (newPassword == null || newPassword.isBlank() || newPassword.length() < 8) {
             throw new ServiceException(ErrorCode.INVALID_PASSWORD_FORMAT);
+        }
+        if (newPassword.equals(user.getPassword()) && newUserName.equals(user.getUserName())) {
+            return; // 변경 없음
         }
         user.setUserName(newUserName);
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -127,6 +135,39 @@ public class UserService {
     public void existsUserId(Long id) {
         if(!userRepository.existsById(id)) {
             throw new ServiceException(ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    @Transactional
+    public boolean nameChanged(User currentUser, String newUserName) {
+        if(newUserName != null && !newUserName.isBlank() && !newUserName.trim().equals(currentUser.getUserName())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Transactional
+    public boolean passwordChanged(User currentUser, String newPassword) {
+        if(newPassword != null && !newPassword.isBlank() && !passwordEncoder.matches(newPassword, currentUser.getPassword())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Transactional
+    public void editUserInfo(User currentUser, String newUserName, String newPassword) {
+        boolean nameChanged = nameChanged(currentUser, newUserName);
+        boolean pwdChanged = passwordChanged(currentUser, newPassword);
+        if (nameChanged && pwdChanged) {
+            editAll(currentUser, newUserName, newPassword);
+        } else if (nameChanged) {
+            editName(currentUser, newUserName);
+        } else if (pwdChanged) {
+            editPwd(currentUser, newPassword);
+        } else  {
+            throw new ServiceException(ErrorCode.NO_FIELDS_TO_UPDATE);
         }
     }
 }
