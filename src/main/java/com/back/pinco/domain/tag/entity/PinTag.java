@@ -2,6 +2,7 @@ package com.back.pinco.domain.tag.entity;
 
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.global.jpa.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,6 +39,7 @@ public class PinTag extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pin_id", nullable = false)
+    @JsonIgnore
     private Pin pin;    // 핀 ID
 
     @ManyToOne(fetch = FetchType.LAZY)

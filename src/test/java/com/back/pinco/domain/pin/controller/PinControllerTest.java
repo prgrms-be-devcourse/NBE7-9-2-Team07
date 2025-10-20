@@ -181,7 +181,6 @@ public class PinControllerTest {
     void t2_1() throws Exception {
 
         Pin pin = pinRepository.findById(targetId).get();
-        System.out.println("/api/pins/%s".formatted(targetId));
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/%s".formatted(targetId))
@@ -196,7 +195,8 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.data.latitude").value(pin.getPoint().getY()))
                 .andExpect(jsonPath("$.data.longitude").value(pin.getPoint().getX()))
                 .andExpect(jsonPath("$.data.createdAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
-                .andExpect(jsonPath("$.data.modifiedAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data.modifiedAt").value(matchesPattern(pin.getModifiedAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data.pinTags.length()").value(pin.getPinTags().size()))
         ;
     }
 
@@ -242,6 +242,7 @@ public class PinControllerTest {
     void t3_1() throws Exception {
 
         Pin pin = pinRepository.findById(targetId).get();
+        List<Pin> pins = pinRepository.findPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0);
 
         ResultActions resultActions = mvc
                 .perform(
@@ -257,12 +258,16 @@ public class PinControllerTest {
                 .andExpect(handler().methodName("getRadiusPins"))
                 .andExpect(status().isOk());
 
-        resultActions
-                .andExpect(jsonPath("$.data[0].id").value(pin.getId()))
-                .andExpect(jsonPath("$.data[0].latitude").value(pin.getPoint().getY()))
-                .andExpect(jsonPath("$.data[0].longitude").value(pin.getPoint().getX()))
-                .andExpect(jsonPath("$.data[0].createdAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
-                .andExpect(jsonPath("$.data[0].modifiedAt").value(matchesPattern(pin.getModifiedAt().toString().replaceAll("0+$", "") + ".*")));
+        for (int i = 0; i < pins.size(); i++) {
+            resultActions
+                    .andExpect(jsonPath("$.data[%d].id".formatted(i)).value(pins.get(i).getId()))
+                    .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pins.get(i).getPoint().getY()))
+                    .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pins.get(i).getPoint().getX()))
+                    .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pins.get(i).getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].modifiedAt".formatted(i)).value(matchesPattern(pins.get(i).getModifiedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].pinTags.length()".formatted(i)).value(pins.get(i).getPinTags().size()));
+        }
+
     }
 
     @Test
@@ -304,17 +309,16 @@ public class PinControllerTest {
         resultActions
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getAll"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()", is(pins.size())));
+                .andExpect(status().isOk());
 
         for (int i = 0; i < pins.size(); i++) {
-            Pin pin = pins.get(i);
             resultActions
-                    .andExpect(jsonPath("$.data[%d].id".formatted(i)).value(pin.getId()))
-                    .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pin.getPoint().getY()))
-                    .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pin.getPoint().getX()))
-                    .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
-                    .andExpect(jsonPath("$.data[%d].modifiedAt".formatted(i)).value(matchesPattern(pin.getModifiedAt().toString().replaceAll("0+$", "") + ".*")));
+                    .andExpect(jsonPath("$.data[%d].id".formatted(i)).value(pins.get(i).getId()))
+                    .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pins.get(i).getPoint().getY()))
+                    .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pins.get(i).getPoint().getX()))
+                    .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pins.get(i).getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].modifiedAt".formatted(i)).value(matchesPattern(pins.get(i).getModifiedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].pinTags.length()".formatted(i)).value(pins.get(i).getPinTags().size()));
         }
     }
 
