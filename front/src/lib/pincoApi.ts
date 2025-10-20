@@ -9,8 +9,22 @@ import {
 } from "../types/types";
 
 // ---------- Tags ----------
-export const apiGetAllTags = () =>
-  fetchApi<TagDto[]>("/api/tags", { method: "GET" });
+export const apiGetAllTags = async (): Promise<TagDto[]> => {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags`);
+  const json = await res.json();
+
+  // ✅ 정확한 구조 대응: { data: { tags: [...] } }
+  if (Array.isArray(json?.data?.tags)) {
+    return json.data.tags;
+  }
+
+  // ✅ fallback (혹시 서버 구조가 바뀌더라도 대응)
+  if (Array.isArray(json?.data)) {
+    return json.data;
+  }
+
+  return [];
+};
 
 export const apiGetPinTags = async (pinId: number): Promise<TagDto[]> => {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/tags`);
@@ -48,12 +62,31 @@ export const apiFilterByTags = (keywords: string[]) => {
 };
 
 // ---------- Pins ----------
-export const apiCreatePin = (latitude: number, longitude: number, content: string) =>
-  fetchApi<PinDto>("/api/pins", {
+// pincoApi.ts
+export const apiCreatePin = async (
+  latitude: number,
+  longitude: number,
+  content: string
+): Promise<PinDto> => {
+  console.log("📤 보내는 요청:", { latitude, longitude, content });
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ latitude, longitude, content }),
+    body: JSON.stringify({
+      latitude: Number(latitude), // ✅ 숫자형으로 강제
+      longitude: Number(longitude),
+      content: content.trim(), // ✅ 공백 제거
+    }),
   });
+
+  const json = await res.json();
+  console.log("🧭 좌표값 확인:", latitude, longitude);
+  console.log("📥 서버 응답:", json);
+
+  if (json?.data) return json.data as PinDto;
+  throw new Error("핀 생성 실패: 서버 응답에 data가 없습니다");
+};
 
 export const apiGetPin = (id: number) =>
   fetchApi<PinDto>(`/api/pins/${id}`, { method: "GET" });
