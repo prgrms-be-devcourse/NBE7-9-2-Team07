@@ -63,9 +63,9 @@ public class InitData {
 
 
         // ✅ 샘플 북마크 생성 (user1이 pinA, pinD 북마크 / user2가 pinB 북마크)
-        bookmarkService.createBookmark(user1.getId(), pinA.getId());
-        bookmarkService.createBookmark(user1.getId(), pinD.getId());
-        bookmarkService.createBookmark(user2.getId(), pinB.getId());
+        bookmarkService.addBookmark(user1.getId(), pinA.getId());
+        bookmarkService.addBookmark(user1.getId(), pinD.getId());
+        bookmarkService.addBookmark(user2.getId(), pinB.getId());
 
 
         // 좋아요 등록 (user1이 pin1, pin2 좋아요 / user2가 pin1 좋아요)

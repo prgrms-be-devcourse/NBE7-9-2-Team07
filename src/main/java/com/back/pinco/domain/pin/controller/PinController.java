@@ -237,7 +237,7 @@ public class PinController {
 
 
     // 해당 핀 북마크 추가
-    @PostMapping
+    @PostMapping("{pinId}/bookmarks")
     public RsData<BookmarkDto> addBookmark(
             @RequestBody addBookmarkRequest requestDto
     ) {
