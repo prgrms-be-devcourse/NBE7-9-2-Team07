@@ -26,14 +26,13 @@ public class PinService {
 
 
     public Pin write(User actor, CreatePinRequest pinReqbody) {
+        Point point = GeometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
         try {
-            Point point = GeometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
             Pin pin = new Pin(point, actor, pinReqbody.content());
             return pinRepository.save(pin);
         }catch(Exception e){
             throw new ServiceException(ErrorCode.PIN_CREATE_FAILED);
         }
-
     }
 
     public Pin findById(long id) {
@@ -63,7 +62,7 @@ public class PinService {
     @Transactional
     public Pin update(User actor, Long pinId, UpdatePinContentRequest updatePinContentRequest) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        //
+        // TODO: 인증 추가
         try {
             pin.update(updatePinContentRequest);
         }catch(Exception e){
@@ -76,7 +75,7 @@ public class PinService {
     @Transactional
     public Pin changePublic(User actor, Long pinId) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        //여기에 이제 인증 들어가긴 해야함
+        // TODO: 인증 추가
         try {
         pin.togglePublic();
         }catch(Exception e){
@@ -87,7 +86,7 @@ public class PinService {
 
     public void deleteById(Long pinId) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        //여기에 이제 인증 들어가긴 해야함
+        // TODO: 인증 추가
         try {
             pin.setDeleted();
         }catch(Exception e){
