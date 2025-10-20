@@ -106,7 +106,7 @@ class BookmarkControllerTest {
         ).andDo(print());
 
         resultActions.andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode").value("2005"))
+                .andExpect(jsonPath("$.errorCode").value("2006"))
                 .andExpect(jsonPath("$.msg").exists());
     }
 
@@ -148,7 +148,7 @@ class BookmarkControllerTest {
         ).andDo(print());
 
         resultActions.andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode").value("2005"))
+                .andExpect(jsonPath("$.errorCode").value("2006"))
                 .andExpect(jsonPath("$.msg").exists());
     }
 

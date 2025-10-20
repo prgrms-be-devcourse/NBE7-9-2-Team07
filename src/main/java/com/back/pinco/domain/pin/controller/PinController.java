@@ -1,5 +1,8 @@
 package com.back.pinco.domain.pin.controller;
 
+import com.back.pinco.domain.bookmark.dto.BookmarkDto;
+import com.back.pinco.domain.bookmark.dto.addBookmarkRequest;
+import com.back.pinco.domain.bookmark.service.BookmarkService;
 import com.back.pinco.domain.likes.dto.*;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.CreatePinRequest;
@@ -30,13 +33,8 @@ public class PinController {
 
     private final UserService userService;
 
-    @Autowired
-    private BookmarkService bookmarkService;
+    private final BookmarkService bookmarkService;
 
-    //검증 예외처리 핸들러
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<RsData<Void>> handlePinValidationException(MethodArgumentNotValidException e) {
-        FieldError firstError = e.getBindingResult().getFieldError();
     private final LikesService likesService;
 
 
