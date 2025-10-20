@@ -99,10 +99,10 @@ public class PinController {
     }
 
     //사용자로 조회
-    @GetMapping("/")
+    @GetMapping("/user/{userId}")
     public RsData<List<PinDto>> getUserPins(
             @NotNull
-            @RequestParam Long userId
+            @PathVariable Long userId
     ){
         //jwt 구현 후 변경 예정. 일단 id 1번 넣음
         User actor = userService.findByEmail("user1@example.com");
