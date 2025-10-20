@@ -30,14 +30,18 @@ export default function PostModal({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(pin.likeCount ?? 0);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isPublic, setIsPublic] = useState(pin.isPublic);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(pin.content);
 
+  // ✅ 공개 상태는 즉시 반영 위해 로컬 상태 따로 유지
+  const [localPublic, setLocalPublic] = useState(pin.isPublic);
+  useEffect(() => {
+    setLocalPublic(pin.isPublic);
+  }, [pin.isPublic]);
+
   /** ✅ 어떤 응답이 와도 태그 배열로 변환 */
   const parseTags = (resp: any): TagDto[] => {
-    // 신구 구조 모두 대응
     if (Array.isArray(resp?.data?.tags)) return resp.data.tags as TagDto[];
     if (Array.isArray(resp?.data)) return resp.data as TagDto[];
     if (Array.isArray(resp)) return resp as TagDto[];
@@ -66,9 +70,7 @@ export default function PostModal({
         if (mounted) {
           setLikeUsers(likeUserList);
           setIsLiked(likeUserList.some((usr) => usr.id === userId));
-          if (Array.isArray(likeUserList) && likeUserList.length !== likeCount) {
-            setLikeCount(likeUserList.length);
-          }
+          setLikeCount(likeUserList.length);
         }
       } catch (err) {
         console.error("좋아요 로드 실패:", err);
@@ -95,14 +97,14 @@ export default function PostModal({
     return () => {
       mounted = false;
     };
-  }, [pin.id, userId]); // pin이 바뀌면 다시 로드
+  }, [pin.id, userId]);
 
   // ✅ 태그 추가
   const addTag = async () => {
     if (!newTag.trim()) return;
     await apiAddTagToPin(pin.id, newTag.trim());
     const res = await apiGetPinTags(pin.id);
-    setTags(parseTags(res)); // ✅ RsData.data.tags 대응
+    setTags(parseTags(res));
     setNewTag("");
     onChanged?.();
   };
@@ -111,11 +113,11 @@ export default function PostModal({
   const removeTag = async (tagId: number) => {
     await apiRemoveTagFromPin(pin.id, tagId);
     const res = await apiGetPinTags(pin.id);
-    setTags(parseTags(res)); // ✅ 동일하게
+    setTags(parseTags(res));
     onChanged?.();
   };
 
-  // ✅ 좋아요 토글 (낙관적 업데이트 + 보정)
+  // ✅ 좋아요 토글
   const toggleLike = async () => {
     try {
       setIsLiked((prev) => !prev);
@@ -139,7 +141,6 @@ export default function PostModal({
       onChanged?.();
     } catch (err) {
       console.error("좋아요 토글 실패:", err);
-      // 롤백
       setIsLiked((prev) => !prev);
       setLikeCount((prev) => (isLiked ? prev + 1 : prev - 1));
     }
@@ -162,26 +163,26 @@ export default function PostModal({
     }
   };
 
-  // ✅ 공개 토글
+  // ✅ 공개 토글 (즉시 반영 + 서버 응답 동기화)
   const togglePublic = async () => {
+    const next = !localPublic;
+    setLocalPublic(next); // UI 즉시 반영
+
     try {
-      // UI 즉시 반영
-      setIsPublic((prev) => !prev);
       const res = await apiTogglePublic(pin.id);
+      const updatedPin =
+        res?.data && res.data.isPublic !== undefined ? res.data : res;
+      const confirmed = updatedPin?.isPublic ?? next;
+      setLocalPublic(confirmed);
 
-      // 서버 응답 우선
-      if (res?.data?.isPublic !== undefined) {
-        setIsPublic(res.data.isPublic);
-        alert(res.data.isPublic ? "🌍 공개로 전환되었습니다" : "🔒 비공개로 전환되었습니다");
-      } else {
-        alert(isPublic ? "🔒 비공개로 전환되었습니다" : "🌍 공개로 전환되었습니다");
-      }
+      alert(
+        confirmed ? "🌍 공개로 전환되었습니다" : "🔒 비공개로 전환되었습니다"
+      );
 
-      onChanged?.();
+      await onChanged?.();
     } catch (err) {
       console.error("공개 토글 실패:", err);
-      // 롤백
-      setIsPublic((prev) => !prev);
+      setLocalPublic(!next); // 실패 시 롤백
       alert("공개 설정 변경 중 오류가 발생했습니다.");
     }
   };
@@ -235,9 +236,7 @@ export default function PostModal({
 
             <div className="flex flex-wrap gap-2">
               {(!Array.isArray(tags) || tags.length === 0) && (
-                <span className="text-xs text-gray-400">
-                  등록된 태그 없음
-                </span>
+                <span className="text-xs text-gray-400">등록된 태그 없음</span>
               )}
 
               {Array.isArray(tags) &&
@@ -298,30 +297,33 @@ export default function PostModal({
               <>
                 <button
                   onClick={toggleLike}
-                  className={`px-3 py-1 rounded-md border transition ${isLiked
-                    ? "bg-red-100 text-red-600 border-red-300"
-                    : "border-gray-300"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    isLiked
+                      ? "bg-red-100 text-red-600 border-red-300"
+                      : "border-gray-300"
+                  }`}
                 >
                   {isLiked ? "💔 좋아요 취소" : "👍 좋아요"} ({likeCount})
                 </button>
 
                 <button
                   onClick={togglePublic}
-                  className={`px-3 py-1 rounded-md border transition ${isPublic
-                    ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
-                    : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    localPublic
+                      ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
+                      : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                  }`}
                 >
-                  {isPublic ? "🔓 공개 중" : "🔒 비공개"}
+                  {localPublic ? "🔓 공개 중" : "🔒 비공개"}
                 </button>
 
                 <button
                   onClick={toggleBookmark}
-                  className={`px-3 py-1 rounded-md border transition ${isBookmarked
-                    ? "bg-blue-100 text-blue-600 border-blue-300"
-                    : "border-gray-300"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    isBookmarked
+                      ? "bg-blue-100 text-blue-600 border-blue-300"
+                      : "border-gray-300"
+                  }`}
                 >
                   {isBookmarked ? "🔖 북마크됨" : "📌 북마크"}
                 </button>
