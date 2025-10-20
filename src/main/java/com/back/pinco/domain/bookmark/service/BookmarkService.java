@@ -28,15 +28,15 @@ public class BookmarkService {
     // jwt 적용 시 수정 필요
 
     /**
-     * 북마크 생성
+     * 북마크 추가
      *
      * @param userId 사용자 ID
      * @param pinId 핀 ID
      * @return 생성된 북마크 DTO
      */
-    public BookmarkDto createBookmark(Long userId, Long pinId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+    @Transactional
+    public BookmarkDto addBookmark(Long userId, Long pinId) {
+        User user = userService.findById(userId);
         Pin pin = pinService.findById(pinId);
 
         Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndPinAndDeletedFalse(user, pin);
@@ -60,8 +60,7 @@ public class BookmarkService {
      * @return 북마크 DTO 목록
      */
     public List<BookmarkDto> getMyBookmarks(Long userId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.findById(userId);
 
         // 삭제되지 않은 북마크 목록만 조회
         List<Bookmark> bookmarks = bookmarkRepository.findByUserAndDeletedFalse(user);
@@ -77,9 +76,9 @@ public class BookmarkService {
      * @param userId 사용자 ID
      * @param bookmarkId 북마크 ID
      */
+    @Transactional
     public void deleteBookmark(Long userId, Long bookmarkId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.findById(userId);
 
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND));
@@ -104,9 +103,9 @@ public class BookmarkService {
      * @param userId 사용자 ID
      * @param bookmarkId 북마크 ID
      */
+    @Transactional
     public void restoreBookmark(Long userId, Long bookmarkId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.findById(userId);
 
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND));

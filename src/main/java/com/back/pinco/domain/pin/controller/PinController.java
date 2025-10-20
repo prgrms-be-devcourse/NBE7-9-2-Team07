@@ -1,5 +1,8 @@
 package com.back.pinco.domain.pin.controller;
 
+import com.back.pinco.domain.bookmark.dto.BookmarkDto;
+import com.back.pinco.domain.bookmark.dto.addBookmarkRequest;
+import com.back.pinco.domain.bookmark.service.BookmarkService;
 import com.back.pinco.domain.likes.dto.*;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.CreatePinRequest;
@@ -29,6 +32,8 @@ public class PinController {
     private final PinService pinService;
 
     private final UserService userService;
+
+    private final BookmarkService bookmarkService;
 
     private final LikesService likesService;
 
@@ -227,6 +232,20 @@ public class PinController {
                 "200",
                 "성공적으로 처리되었습니다",
                 likesService.getUsersWhoLikedPin(pinId)
+        );
+    }
+
+
+    // 해당 핀 북마크 추가
+    @PostMapping("{pinId}/bookmarks")
+    public RsData<BookmarkDto> addBookmark(
+            @RequestBody addBookmarkRequest requestDto
+    ) {
+        BookmarkDto bookmarkDto = bookmarkService.addBookmark(requestDto.userId(), requestDto.pinId());
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다.",
+                bookmarkDto
         );
     }
 
