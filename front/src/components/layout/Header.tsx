@@ -23,7 +23,7 @@ export default function Header() {
           pathname === "/home" ? "text-blue-600" : "text-gray-700"
         }`}
       >
-        🐾 PinCo
+        🎈 <span>PinCo</span>
       </Link>
 
       {/* ✅ 네비게이션 */}
