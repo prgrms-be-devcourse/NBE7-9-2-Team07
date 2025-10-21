@@ -192,7 +192,7 @@ class BookmarkControllerTest {
         ResultActions resultActions = mvc.perform(
                 get("/api/bookmarks")
         ).andDo(print());
-        
+
         resultActions.andExpect(status().isForbidden());
     }
 

@@ -35,7 +35,7 @@ public class BookmarkService {
     @Transactional
     public BookmarkDto addBookmark(Long userId, Long pinId) {
         User user = userService.findById(userId);
-        Pin pin = pinService.findById(pinId);
+        Pin pin = pinService.findById(pinId, user);
 
         Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndPinAndDeletedFalse(user, pin);
 
