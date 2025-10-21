@@ -43,7 +43,6 @@ public class PinController {
     private final Rq rq;
 
 
-
     //생성
     @Operation(summary = "핀 생성", description = "사용자의 위치와 설명을 받아 핀을 생성")
     @PostMapping
