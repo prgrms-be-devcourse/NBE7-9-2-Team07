@@ -35,11 +35,10 @@ public class LikesService {
 
 
     /** 좋아요 있으면 상태변경, 없으면 신규 생성 */
-    private Likes teoggleLike(Long pinId, Long userId, boolean isLiked) {
-        Pin pin = pinService.findById(pinId);
+    private Likes toggleLike(Long pinId, Long userId, boolean isLiked) {
         User user = userService.findById(userId);
+        Pin pin = pinService.findById(pinId, user);
 
-        // 받아온 객체에서 꺼내쓰는 게 좋을지, 그냥 전달 받은 값으로 사용해도 되는지?
         Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
                 .map(like -> like.toggleLike(isLiked))
                 .orElse(new Likes(user, pin));
@@ -52,12 +51,12 @@ public class LikesService {
     }
 
     public createPinLikesResponse createPinLikes(Long pinId, Long userId) {
-        Likes rt_like = teoggleLike(pinId, userId, true);
+        Likes rt_like = toggleLike(pinId, userId, true);
         return new createPinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
     }
 
     public deletePinLikesResponse togglePinLikes(Long pinId, Long userId) {
-        Likes rt_like = teoggleLike(pinId, userId, false);
+        Likes rt_like = toggleLike(pinId, userId, false);
         return new deletePinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
     }
 
