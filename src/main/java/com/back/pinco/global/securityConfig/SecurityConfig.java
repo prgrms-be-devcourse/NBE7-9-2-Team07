@@ -32,6 +32,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/user/getInfo/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/user/edit/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/user/delete/**").permitAll()
+                        // Swagger 관련 URL 전부 허용
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )
