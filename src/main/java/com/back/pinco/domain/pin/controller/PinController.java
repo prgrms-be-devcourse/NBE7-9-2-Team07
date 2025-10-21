@@ -12,6 +12,7 @@ import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
+import com.back.pinco.global.rq.Rq;
 import com.back.pinco.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -38,6 +39,7 @@ public class PinController {
 
     private final LikesService likesService;
 
+    private final Rq rq;
 
     //생성
     @PostMapping
@@ -242,7 +244,9 @@ public class PinController {
     public RsData<BookmarkDto> addBookmark(
             @RequestBody addBookmarkRequest requestDto
     ) {
-        BookmarkDto bookmarkDto = bookmarkService.addBookmark(requestDto.userId(), requestDto.pinId());
+        User actor = rq.getActor();
+
+        BookmarkDto bookmarkDto = bookmarkService.addBookmark(actor.getId(), requestDto.pinId());
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다.",

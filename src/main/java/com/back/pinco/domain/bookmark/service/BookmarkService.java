@@ -25,8 +25,6 @@ public class BookmarkService {
     private final UserService userService;
     private final PinService pinService;
 
-    // jwt 적용 시 수정 필요
-
     /**
      * 북마크 추가
      *
@@ -40,10 +38,10 @@ public class BookmarkService {
         Pin pin = pinService.findById(pinId);
 
         Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndPinAndDeletedFalse(user, pin);
+
         if (existingBookmark.isPresent()) {
             throw new ServiceException(ErrorCode.BOOKMARK_ALREADY_EXISTS);
         }
-
         Bookmark bookmark = new Bookmark(user, pin);
         try {
             bookmarkRepository.save(bookmark);
@@ -78,14 +76,11 @@ public class BookmarkService {
      */
     @Transactional
     public void deleteBookmark(Long userId, Long bookmarkId) {
-        User user = userService.findById(userId);
-
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND));
 
-        // 소유자 확인(jwt 적용 시 수정)
-        if (!bookmark.getUser().getId().equals(user.getId())) {
-            // 소유자가 아니면 찾을 수 없음으로 처리
+        // 소유자가 아니면 찾을 수 없음으로 처리
+        if (!bookmark.getUser().getId().equals(userId)) {
             throw new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND);
         }
 
@@ -110,7 +105,7 @@ public class BookmarkService {
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND));
 
-        // 소유자 확인(jwt 적용 시 수정)
+        // 소유자가 아니면 찾을 수 없음으로 처리
         if (!bookmark.getUser().getId().equals(user.getId())) {
             throw new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND);
         }
