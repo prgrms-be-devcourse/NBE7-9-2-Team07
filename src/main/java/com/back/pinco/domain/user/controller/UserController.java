@@ -99,10 +99,9 @@ public class UserController {
         );
     }
 
-    @GetMapping("/getInfo/{apiKey}")
-    public RsData<GetInfoResponse> getUserInfo(
-            @PathVariable String apiKey) {
-        User user = userService.findByApiKey(apiKey);
+    @GetMapping("/getInfo")
+    public RsData<GetInfoResponse> getUserInfo() {
+        User user = userService.requireActor();
         return new RsData<>(
                 "200",
                 "회원 정보를 성공적으로 조회했습니다.",
@@ -110,11 +109,10 @@ public class UserController {
         );
     }
 
-    @PutMapping("/edit/{apiKey}")
+    @PutMapping("/edit")
     public RsData<Void> edit(
-            @RequestBody EditRequest reqBody,
-            @PathVariable String apiKey) {
-        User currentUser = userService.findByApiKey(apiKey);
+            @RequestBody EditRequest reqBody) {
+        User currentUser = userService.requireActor();
         userService.checkPwd(currentUser, reqBody.password());
         userService.editUserInfo(currentUser, reqBody.newUserName(), reqBody.newPassword());
         return new RsData<>(
@@ -123,11 +121,10 @@ public class UserController {
         );
     }
 
-    @DeleteMapping("/delete/{apiKey}")
+    @DeleteMapping("/delete")
     public RsData<Void> delete(
-            @RequestBody DeleteRequest reqBody,
-            @PathVariable String apiKey) {
-        User user = userService.findByApiKey(apiKey);
+            @RequestBody DeleteRequest reqBody) {
+        User user = userService.requireActor();
         userService.checkPwd(user, reqBody.password());
         userService.delete(user);
         rq.deleteCookie("accessToken");
