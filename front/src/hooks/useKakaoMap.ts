@@ -6,17 +6,23 @@ export function useKakaoMap({
   center,
   onSelectPin,
   kakaoReady,
-  onCenterChange, // ✅ 중심 좌표 변경 콜백 추가
+  onCenterChange,
 }: {
   pins: PinDto[];
   center: { lat: number; lng: number };
   onSelectPin: (pin: PinDto) => void;
   kakaoReady?: boolean;
-  onCenterChange?: (lat: number, lng: number) => void; // ✅ 추가
+  onCenterChange?: (lat: number, lng: number) => void;
 }) {
   const mapRef = useRef<any>(null);
   const clustererRef = useRef<any>(null);
   const circleRef = useRef<any>(null);
+  //=================
+  // 디바운스를 위한 타이머 ref
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // 마지막으로 업데이트된 좌표 저장 (불필요한 업데이트 방지)
+  const lastCenterRef = useRef({ lat: center.lat, lng: center.lng });
+  //=================
 
   // ✅ 지도 초기화 (kakaoReady 이후에만)
   useEffect(() => {
@@ -37,28 +43,43 @@ export function useKakaoMap({
     (window as any).mapRef = map;
 
     //=================
-    // 지도 이동/드래그 이벤트 리스너 등록
+    // 🚀 최적화 1: dragend만 사용 (center_changed 제거)
+    // 🚀 최적화 2: 디바운스 적용 (500ms 대기)
     kakao.maps.event.addListener(map, 'dragend', () => {
-      const centerLatLng = map.getCenter();
-      const newLat = centerLatLng.getLat();
-      const newLng = centerLatLng.getLng();
-      
-      if (onCenterChange) {
-        onCenterChange(newLat, newLng);
+      // 기존 타이머 취소
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-    });
 
-    // 지도 중심 좌표 변경 이벤트 (확대/축소 시에도 발생)
-    kakao.maps.event.addListener(map, 'center_changed', () => {
-      const centerLatLng = map.getCenter();
-      const newLat = centerLatLng.getLat();
-      const newLng = centerLatLng.getLng();
-      
-      if (onCenterChange) {
-        onCenterChange(newLat, newLng);
-      }
+      // 새 타이머 설정 (500ms 후 실행)
+      debounceTimerRef.current = setTimeout(() => {
+        const centerLatLng = map.getCenter();
+        const newLat = centerLatLng.getLat();
+        const newLng = centerLatLng.getLng();
+
+        // 🚀 최적화 3: 좌표가 실제로 변경되었을 때만 업데이트
+        const latDiff = Math.abs(newLat - lastCenterRef.current.lat);
+        const lngDiff = Math.abs(newLng - lastCenterRef.current.lng);
+        
+        // 0.0001도 이상 변경되었을 때만 업데이트 (약 10m)
+        if (latDiff > 0.0001 || lngDiff > 0.0001) {
+          console.log("🗺️ 지도 중심 업데이트:", { lat: newLat, lng: newLng });
+          lastCenterRef.current = { lat: newLat, lng: newLng };
+          
+          if (onCenterChange) {
+            onCenterChange(newLat, newLng);
+          }
+        }
+      }, 500); // 500ms 디바운스
     });
     //=================
+
+    // 클린업
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [kakaoReady, onCenterChange]);
 
   // ✅ 중심 이동 + 반경 원 표시
@@ -68,13 +89,23 @@ export function useKakaoMap({
 
     const map = mapRef.current;
     const ll = new kakao.maps.LatLng(center.lat, center.lng);
-    map.setCenter(ll);
-/*
+    
+    //=================
+    // 🚀 최적화 4: 중심 좌표 변경이 의미있을 때만 setCenter 호출
+    const currentCenter = map.getCenter();
+    const latDiff = Math.abs(currentCenter.getLat() - center.lat);
+    const lngDiff = Math.abs(currentCenter.getLng() - center.lng);
+    
+    if (latDiff > 0.0001 || lngDiff > 0.0001) {
+      map.setCenter(ll);
+    }
+    //=================
+
     // ✅ 1km 반경 원 표시 (중심 고정)
     if (circleRef.current) circleRef.current.setMap(null);
     const circle = new kakao.maps.Circle({
       center: ll,
-      radius: 1000, // ✅ 1km
+      radius: 1000,
       strokeWeight: 2,
       strokeColor: "#2563EB",
       strokeOpacity: 0.8,
@@ -84,7 +115,6 @@ export function useKakaoMap({
     });
     circle.setMap(map);
     circleRef.current = circle;
-    */
   }, [center, kakaoReady]);
 
   // ✅ 마커 및 클러스터러 관리
@@ -100,6 +130,11 @@ export function useKakaoMap({
       averageCenter: true,
       minLevel: 3,
       gridSize: 60,
+      //=================
+      // 🚀 최적화 5: 클러스터러 성능 옵션 추가
+      disableClickZoom: false,
+      calculator: [10, 30, 50], // 클러스터 크기 임계값
+      //=================
     });
 
     const markers = pins.map((pin) => {
