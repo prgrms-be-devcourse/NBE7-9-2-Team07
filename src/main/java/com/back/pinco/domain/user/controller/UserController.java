@@ -29,7 +29,9 @@ public class UserController {
     private final Rq rq;
 
     @PostMapping("/join")
-    public RsData<JoinResponse> join(@RequestBody @Valid JoinRequest reqBody) {
+    public RsData<JoinResponse> join(
+            @RequestBody JoinRequest reqBody
+    ) {
         User user = userService.createUser(reqBody.email(), reqBody.password(), reqBody.userName());
         String apiKey = userService.ensureApiKey(user);
         String access = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getUserName());
@@ -46,7 +48,9 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public RsData<Map<String, String>> login(@RequestBody @Valid LoginRequest reqBody) {
+    public RsData<Map<String, String>> login(
+            @RequestBody LoginRequest reqBody
+    ) {
         userService.login(reqBody.email(), reqBody.password());
         User user = userService.findByEmail(reqBody.email());
 
@@ -72,7 +76,9 @@ public class UserController {
     }
 
     @PostMapping("/reissue")
-    public RsData<Map<String, String>> reissue(@RequestBody Map<String, String> body) {
+    public RsData<Map<String, String>> reissue(
+            @RequestBody Map<String, String> body
+    ) {
         String refreshToken = body.getOrDefault("refreshToken", "");
         if (refreshToken.isBlank() || !jwtTokenProvider.isValid(refreshToken)) {
             return new RsData<>(
@@ -101,7 +107,7 @@ public class UserController {
 
     @GetMapping("/getInfo")
     public RsData<GetInfoResponse> getUserInfo() {
-        User user = userService.requireActor();
+        User user = rq.getActor();
         return new RsData<>(
                 "200",
                 "회원 정보를 성공적으로 조회했습니다.",
@@ -111,10 +117,11 @@ public class UserController {
 
     @PutMapping("/edit")
     public RsData<Void> edit(
-            @RequestBody EditRequest reqBody) {
-        User currentUser = userService.requireActor();
+            @RequestBody EditRequest reqBody
+    ) {
+        User currentUser = rq.getActor();
         userService.checkPwd(currentUser, reqBody.password());
-        userService.editUserInfo(currentUser, reqBody.newUserName(), reqBody.newPassword());
+        userService.editUserInfo(currentUser.getId(), reqBody.newUserName(), reqBody.newPassword());
         return new RsData<>(
                 "200",
                 "회원정보 수정 완료"
@@ -123,8 +130,9 @@ public class UserController {
 
     @DeleteMapping("/delete")
     public RsData<Void> delete(
-            @RequestBody DeleteRequest reqBody) {
-        User user = userService.requireActor();
+            @RequestBody DeleteRequest reqBody
+    ) {
+        User user = rq.getActor();
         userService.checkPwd(user, reqBody.password());
         userService.delete(user);
         rq.deleteCookie("accessToken");
@@ -136,7 +144,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/likespins")
-    public RsData<List<PinsLikedByUserResponse>> getPinsLikedByUser(@PathVariable("userId") Long userId) {
+    public RsData<List<PinsLikedByUserResponse>> getPinsLikedByUser(
+            @PathVariable("userId") Long userId
+    ) {
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다", likesService.getPinsLikedByUser(userId)
