@@ -4,6 +4,7 @@ import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
+import com.back.pinco.global.rq.Rq;
 import com.back.pinco.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
+    private final Rq rq;
 
     @Transactional
     public String ensureApiKey(User user) {
@@ -72,12 +74,6 @@ public class UserService {
         if (!passwordEncoder.matches(rawPwd, user.getPassword())) {
             throw new ServiceException(ErrorCode.PASSWORD_NOT_MATCH);
         }
-    }
-
-    @Transactional(readOnly = true)
-    public User userInform(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_INFO_NOT_FOUND));
     }
 
     @Transactional
@@ -198,8 +194,9 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<User> findByApiKey(String apiKey) {
-        return userRepository.findByApiKey(apiKey);
+    public User findByApiKey(String apiKey) {
+        return userRepository.findByApiKey(apiKey)
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_INFO_NOT_FOUND));
     }
 
     // accessToken 생성
@@ -210,6 +207,13 @@ public class UserService {
     @Transactional(readOnly = true)
     public Optional<User> findByIdOptional(Long id) {
         return userRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public User requireActor() {
+        User actor = rq.getActor();
+        if (actor == null) throw new RuntimeException("인증 필요"); // 또는 ServiceException 401
+        return actor;
     }
 
 }
