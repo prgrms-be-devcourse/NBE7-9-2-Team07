@@ -52,7 +52,10 @@ export default function PinCoMainPage() {
             setSelectedPin(withTags);
             setCenter({ lat: withTags.latitude, lng: withTags.longitude });
         },
-        kakaoReady, // ✅ 추가
+        kakaoReady,
+        onCenterChange: (lat, lng) => {
+        setCenter({ lat, lng });
+    }, // ✅ 추가
     });
 
     const [showCreate, setShowCreate] = useState(false);
