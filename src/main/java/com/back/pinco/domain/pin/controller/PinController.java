@@ -42,13 +42,14 @@ public class PinController {
 
     private final Rq rq;
 
+
     //생성
     @Operation(summary = "핀 생성", description = "사용자의 위치와 설명을 받아 핀을 생성")
     @PostMapping
     public RsData<PinDto> createPin(@Valid @RequestBody CreatePinRequest pinReqbody) {
-        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
-        User actor = userService.findByEmail("user1@example.com");
+        User actor = rq.getActor();
         Pin pin = pinService.write(actor, pinReqbody);
+        System.out.println("핀 아이디:"+pin.getUser().getId());
         PinDto pinDto= new PinDto(pin);
         return new RsData<>(
                 "200",
@@ -62,7 +63,8 @@ public class PinController {
     @Operation(summary = "핀 조회 - 단건 (pinId)", description = "핀의 ID로 핀을 단건 조회")
     @GetMapping("/{pinId}")
     public RsData<PinDto> getPinById(@PathVariable("pinId") Long pinId){
-        Pin pin = pinService.findById(pinId);
+        User actor = rq.getActor();
+        Pin pin = pinService.findById(pinId, actor);
         // pin 좋아요 개수 설정
         pin.setLikeCount(likesService.getLikesCount(pinId));
 
@@ -87,7 +89,8 @@ public class PinController {
             @Max(180)
             @RequestParam double longitude
     ) {
-        List<Pin> pins = pinService.findNearPins(latitude, longitude);
+        User actor = rq.getActor();
+        List<Pin> pins = pinService.findNearPins(latitude, longitude, actor);
 
         List<PinDto> pinDtos = pins.stream()
                 .map((pin)->{
@@ -117,8 +120,7 @@ public class PinController {
             @NotNull
             @PathVariable Long userId
     ){
-        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
-        User actor = userService.findByEmail("user1@example.com");
+        User actor = rq.getActor();
         User writer = userService.findById(userId);
         List<Pin> pins = pinService.findByUserId(actor, writer);
         List<PinDto> pinDtos = pins.stream()
@@ -138,7 +140,8 @@ public class PinController {
     @Operation(summary = "핀 조회 - 다건 (all)", description = "모든 핀을 다건 조회")
     @GetMapping("/all")
     public RsData<List<PinDto>> getAll() {
-        List<Pin> pins = pinService.findAll();
+        User actor = rq.getActor();
+        List<Pin> pins = pinService.findAll(actor);
 
         List<PinDto> pinDtos = pins.stream()
                 .map((pin)->{
@@ -200,7 +203,8 @@ public class PinController {
     @Operation(summary = "핀 삭제 - pinId", description = "핀을 id로 조회하여 삭제")
     @DeleteMapping("/{pinId}")
     public RsData<Void> deletePin(@PathVariable Long pinId) {
-        pinService.deleteById(pinId);
+        User actor = rq.getActor();
+        pinService.deleteById(pinId,actor);
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
@@ -252,6 +256,7 @@ public class PinController {
     }
 
 
+    // 해당 핀 북마크 추가
     @Operation(summary = "핀 북마크 등록 - pinId", description = "핀을 id로 조회하여 북마크에 등록")
     @PostMapping("{pinId}/bookmarks")
     public RsData<BookmarkDto> addBookmark(
