@@ -38,6 +38,8 @@ public class User extends BaseEntity {
     @Column(name = "username", nullable = false, length = 50)
     private String userName;    // 사용자명
 
+    @Column(name = "api_key", unique = true, length = 64)
+    private String apiKey; // apiKey
 
     public User(String email, String password, String userName) {
         this.email = email;
