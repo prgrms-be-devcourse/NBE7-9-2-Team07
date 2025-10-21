@@ -201,7 +201,27 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${userId}/likespins`);
+      const apiKey = localStorage.getItem("apiKey");
+      const accessToken = localStorage.getItem("accessToken");
+
+      if (!apiKey || !accessToken) {
+      console.error("❌ 토큰이 없습니다. 로그인이 필요합니다.");
+      alert("로그인이 필요합니다.");
+      setLoading(false);
+      return;
+    }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${userId}/likespins`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey} ${accessToken}`, // ✅ 인증 헤더 추가
+        },
+        credentials: "include", // ✅ 쿠키 포함
+      }
+    );
+    
       const data = await res.json();
 
       const likedArray = extractArray(data.data);
