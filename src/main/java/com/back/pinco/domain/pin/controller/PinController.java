@@ -13,6 +13,7 @@ import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.rsData.RsData;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -236,7 +237,7 @@ public class PinController {
     }
 
 
-    // 해당 핀 북마크 추가
+    @Operation(summary = "해당 핀 북마크 추가", description = "특정 핀을 사용자의 북마크에 추가")
     @PostMapping("{pinId}/bookmarks")
     public RsData<BookmarkDto> addBookmark(
             @RequestBody addBookmarkRequest requestDto

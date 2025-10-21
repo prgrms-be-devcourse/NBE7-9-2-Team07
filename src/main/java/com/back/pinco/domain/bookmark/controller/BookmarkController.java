@@ -3,6 +3,7 @@ package com.back.pinco.domain.bookmark.controller;
 import com.back.pinco.domain.bookmark.dto.BookmarkDto;
 import com.back.pinco.domain.bookmark.service.BookmarkService;
 import com.back.pinco.global.rsData.RsData;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +17,7 @@ import java.util.List;
 public class BookmarkController {
     private final BookmarkService bookmarkService;
 
-
-    // 나의 북마크 목록 조회
+    @Operation(summary = "나의 북마크 목록 조회", description = "사용자가 저장한 핀들의 목록을 조회")
     @GetMapping
     public RsData<List<BookmarkDto>> getMyBookmarks(@RequestParam Long userId) {
         List<BookmarkDto> bookmarkDtos = bookmarkService.getMyBookmarks(userId);
@@ -29,7 +29,7 @@ public class BookmarkController {
         );
     }
 
-    // 북마크 삭제 (soft delete)
+    @Operation(summary = "북마크 삭제 (Soft Delete)", description = "특정 북마크를 소프트 삭제 처리")
     @DeleteMapping("/{bookmarkId}")
     public RsData<Void> deleteBookmark(@PathVariable Long bookmarkId, @RequestParam Long userId) {
         bookmarkService.deleteBookmark(userId, bookmarkId);
@@ -39,7 +39,7 @@ public class BookmarkController {
         );
     }
 
-    // 북마크 복원
+    @Operation(summary = "북마크 복원", description = "소프트 삭제된 북마크를 복원")
     @PatchMapping("/{bookmarkId}")
     public RsData<Void> restoreBookmark(@PathVariable Long bookmarkId, @RequestParam Long userId) {
         bookmarkService.restoreBookmark(userId, bookmarkId);
