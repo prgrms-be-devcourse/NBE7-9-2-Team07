@@ -5,16 +5,18 @@ export function useKakaoMap({
   pins,
   center,
   onSelectPin,
-  kakaoReady, // ✅ SDK 로드 완료 여부
+  kakaoReady,
+  onCenterChange, // ✅ 중심 좌표 변경 콜백 추가
 }: {
   pins: PinDto[];
   center: { lat: number; lng: number };
   onSelectPin: (pin: PinDto) => void;
   kakaoReady?: boolean;
+  onCenterChange?: (lat: number, lng: number) => void; // ✅ 추가
 }) {
   const mapRef = useRef<any>(null);
   const clustererRef = useRef<any>(null);
-  const circleRef = useRef<any>(null); // ✅ 원 객체 저장
+  const circleRef = useRef<any>(null);
 
   // ✅ 지도 초기화 (kakaoReady 이후에만)
   useEffect(() => {
@@ -33,7 +35,31 @@ export function useKakaoMap({
 
     mapRef.current = map;
     (window as any).mapRef = map;
-  }, [kakaoReady]);
+
+    //=================
+    // 지도 이동/드래그 이벤트 리스너 등록
+    kakao.maps.event.addListener(map, 'dragend', () => {
+      const centerLatLng = map.getCenter();
+      const newLat = centerLatLng.getLat();
+      const newLng = centerLatLng.getLng();
+      
+      if (onCenterChange) {
+        onCenterChange(newLat, newLng);
+      }
+    });
+
+    // 지도 중심 좌표 변경 이벤트 (확대/축소 시에도 발생)
+    kakao.maps.event.addListener(map, 'center_changed', () => {
+      const centerLatLng = map.getCenter();
+      const newLat = centerLatLng.getLat();
+      const newLng = centerLatLng.getLng();
+      
+      if (onCenterChange) {
+        onCenterChange(newLat, newLng);
+      }
+    });
+    //=================
+  }, [kakaoReady, onCenterChange]);
 
   // ✅ 중심 이동 + 반경 원 표시
   useEffect(() => {
@@ -43,7 +69,7 @@ export function useKakaoMap({
     const map = mapRef.current;
     const ll = new kakao.maps.LatLng(center.lat, center.lng);
     map.setCenter(ll);
-
+/*
     // ✅ 1km 반경 원 표시 (중심 고정)
     if (circleRef.current) circleRef.current.setMap(null);
     const circle = new kakao.maps.Circle({
@@ -58,6 +84,7 @@ export function useKakaoMap({
     });
     circle.setMap(map);
     circleRef.current = circle;
+    */
   }, [center, kakaoReady]);
 
   // ✅ 마커 및 클러스터러 관리
