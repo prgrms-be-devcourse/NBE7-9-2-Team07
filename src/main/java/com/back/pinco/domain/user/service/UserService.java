@@ -179,7 +179,9 @@ public class UserService {
     }
 
     @Transactional
-    public void editUserInfo(User currentUser, String newUserName, String newPassword) {
+    public void editUserInfo(Long userId, String newUserName, String newPassword) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
         boolean nameChanged = nameChanged(currentUser, newUserName);
         boolean pwdChanged = passwordChanged(currentUser, newPassword);
         if (nameChanged && pwdChanged) {
@@ -207,13 +209,6 @@ public class UserService {
     @Transactional(readOnly = true)
     public Optional<User> findByIdOptional(Long id) {
         return userRepository.findById(id);
-    }
-
-    @Transactional(readOnly = true)
-    public User requireActor() {
-        User actor = rq.getActor();
-        if (actor == null) throw new RuntimeException("인증 필요"); // 또는 ServiceException 401
-        return actor;
     }
 
 }
