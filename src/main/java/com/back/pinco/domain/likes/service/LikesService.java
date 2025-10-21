@@ -14,6 +14,7 @@ import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,19 +28,19 @@ public class LikesService {
 
 
     /** 특정 핀에 대한 좋아요 수 조회 */
+    @Transactional(readOnly = true)
     public int getLikesCount(Long pinId) {
         return (int) likesRepository.countByPin_IdAndLikedTrue(pinId);
     }
 
 
     /** 좋아요 있으면 상태변경, 없으면 신규 생성 */
-    private Likes teoggleLike(Long pinId, Long userId) {
-        Pin pin = pinService.findById(pinId);
+    private Likes toggleLike(Long pinId, Long userId, boolean isLiked) {
         User user = userService.findById(userId);
+        Pin pin = pinService.findById(pinId, user);
 
-        // 받아온 객체에서 꺼내써야하는지, 그냥 전달 받은 값으로 사용해도 되는지?
         Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
-                .map(Likes::toggleLike)
+                .map(like -> like.toggleLike(isLiked))
                 .orElse(new Likes(user, pin));
 
         try {
@@ -50,12 +51,12 @@ public class LikesService {
     }
 
     public createPinLikesResponse createPinLikes(Long pinId, Long userId) {
-        Likes rt_like = teoggleLike(pinId, userId);
+        Likes rt_like = toggleLike(pinId, userId, true);
         return new createPinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
     }
 
     public deletePinLikesResponse togglePinLikes(Long pinId, Long userId) {
-        Likes rt_like = teoggleLike(pinId, userId);
+        Likes rt_like = toggleLike(pinId, userId, false);
         return new deletePinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
     }
 
