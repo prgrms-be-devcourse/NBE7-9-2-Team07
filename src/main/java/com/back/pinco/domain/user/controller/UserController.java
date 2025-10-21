@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -100,9 +99,10 @@ public class UserController {
         );
     }
 
-    @GetMapping("/getInfo/{id}")
-    public RsData<GetInfoResponse> getUserInfo(@PathVariable Long id) {
-        User user = userService.userInform(id);
+    @GetMapping("/getInfo/{apiKey}")
+    public RsData<GetInfoResponse> getUserInfo(
+            @PathVariable String apiKey) {
+        User user = userService.findByApiKey(apiKey);
         return new RsData<>(
                 "200",
                 "회원 정보를 성공적으로 조회했습니다.",
@@ -110,9 +110,11 @@ public class UserController {
         );
     }
 
-    @PutMapping("/edit/{id}")
-    public RsData<Void> edit(@RequestBody @Valid EditRequest reqBody, @PathVariable Long id) {
-        User currentUser = userService.findById(id);
+    @PutMapping("/edit/{apiKey}")
+    public RsData<Void> edit(
+            @RequestBody EditRequest reqBody,
+            @PathVariable String apiKey) {
+        User currentUser = userService.findByApiKey(apiKey);
         userService.checkPwd(currentUser, reqBody.password());
         userService.editUserInfo(currentUser, reqBody.newUserName(), reqBody.newPassword());
         return new RsData<>(
@@ -121,9 +123,11 @@ public class UserController {
         );
     }
 
-    @DeleteMapping("/delete/{id}")
-    public RsData<Void> delete(@RequestBody DeleteRequest reqBody, @PathVariable Long id) {
-        User user = userService.findById(id);
+    @DeleteMapping("/delete/{apiKey}")
+    public RsData<Void> delete(
+            @RequestBody DeleteRequest reqBody,
+            @PathVariable String apiKey) {
+        User user = userService.findByApiKey(apiKey);
         userService.checkPwd(user, reqBody.password());
         userService.delete(user);
         rq.deleteCookie("accessToken");

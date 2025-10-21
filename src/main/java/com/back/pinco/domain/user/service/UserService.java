@@ -74,12 +74,6 @@ public class UserService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public User userInform(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_INFO_NOT_FOUND));
-    }
-
     @Transactional
     public void editName(User user, String newUserName) {
         if (newUserName == null || newUserName.isBlank()
@@ -198,8 +192,9 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<User> findByApiKey(String apiKey) {
-        return userRepository.findByApiKey(apiKey);
+    public User findByApiKey(String apiKey) {
+        return userRepository.findByApiKey(apiKey)
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_INFO_NOT_FOUND));
     }
 
     // accessToken 생성
