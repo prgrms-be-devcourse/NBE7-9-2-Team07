@@ -5,6 +5,7 @@ import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
+import com.back.pinco.global.rq.Rq;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +39,14 @@ public class PinControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private Rq rq;
+
 
     long targetId = 1L;
     long failedTargetId = Integer.MAX_VALUE;
+
+
 
     @Test
     @DisplayName("핀 생성")
@@ -49,7 +55,7 @@ public class PinControllerTest {
         double lat = 0;
         double lon = 0;
         String content = "new Content!";
-
+        User testUser = userRepository.findById(1L).get();
         String jsonContent = String.format(
                 """
                         {
@@ -63,6 +69,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         post("/api/pins")
+                                .header("Authorization", "Bearer %s".formatted(testUser.getApiKey()))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonContent)
                 )
@@ -240,7 +247,7 @@ public class PinControllerTest {
     void t3_1() throws Exception {
 
         Pin pin = pinRepository.findById(targetId).get();
-        List<Pin> pins = pinRepository.findPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0,true,false);
+        List<Pin> pins = pinRepository.findPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0,rq.getActor().getId());
 
         ResultActions resultActions = mvc
                 .perform(
@@ -296,7 +303,7 @@ public class PinControllerTest {
     @Test
     @DisplayName("모든 핀 리턴")
     void t4_1() throws Exception {
-        List<Pin> pins = pinRepository.findByIsPublicAndDeleted(true, false);
+        List<Pin> pins = pinRepository.findAllAccessiblePins(rq.getActor().getId());
 
         ResultActions resultActions = mvc
                 .perform(
@@ -321,8 +328,8 @@ public class PinControllerTest {
     @Test
     @DisplayName("특정 사용자 핀 리턴 -성공 ")
     void t4_2() throws Exception {
-        User actor= userRepository.getById(targetId);
-        List<Pin> pins = pinRepository.findByUserAndIsPublicAndDeleted(actor,true, false);
+        User testUser = userRepository.getReferenceById(1L);
+        List<Pin> pins = pinRepository.findAccessibleByUser(testUser.getId(), rq.getActor().getId());
 
         ResultActions resultActions = mvc
                 .perform(
