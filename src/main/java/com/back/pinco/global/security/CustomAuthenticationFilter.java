@@ -2,6 +2,7 @@ package com.back.pinco.global.security;
 
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
+import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rq.Rq;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -39,13 +40,13 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
 
         final String uri = req.getRequestURI();
 
-        // 1) /api/* 가 아니거나 공개 경로면 바로 통과 (여기서 난 예외는 전역 핸들러가 처리)
+        // /api/* 가 아니거나 공개 경로면 바로 통과 (여기서 난 예외는 전역 핸들러가 처리)
         if (!uri.startsWith("/api/") || PERMIT_PATHS.stream().anyMatch(uri::equals)) {
             chain.doFilter(req, res);
             return;
         }
 
-        // 2) 인증 정보 추출 (Authorization: Bearer <apiKey> <accessToken> 지원 + 쿠키 fallback)
+        // 인증 정보 추출 (Authorization: Bearer <apiKey> <accessToken> 지원 + 쿠키 fallback)
         String apiKey = rq.getHeader("X-API-Key", "");
         String accessToken = "";
 
@@ -72,7 +73,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 3) access 토큰 검사 → 유저
+        // access 토큰 검사 → 유저
         User user = null;
         boolean accessValid = false;
 
@@ -88,28 +89,30 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 4) 토큰이 없거나 무효면 apiKey로 대체 인증
+        // 토큰이 없거나 무효면 apiKey로 대체 인증
         if (user == null && hasApiKey) {
-            user = userService.findByApiKey(apiKey).orElse(null);
-            if (user == null) {
+            try {
+                user = userService.findByApiKey(apiKey);
+            } catch (ServiceException e) {
                 write401(res, "401-3", "API 키가 유효하지 않습니다.");
                 return;
             }
         }
+
 
         if (user == null) {
             write401(res, "401-2", "인증 정보가 유효하지 않습니다.");
             return;
         }
 
-        // 5) 토큰이 있었는데 무효였다면, apiKey가 유효한 경우 새 access 토큰 재발급
+        // 토큰이 있었는데 무효였다면, apiKey가 유효한 경우 새 access 토큰 재발급
         if (hasAccess && !accessValid && hasApiKey) {
             String newAccess = userService.genAccessToken(user);
             rq.setCookie("accessToken", newAccess);
             rq.setHeader("accessToken", newAccess);
         }
 
-        // 6) SecurityContext 주입
+        // SecurityContext 주입
         var auth = new UsernamePasswordAuthenticationToken(
                 user, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );
