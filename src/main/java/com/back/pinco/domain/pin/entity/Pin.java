@@ -70,6 +70,10 @@ public class Pin extends BaseEntity{
     public void setDeleted() {
         this.deleted = true;
     }
+//삭제 복구
+    public void unSetDeleted() {
+        this.deleted = true;
+    }
 
     // 공개 여부 변경
     public void togglePublic() {

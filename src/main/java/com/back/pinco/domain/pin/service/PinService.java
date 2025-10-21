@@ -113,6 +113,21 @@ public class PinService {
         pinRepository.save(pin);
     }
 
+    public void unDeleteById(Long pinId, User actor) {
+        Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
+        if(pin.getUser().getId().equals(actor.getId())){
+            try {
+                pin.unSetDeleted();
+            }catch(Exception e){
+                throw new ServiceException(ErrorCode.PIN_DELETE_FAILED);
+            }
+        }else{
+            throw new ServiceException(ErrorCode.PIN_NO_PERMISSION);
+        }
+
+        pinRepository.save(pin);
+    }
+
     /**
      * 핀 좋아요 수 갱신
      * @param pin

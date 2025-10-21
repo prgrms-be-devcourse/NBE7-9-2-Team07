@@ -13,7 +13,7 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
     @Query(value = """
     SELECT * FROM pins p
     WHERE ST_DWithin(p.point,ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,:radiusInMeters) 
-          AND p.is_deleted=:isDeletedCheck
+          AND p.is_deleted=false
           AND (user_id = :userId OR is_public = true)
     """,
             nativeQuery = true)
@@ -30,7 +30,7 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
     @Query(value = """
     SELECT p FROM Pin p
     WHERE p.user.id = :writerId
-      AND (p.user.id = :userId OR p.isPublic = true)
+      AND (p.user.id = :actorId OR p.isPublic = true)
 """)
     List<Pin> findAccessibleByUser(Long writerId, Long actorId);
 

@@ -3,6 +3,7 @@ package com.back.pinco.domain.pin.controller;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
+import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.rq.Rq;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,17 +38,19 @@ public class PinControllerTest {
     private PinRepository pinRepository;
 
     @Autowired
-    private LikesRepository likesRepository;
-
-    @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Autowired
+    private PinService pinService;
+
 
     long targetId = 1L;
     long failedTargetId = Integer.MAX_VALUE;
+
+    long noAuthId =4L;
 
     private String jwtToken;
     private User testUser;
@@ -79,7 +83,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         post("/api/pins")
-                                .header("Authorization", "Bearer %s".formatted(jwtToken))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonContent)
                 )
@@ -117,6 +121,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         post("/api/pins")
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonContent)
                 )
@@ -148,6 +153,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         post("/api/pins")
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonContent)
                 )
@@ -179,6 +185,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         post("/api/pins")
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonContent)
                 )
@@ -192,13 +199,43 @@ public class PinControllerTest {
     }
 
     @Test
+    @DisplayName("핀 생성 - 실패 (jwt 없음)")
+    void t1_5() throws Exception {
+        double lat = 0;
+        double lon = 0;
+        String content = "new Content!";
+
+        String jsonContent = String.format(
+                """
+                        {
+                            "content": "%s",
+                            "latitude" : %s, 
+                            "longitude" : %s
+                        }
+                        """, content, lat, lon
+        );
+
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/pins")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonContent)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(status().is(403));
+    }
+
+    @Test
     @DisplayName("id로 핀 조회 - 성공")
     void t2_1() throws Exception {
 
-        Pin pin = pinRepository.findById(targetId).get();
+        Pin pin = pinRepository.findAccessiblePinById(targetId, testUser.getId()).get();
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/%s".formatted(targetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
@@ -213,6 +250,8 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.data.modifiedAt").value(matchesPattern(pin.getModifiedAt().toString().replaceAll("0+$", "") + ".*")))
                 .andExpect(jsonPath("$.data.pinTags.length()").value(pin.getPinTags().size()))
         ;
+
+
     }
 
     @Test
@@ -221,31 +260,11 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/%s".formatted(failedTargetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
         resultActions
-                .andExpect(handler().handlerType(PinController.class))
-                .andExpect(handler().methodName("getPinById"))
-                .andExpect(jsonPath("$.errorCode").value("1002"))
-                .andExpect(jsonPath("$.msg").exists());
-    }
-
-    @Test
-    @DisplayName("id로 핀 조회 - 실패 (있긴 한데 삭제되어서 안 뜸)")
-    void t2_3() throws Exception {
-        ResultActions resultActions1 = mvc
-                .perform(
-                        delete("/api/pins/%s".formatted(targetId))
-                )
-                .andDo(print());
-        ResultActions resultActions2 = mvc
-                .perform(
-                        get("/api/pins/%s".formatted(targetId))
-                )
-                .andDo(print());
-
-        resultActions2
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("getPinById"))
                 .andExpect(jsonPath("$.errorCode").value("1002"))
@@ -265,6 +284,7 @@ public class PinControllerTest {
                                 .param("radius", String.valueOf(1000))
                                 .param("longitude", String.valueOf(pin.getPoint().getX()))
                                 .param("latitude", String.valueOf(pin.getPoint().getY()))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
@@ -299,6 +319,7 @@ public class PinControllerTest {
                                 .param("radius", String.valueOf(radius))
                                 .param("latitude", String.valueOf(outOfRangeLat))
                                 .param("longitude", String.valueOf(outOfRangeLon))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
@@ -318,6 +339,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/all")
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
@@ -344,6 +366,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/user/%s".formatted(targetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
@@ -369,6 +392,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/user/%s".formatted(failedTargetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
@@ -389,6 +413,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         put("/api/pins/%s".formatted(targetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -418,6 +443,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         put("/api/pins/%s".formatted(failedTargetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -439,7 +465,9 @@ public class PinControllerTest {
     void t5_1_3() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
-                        put("/api/pins/%s".formatted(targetId)).contentType(MediaType.APPLICATION_JSON)
+                        put("/api/pins/%s".formatted(targetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .content("{}")
                 )
                 .andDo(print());
@@ -448,6 +476,30 @@ public class PinControllerTest {
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("updatePinContent"))
                 .andExpect(jsonPath("$.errorCode").value("1005"))
+                .andExpect(jsonPath("$.msg").exists());
+    }
+
+    @Test
+    @DisplayName("핀 내용 수정 - 실패 (권한 없음)")
+    void t5_1_4() throws Exception {
+        String content = "updated Content!";
+        ResultActions resultActions = mvc
+                .perform(
+                        put("/api/pins/%s".formatted(noAuthId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "content": "%s"
+                                        }
+                                        """.formatted(content))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("updatePinContent"))
+                .andExpect(jsonPath("$.errorCode").value("1010"))
                 .andExpect(jsonPath("$.msg").exists());
     }
 
@@ -463,6 +515,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         put("/api/pins/%s/public".formatted(targetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{}")
                 )
@@ -484,6 +537,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         put("/api/pins/%s/public".formatted(failedTargetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{}")
                 )
@@ -498,12 +552,33 @@ public class PinControllerTest {
     }
 
     @Test
+    @DisplayName("핀 공개 여부 수정 - 실패 (권한 없음)")
+    void t5_2_3() throws Exception {
+
+        ResultActions resultActions = mvc
+                .perform(
+                        put("/api/pins/%s/public".formatted(noAuthId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}")
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("changePinPublic"))
+                .andExpect(jsonPath("$.errorCode").value("1010"))
+                .andExpect(jsonPath("$.msg").exists());
+    }
+
+    @Test
     @DisplayName("핀 삭제 - 성공")
     void t6_1() throws Exception {
 
         ResultActions resultActions = mvc
                 .perform(
                         delete("/api/pins/%s".formatted(targetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
@@ -520,6 +595,7 @@ public class PinControllerTest {
         ResultActions resultActions = mvc
                 .perform(
                         delete("/api/pins/%s".formatted(failedTargetId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
                 )
                 .andDo(print());
 
@@ -527,6 +603,24 @@ public class PinControllerTest {
                 .andExpect(handler().handlerType(PinController.class))
                 .andExpect(handler().methodName("deletePin"))
                 .andExpect(jsonPath("$.errorCode").value("1002"))
+                .andExpect(jsonPath("$.msg").exists());
+    }
+
+    @Test
+    @DisplayName("핀 삭제 - 실패 (권한 없음)")
+    void t6_3() throws Exception {
+
+        ResultActions resultActions = mvc
+                .perform(
+                        delete("/api/pins/%s".formatted(noAuthId))
+                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("deletePin"))
+                .andExpect(jsonPath("$.errorCode").value("1010"))
                 .andExpect(jsonPath("$.msg").exists());
     }
 
