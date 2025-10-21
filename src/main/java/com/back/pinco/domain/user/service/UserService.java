@@ -4,10 +4,14 @@ import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
+import com.back.pinco.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +19,25 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final JwtTokenProvider tokenProvider;
+
+    @Transactional
+    public String ensureApiKey(User user) {
+        if (user.getApiKey() == null || user.getApiKey().isBlank()) {
+            String key = UUID.randomUUID().toString();
+
+            // 혹시 중복이면 새로 생성
+            while (userRepository.existsByApiKey(key)) {
+                key = UUID.randomUUID().toString();
+            }
+
+            user.setApiKey(key);
+            userRepository.save(user);
+        }
+        return user.getApiKey();
+    }
+
+
 
     @Transactional
     public User createUser(String email, String password, String userName) {
@@ -36,7 +59,9 @@ public class UserService {
         }
         String hashedPwd = passwordEncoder.encode(password);
         User user = new User(email, hashedPwd, userName);
-        return userRepository.save(user);
+        userRepository.save(user);
+        ensureApiKey(user);
+        return user;
     }
 
     @Transactional(readOnly = true)
@@ -108,6 +133,7 @@ public class UserService {
     @Transactional
     public void delete(User user) {
         userRepository.delete(user);
+        userRepository.flush();
     }
 
     // 비밀번호 확인
@@ -170,4 +196,20 @@ public class UserService {
             throw new ServiceException(ErrorCode.NO_FIELDS_TO_UPDATE);
         }
     }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findByApiKey(String apiKey) {
+        return userRepository.findByApiKey(apiKey);
+    }
+
+    // accessToken 생성
+    public String genAccessToken(User user) {
+        return tokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getUserName());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findByIdOptional(Long id) {
+        return userRepository.findById(id);
+    }
+
 }

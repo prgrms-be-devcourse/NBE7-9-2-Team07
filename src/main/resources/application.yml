@@ -15,3 +15,8 @@ spring:
   devtools:
     restart:
       enabled: false
+custom:
+  jwt:
+    secret: "aVeryLongSecretKey_ChangeMe_2025!"
+    accessExpireSeconds: 1800
+    refreshExpireSeconds: 86400
