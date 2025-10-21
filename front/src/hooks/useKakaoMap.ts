@@ -99,8 +99,8 @@ export function useKakaoMap({
     if (latDiff > 0.0001 || lngDiff > 0.0001) {
       map.setCenter(ll);
     }
-    //=================
-
+    
+    /* 
     // ✅ 1km 반경 원 표시 (중심 고정)
     if (circleRef.current) circleRef.current.setMap(null);
     const circle = new kakao.maps.Circle({
@@ -115,6 +115,7 @@ export function useKakaoMap({
     });
     circle.setMap(map);
     circleRef.current = circle;
+    */
   }, [center, kakaoReady]);
 
   // ✅ 마커 및 클러스터러 관리
