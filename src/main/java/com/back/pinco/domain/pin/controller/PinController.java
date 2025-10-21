@@ -262,7 +262,9 @@ public class PinController {
     public RsData<BookmarkDto> addBookmark(
             @RequestBody addBookmarkRequest requestDto
     ) {
-        BookmarkDto bookmarkDto = bookmarkService.addBookmark(requestDto.userId(), requestDto.pinId());
+        User actor = rq.getActor();
+
+        BookmarkDto bookmarkDto = bookmarkService.addBookmark(actor.getId(), requestDto.pinId());
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다.",
