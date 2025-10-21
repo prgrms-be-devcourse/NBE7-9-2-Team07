@@ -20,6 +20,7 @@ public enum ErrorCode {
     INVALID_PIN_LONGITUDE(1007, HttpStatus.BAD_REQUEST, "longitude를 입력해주세요."),
     PIN_UPDATE_FAILED(1008, HttpStatus.INTERNAL_SERVER_ERROR, "핀 수정 중 오류가 발생했습니다."),
     PIN_DELETE_FAILED(1009, HttpStatus.INTERNAL_SERVER_ERROR, "핀 삭제 중 오류가 발생했습니다."),
+    PIN_NO_PERMISSION(1010, HttpStatus.FORBIDDEN, "핀 생성,수정 권한이 없습니다."),
 
     // User 도메인_2000번대
     INVALID_EMAIL_FORMAT(2001, HttpStatus.BAD_REQUEST, "이메일 형식이 올바르지 않습니다."),

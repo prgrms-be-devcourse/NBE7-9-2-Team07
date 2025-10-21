@@ -36,12 +36,9 @@ public class PinService {
         }
     }
 
-    public Pin findById(long id) {
-        // TODO: 인증 추가하여 공개/비공개 열람 범위 정하고, 삭제된 것도 필요한지 확인
-        Pin pin = pinRepository.findByIdWithConditions(id,true,false);
-        if(pin==null){
-            throw new ServiceException(ErrorCode.PIN_NOT_FOUND);
-        }
+    public Pin findById(long id, User actor) {
+        Pin pin = pinRepository.findAccessiblePinById(id, actor.getId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
         return pin;
     }
 
@@ -49,15 +46,21 @@ public class PinService {
         return pinRepository.findById(id).isPresent();
     }
 
-    public List<Pin> findAll() {
-        List<Pin> pins = pinRepository.findByIsPublicAndDeleted(true, false);
+    public List<Pin> findAll(User actor) {
+        List<Pin> pins = pinRepository.findAllAccessiblePins(actor.getId());
+        if(pins.isEmpty()){ throw new ServiceException(ErrorCode.PINS_NOT_FOUND);}
+
+        return pins;
+    }
+
+    public List<Pin> findNearPins(double latitude,double longitude, User actor) {
+        List<Pin> pins = pinRepository.findPinsWithinRadius(latitude,longitude,1000.0, actor.getId());
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
 
-    public List<Pin> findNearPins(double latitude,double longitude) {
-        // TODO: 인증 추가하여 공개/비공개 열람 범위 정하고, 삭제된 것도 필요한지 확인
-        List<Pin> pins = pinRepository.findPinsWithinRadius(latitude,longitude,1000.0, true,false);
+    public List<Pin> findByUserId(User actor, User writer) {
+        List<Pin> pins = pinRepository.findAccessibleByUser(writer.getId(), actor.getId());
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
@@ -65,12 +68,16 @@ public class PinService {
     @Transactional
     public Pin update(User actor, Long pinId, UpdatePinContentRequest updatePinContentRequest) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        // TODO: 인증 추가
-        try {
-            pin.update(updatePinContentRequest);
-        }catch(Exception e){
-            throw new ServiceException(ErrorCode.PIN_UPDATE_FAILED);
+        if(pin.getUser().getId().equals(actor.getId())){
+            try {
+                pin.update(updatePinContentRequest);
+            }catch(Exception e){
+                throw new ServiceException(ErrorCode.PIN_UPDATE_FAILED);
+            }
+        }else{
+            throw new ServiceException(ErrorCode.PIN_NO_PERMISSION);
         }
+
 
         return pin;
     }
@@ -78,23 +85,46 @@ public class PinService {
     @Transactional
     public Pin changePublic(User actor, Long pinId) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        // TODO: 인증 추가
-        try {
-        pin.togglePublic();
-        }catch(Exception e){
-            throw new ServiceException(ErrorCode.PIN_UPDATE_FAILED);
+        if(pin.getUser().getId().equals(actor.getId())){
+            try {
+                pin.togglePublic();
+            }catch(Exception e){
+                throw new ServiceException(ErrorCode.PIN_UPDATE_FAILED);
+            }
+        }else{
+            throw new ServiceException(ErrorCode.PIN_NO_PERMISSION);
         }
+
         return pin;
     }
 
-    public void deleteById(Long pinId) {
+    public void deleteById(Long pinId, User actor) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        // TODO: 인증 추가
-        try {
-            pin.setDeleted();
-        }catch(Exception e){
-            throw new ServiceException(ErrorCode.PIN_DELETE_FAILED);
+        if(pin.getUser().getId().equals(actor.getId())){
+            try {
+                pin.setDeleted();
+            }catch(Exception e){
+                throw new ServiceException(ErrorCode.PIN_DELETE_FAILED);
+            }
+        }else{
+            throw new ServiceException(ErrorCode.PIN_NO_PERMISSION);
         }
+
+        pinRepository.save(pin);
+    }
+
+    public void unDeleteById(Long pinId, User actor) {
+        Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
+        if(pin.getUser().getId().equals(actor.getId())){
+            try {
+                pin.unSetDeleted();
+            }catch(Exception e){
+                throw new ServiceException(ErrorCode.PIN_DELETE_FAILED);
+            }
+        }else{
+            throw new ServiceException(ErrorCode.PIN_NO_PERMISSION);
+        }
+
         pinRepository.save(pin);
     }
 
@@ -110,10 +140,5 @@ public class PinService {
         return pinRepository.save(pin);
     }
 
-    public List<Pin> findByUserId(User actor, User writer) {
-        //TODO: 인증 추가해서 비공개-남이 작성한 건 걸러주기
-        List<Pin> pins = pinRepository.findByUserAndIsPublicAndDeleted(writer, true, false);
-        if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
-        return pins;
-    }
+
 }
