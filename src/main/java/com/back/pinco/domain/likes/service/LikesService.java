@@ -37,7 +37,7 @@ public class LikesService {
     /** 좋아요 있으면 상태변경, 없으면 신규 생성 */
     private Likes teoggleLike(Long pinId, Long userId, boolean isLiked) {
         Pin pin = pinService.findById(pinId);
-        User user = userService.userInform(userId);
+        User user = userService.findById(userId);
 
         // 받아온 객체에서 꺼내쓰는 게 좋을지, 그냥 전달 받은 값으로 사용해도 되는지?
         Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())

@@ -52,7 +52,10 @@ export default function PinCoMainPage() {
             setSelectedPin(withTags);
             setCenter({ lat: withTags.latitude, lng: withTags.longitude });
         },
-        kakaoReady, // ✅ 추가
+        kakaoReady,
+        onCenterChange: (lat, lng) => {
+        setCenter({ lat, lng });
+    }, // ✅ 추가
     });
 
     const [showCreate, setShowCreate] = useState(false);
@@ -123,6 +126,14 @@ export default function PinCoMainPage() {
                                 <LogOut size={14} /> 로그아웃
                             </button>
                         )}
+                    </div>
+
+                    <div className="absolute top-20 left-4 bg-white p-2 px-3 rounded-lg shadow-md z-50 text-xs">
+                        <p className="text-gray-500">📍 현재 위치</p>
+                        <p className="text-gray-700 font-mono">
+                            {/* center 상태는 useKakaoMap에서 실시간으로 갱신됨 */}
+                            {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
+                        </p>
                     </div>
 
                     {selectedPin && (
