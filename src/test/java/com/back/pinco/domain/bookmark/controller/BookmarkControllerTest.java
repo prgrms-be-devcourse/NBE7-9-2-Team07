@@ -61,7 +61,6 @@ class BookmarkControllerTest {
         Pin pinC = findPinByContent("청계천 산책로 발견 👣");
         Long targetPinId = pinC.getId();
 
-        // PinController의 addBookmark 엔드포인트에 맞춰 userId 없이 pinId만 JSON에 포함
         String jsonContent = """
                                 {
                                   "pinId": %d
@@ -75,7 +74,7 @@ class BookmarkControllerTest {
                         .content(jsonContent)
         ).andDo(print());
 
-        resultActions.andExpect(status().isOk()) // 성공 응답 코드는 200 (PinController의 응답에 따름)
+        resultActions.andExpect(status().isOk())
                 .andExpect(jsonPath("$.errorCode").value("200"))
                 .andExpect(jsonPath("$.data.id").isNumber())
                 .andExpect(jsonPath("$.data.pin.id").value(targetPinId.intValue()));
@@ -87,7 +86,7 @@ class BookmarkControllerTest {
     @DisplayName("t1_2. 북마크 생성 실패 (이미 북마크된 핀)")
     void t1_2() throws Exception {
         User user1 = userRepository.findByEmail("user1@example.com").orElseThrow();
-        // InitData에 의해 user1은 pinA를 이미 북마크 하고 있음
+        // user1은 pinA를 이미 북마크 하고 있음
         Pin pinA = findPinByContent("서울 시청 근처 카페 ☕");
         Long targetPinId = pinA.getId();
 
@@ -151,7 +150,6 @@ class BookmarkControllerTest {
                         .content(jsonContent)
         ).andDo(print());
 
-        // BookmarkService에서 pinService.findById(pinId)가 PinNotFound(1002) 예외를 던짐 -> HTTP Status 404 Not Found
         resultActions.andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("1002"))
                 .andExpect(jsonPath("$.msg").exists());
@@ -194,8 +192,7 @@ class BookmarkControllerTest {
         ResultActions resultActions = mvc.perform(
                 get("/api/bookmarks")
         ).andDo(print());
-
-        // 인증되지 않은 요청은 403 Forbidden
+        
         resultActions.andExpect(status().isForbidden());
     }
 
