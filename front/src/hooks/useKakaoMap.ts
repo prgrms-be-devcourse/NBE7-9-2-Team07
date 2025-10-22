@@ -16,15 +16,10 @@ export function useKakaoMap({
 }) {
     const mapRef = useRef<any>(null);
     const clustererRef = useRef<any>(null);
-    const circleRef = useRef<any>(null);
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const lastCenterRef = useRef({lat: center.lat, lng: center.lng});
     const userZoomLevelRef = useRef<number>(4);
     const isUpdatingCenterRef = useRef(false);
-    //=================
-    // 외부에서 center가 변경되었는지 추적
-    const externalCenterChangeRef = useRef(false);
-    //=================
 
     // ✅ 지도 초기화 (kakaoReady 이후에만)
     useEffect(() => {
@@ -54,7 +49,6 @@ export function useKakaoMap({
             }
         });
 
-        //=================
         // 드래그 이벤트 - onCenterChange 호출 제거
         kakao.maps.event.addListener(map, 'dragend', () => {
             if (debounceTimerRef.current) {
@@ -72,17 +66,15 @@ export function useKakaoMap({
                 if (latDiff > 0.0001 || lngDiff > 0.0001) {
                     lastCenterRef.current = {lat: newLat, lng: newLng};
 
-                    // ❌ onCenterChange 호출 제거 (이게 줌 레벨 초기화의 원인)
-                    // if (onCenterChange) {
-                    //   onCenterChange(newLat, newLng);
-                    // }
+                    if (onCenterChange) {
+                      onCenterChange(newLat, newLng);
+                    }
 
                     // ✅ 대신 화면 표시용 좌표만 업데이트 (선택사항)
                     console.log("📍 현재 중심:", {lat: newLat, lng: newLng});
                 }
             }, 500);
         });
-        //=================
 
         return () => {
             if (debounceTimerRef.current) {
@@ -91,7 +83,6 @@ export function useKakaoMap({
         };
     }, [kakaoReady]); // onCenterChange 의존성 제거
 
-    //=================
     // ✅ center prop이 외부에서 변경되었을 때만 지도 이동
     useEffect(() => {
         const kakao = (window as any).kakao;
@@ -129,25 +120,7 @@ export function useKakaoMap({
             // lastCenterRef 업데이트
             lastCenterRef.current = {lat: center.lat, lng: center.lng};
         }
-
-        /*
-        // ✅ 1km 반경 원 표시 (중심 고정)
-        if (circleRef.current) circleRef.current.setMap(null);
-        const circle = new kakao.maps.Circle({
-          center: ll,
-          radius: 1000,
-          strokeWeight: 2,
-          strokeColor: "#2563EB",
-          strokeOpacity: 0.8,
-          strokeStyle: "solid",
-          fillColor: "#60A5FA",
-          fillOpacity: 0.15,
-        });
-        circle.setMap(map);
-        circleRef.current = circle;
-        */
     }, [center, kakaoReady]);
-    //=================
 
     // ✅ 마커 및 클러스터러 관리
     useEffect(() => {
