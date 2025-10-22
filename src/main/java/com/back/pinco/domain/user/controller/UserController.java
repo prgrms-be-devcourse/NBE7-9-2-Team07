@@ -36,9 +36,9 @@ public class UserController {
 
     private final UserService userService;
     private final LikesService likesService;
-    private final LikesRepository likesRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final Rq rq;
+
 
     @PostMapping("/join")
     public RsData<JoinResponse> join(
@@ -167,18 +167,18 @@ public class UserController {
     public RsData<MyPageResponse> myPage() {
         // 로그인 사용자
         User user = rq.getActor();
+        List<Pin> listPin = userService.getMyPins(); // DB 접근은 한 번만
         if (user == null) {
             throw new ServiceException(ErrorCode.AUTH_REQUIRED);
         }
-
         // 2) 내가 작성한 핀 개수
-        int pinCount = userService.getMyPins().size();
+        int pinCount = listPin.size();
 
         // 3) 내가 북마크한 핀 개수
         int bookmarkCount = userService.getMyBookmarks().size();
 
         // 내가 지금까지 받은 총 '좋아요 수'
-        long likesCount = userService.likesCount(userService.getMyPins());
+        long likesCount = userService.likesCount(listPin);
 
         return new RsData<>(
                 "200",
