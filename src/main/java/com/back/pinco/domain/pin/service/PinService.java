@@ -27,6 +27,7 @@ public class PinService {
 
 
     public Pin write(User actor, CreatePinRequest pinReqbody) {
+        if(actor==null) throw new ServiceException(ErrorCode.PIN_NO_PERMISSION);
         Point point = GeometryUtil.createPoint(pinReqbody.longitude(), pinReqbody.latitude());
         try {
             Pin pin = new Pin(point, actor, pinReqbody.content());
@@ -37,9 +38,13 @@ public class PinService {
     }
 
     public Pin findById(long id, User actor) {
-        Pin pin = pinRepository.findAccessiblePinById(id, actor.getId())
+        if(actor==null){
+            return pinRepository.findPublicPinById(id)
+                    .orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
+        }
+
+        return pinRepository.findAccessiblePinById(id, actor.getId())
                 .orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        return pin;
     }
 
     public Boolean checkId(long id) {
@@ -47,20 +52,36 @@ public class PinService {
     }
 
     public List<Pin> findAll(User actor) {
-        List<Pin> pins = pinRepository.findAllAccessiblePins(actor.getId());
+        List<Pin> pins;
+        if(actor==null){
+            pins= pinRepository.findAllPublicPins();
+        }else {
+            pins = pinRepository.findAllAccessiblePins(actor.getId());
+        }
         if(pins.isEmpty()){ throw new ServiceException(ErrorCode.PINS_NOT_FOUND);}
 
         return pins;
     }
 
     public List<Pin> findNearPins(double latitude,double longitude, User actor) {
-        List<Pin> pins = pinRepository.findPinsWithinRadius(latitude,longitude,1000.0, actor.getId());
+        List<Pin> pins;
+        if(actor==null){
+            pins=  pinRepository.findPublicPinsWithinRadius(latitude,longitude,1000.0);
+        }else {
+            pins =  pinRepository.findPinsWithinRadius(latitude,longitude,1000.0, actor.getId());
+        }
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
 
     public List<Pin> findByUserId(User actor, User writer) {
-        List<Pin> pins = pinRepository.findAccessibleByUser(writer.getId(), actor.getId());
+        List<Pin> pins;
+        if(actor==null){
+            pins= pinRepository.findPublicByUser(writer.getId());
+        }else {
+            pins = pinRepository.findAccessibleByUser(writer.getId(), actor.getId());
+        }
+
         if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }

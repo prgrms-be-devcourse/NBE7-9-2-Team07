@@ -24,6 +24,19 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
             @Param("userId") Long userId
     );
 
+    @Query(value = """
+    SELECT * FROM pins p
+    WHERE ST_DWithin(p.point,ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,:radiusInMeters) 
+          AND p.is_deleted=false
+          AND is_public = true
+    """,
+            nativeQuery = true)
+    List<Pin> findPublicPinsWithinRadius(
+            @Param("latitude") Double latitude,
+            @Param("longitude") Double longitude,
+            @Param("radiusInMeters") Double radiusInMeters
+    );
+
 
 
     // 특정 사용자의 핀 조회
@@ -34,6 +47,13 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
 """)
     List<Pin> findAccessibleByUser(Long writerId, Long actorId);
 
+    @Query(value = """
+    SELECT p FROM Pin p
+    WHERE p.user.id = :writerId
+      AND p.isPublic = true
+""")
+    List<Pin> findPublicByUser(Long writerId);
+
     // 전체 핀 조회
     @Query(value = """
     SELECT p FROM Pin p
@@ -42,6 +62,12 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
 """)
     List<Pin> findAllAccessiblePins(@Param("userId") Long userId);
 
+    @Query(value = """
+    SELECT p FROM Pin p
+    WHERE p.deleted = false
+      AND p.isPublic = true
+""")
+    List<Pin> findAllPublicPins();
 
     // id로 핀 조회
     @Query("""
@@ -51,6 +77,13 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
       AND (p.user.id = :userId OR p.isPublic = true)
 """)
     Optional<Pin> findAccessiblePinById(@Param("id") Long id, @Param("userId") Long userId);
+    @Query("""
+    SELECT p FROM Pin p
+    WHERE p.id = :id
+      AND p.deleted = false
+      AND p.isPublic = true
+""")
+    Optional<Pin> findPublicPinById(@Param("id") Long id);
 
 
 

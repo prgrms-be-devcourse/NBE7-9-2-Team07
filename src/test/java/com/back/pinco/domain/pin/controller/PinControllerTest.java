@@ -229,13 +229,40 @@ public class PinControllerTest {
 
     @Test
     @DisplayName("id로 핀 조회 - 성공")
-    void t2_1() throws Exception {
+    void t2_1_1() throws Exception {
 
         Pin pin = pinRepository.findAccessiblePinById(targetId, testUser.getId()).get();
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/pins/%s".formatted(targetId))
                                 .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getPinById"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(pin.getId()))
+                .andExpect(jsonPath("$.data.latitude").value(pin.getPoint().getY()))
+                .andExpect(jsonPath("$.data.longitude").value(pin.getPoint().getX()))
+                .andExpect(jsonPath("$.data.createdAt").value(matchesPattern(pin.getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data.modifiedAt").value(matchesPattern(pin.getModifiedAt().toString().replaceAll("0+$", "") + ".*")))
+                .andExpect(jsonPath("$.data.pinTags.length()").value(pin.getPinTags().size()))
+        ;
+
+
+    }
+
+    @Test
+    @DisplayName("id로 핀 조회 - 비 로그인 - 성공")
+    void t2_1_2() throws Exception {
+
+        Pin pin = pinRepository.findPublicPinById(targetId).get();
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/pins/%s".formatted(targetId))
+
                 )
                 .andDo(print());
 
@@ -273,7 +300,7 @@ public class PinControllerTest {
 
     @Test
     @DisplayName("특정 지점에서 범위 내 좌표 확인")
-    void t3_1() throws Exception {
+    void t3_1_1() throws Exception {
 
         Pin pin = pinRepository.findById(targetId).get();
         List<Pin> pins = pinRepository.findPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0,testUser.getId());
@@ -285,6 +312,39 @@ public class PinControllerTest {
                                 .param("longitude", String.valueOf(pin.getPoint().getX()))
                                 .param("latitude", String.valueOf(pin.getPoint().getY()))
                                 .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getRadiusPins"))
+                .andExpect(status().isOk());
+
+        for (int i = 0; i < pins.size(); i++) {
+            resultActions
+                    .andExpect(jsonPath("$.data[%d].id".formatted(i)).value(pins.get(i).getId()))
+                    .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pins.get(i).getPoint().getY()))
+                    .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pins.get(i).getPoint().getX()))
+                    .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pins.get(i).getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].modifiedAt".formatted(i)).value(matchesPattern(pins.get(i).getModifiedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].pinTags.length()".formatted(i)).value(pins.get(i).getPinTags().size()));
+        }
+
+    }
+
+    @Test
+    @DisplayName("특정 지점에서 범위 내 좌표 확인- 비로그인")
+    void t3_1_2() throws Exception {
+
+        Pin pin = pinRepository.findById(targetId).get();
+        List<Pin> pins = pinRepository.findPublicPinsWithinRadius(pin.getPoint().getX(),pin.getPoint().getY(),1000.0);
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/pins")
+                                .param("radius", String.valueOf(1000))
+                                .param("longitude", String.valueOf(pin.getPoint().getX()))
+                                .param("latitude", String.valueOf(pin.getPoint().getY()))
                 )
                 .andDo(print());
 
@@ -333,7 +393,7 @@ public class PinControllerTest {
 
     @Test
     @DisplayName("모든 핀 리턴")
-    void t4_1() throws Exception {
+    void t4_1_1() throws Exception {
         List<Pin> pins = pinRepository.findAllAccessiblePins(testUser.getId());
 
         ResultActions resultActions = mvc
@@ -357,9 +417,36 @@ public class PinControllerTest {
                     .andExpect(jsonPath("$.data[%d].pinTags.length()".formatted(i)).value(pins.get(i).getPinTags().size()));
         }
     }
+
+    @Test
+    @DisplayName("모든 핀 리턴 - 비로그인")
+    void t4_1_2() throws Exception {
+        List<Pin> pins = pinRepository.findAllPublicPins();
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/pins/all")
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getAll"))
+                .andExpect(status().isOk());
+
+        for (int i = 0; i < pins.size(); i++) {
+            resultActions
+                    .andExpect(jsonPath("$.data[%d].id".formatted(i)).value(pins.get(i).getId()))
+                    .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pins.get(i).getPoint().getY()))
+                    .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pins.get(i).getPoint().getX()))
+                    .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pins.get(i).getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].pinTags.length()".formatted(i)).value(pins.get(i).getPinTags().size()));
+        }
+    }
+
     @Test
     @DisplayName("특정 사용자 핀 리턴 -성공 ")
-    void t4_2() throws Exception {
+    void t4_2_1() throws Exception {
         User testUser = userRepository.getReferenceById(1L);
         List<Pin> pins = pinRepository.findAccessibleByUser(testUser.getId(), testUser.getId());
 
@@ -367,6 +454,33 @@ public class PinControllerTest {
                 .perform(
                         get("/api/pins/user/%s".formatted(targetId))
                                 .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(PinController.class))
+                .andExpect(handler().methodName("getUserPins"))
+                .andExpect(status().isOk());
+
+        for (int i = 0; i < pins.size(); i++) {
+            resultActions
+                    .andExpect(jsonPath("$.data[%d].id".formatted(i)).value(pins.get(i).getId()))
+                    .andExpect(jsonPath("$.data[%d].latitude".formatted(i)).value(pins.get(i).getPoint().getY()))
+                    .andExpect(jsonPath("$.data[%d].longitude".formatted(i)).value(pins.get(i).getPoint().getX()))
+                    .andExpect(jsonPath("$.data[%d].createdAt".formatted(i)).value(matchesPattern(pins.get(i).getCreatedAt().toString().replaceAll("0+$", "") + ".*")))
+                    .andExpect(jsonPath("$.data[%d].pinTags.length()".formatted(i)).value(pins.get(i).getPinTags().size()));
+        }
+    }
+
+    @Test
+    @DisplayName("특정 사용자 핀 리턴 - 비로그인 - 성공 ")
+    void t4_2_2() throws Exception {
+        User testUser = userRepository.getReferenceById(1L);
+        List<Pin> pins = pinRepository.findPublicByUser(testUser.getId());
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/pins/user/%s".formatted(targetId))
                 )
                 .andDo(print());
 
