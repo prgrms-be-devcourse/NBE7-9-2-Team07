@@ -10,7 +10,6 @@ interface SidebarProps {
   allTags: TagDto[];
   selectedTags: string[];
   onChangeTags: (next: string[]) => void;
-  onClickNearby: () => void;
   onClickAll: () => void;
   onClickMyBookmarks: () => void;
   onClickLikedPins: () => void;
@@ -24,7 +23,6 @@ export default function Sidebar({
   allTags,
   selectedTags,
   onChangeTags,
-  onClickNearby,
   onClickAll,
   onClickMyBookmarks,
   onClickLikedPins,
@@ -46,15 +44,14 @@ export default function Sidebar({
 
       {/* 필터 버튼 영역 */}
       <div className="p-3 border-b flex flex-wrap gap-2">
-
-
         <button
-          onClick={onClickNearby}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "nearby" ? "bg-green-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+          onClick={handleClickAll}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"
             }`}
         >
-          <Compass size={16} /> 내 주변
+          <Globe size={16} /> 내 주변 전체 보기
         </button>
+
 
         <button
           onClick={onClickLikedPins}

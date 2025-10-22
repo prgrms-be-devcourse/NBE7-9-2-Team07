@@ -168,7 +168,7 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
 
             const pinArray = extractArray(data.data);
             setPins(normalizePins(pinArray));
-            setMode("nearby");
+            setMode("all");
         } catch (e) {
             console.error("주변 핀 로드 실패:", e);
             setPins([]);
@@ -207,7 +207,7 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
     const clearTagFilter = async () => {
         setSelectedTags([]);
         setMode("all");
-        await loadAllPins();
+        await loadNearbyPins()
     };
 
     /* =========================================================
