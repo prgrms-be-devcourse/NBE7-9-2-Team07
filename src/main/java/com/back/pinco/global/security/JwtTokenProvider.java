@@ -5,6 +5,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
@@ -12,20 +13,22 @@ import java.util.Map;
 @Component
 public class JwtTokenProvider {
 
-    private final Key key;
-    private final long accessExpMs;
-    private final long refreshExpMs;
+    private final Key key;                 // 서명/검증용 키(한 번 생성 후 재사용)
+    private final long accessExpMs;        // 액세스 토큰 만료(ms)
+    private final long refreshExpMs;       // 리프레시 토큰 만료(ms)
 
     public JwtTokenProvider(
             @Value("${custom.jwt.secret}") String secret,
             @Value("${custom.jwt.accessExpireSeconds}") long accessExpireSeconds,
             @Value("${custom.jwt.refreshExpireSeconds}") long refreshExpireSeconds
     ) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        // HS256은 32바이트 이상 권장
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpMs = accessExpireSeconds * 1000L;
         this.refreshExpMs = refreshExpireSeconds * 1000L;
     }
 
+    // 토큰 발급
     public String generateAccessToken(Long id, String email, String userName) {
         return build(accessExpMs, Map.of(
                 "id", id,
@@ -50,6 +53,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    // 토큰 검증, 파싱
     public boolean isValid(String token) {
         try {
             parser().parseClaimsJws(token);
@@ -80,6 +84,18 @@ public class JwtTokenProvider {
     private JwtParser parser() {
         return Jwts.parserBuilder().setSigningKey(key).build();
     }
+
+    // 남은 토큰 유효 시간
+    public long getRemainingValidityMillis(String token) {
+        try {
+            Date exp = parser().parseClaimsJws(token).getBody().getExpiration();
+            long now = System.currentTimeMillis();
+            return (exp == null || exp.getTime() <= now) ? 0L : (exp.getTime() - now);
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
 }
+
 
 
