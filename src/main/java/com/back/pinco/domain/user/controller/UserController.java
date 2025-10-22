@@ -7,12 +7,16 @@ import com.back.pinco.domain.user.dto.UserReqBody.*;
 import com.back.pinco.domain.user.dto.UserResBody.GetInfoResponse;
 import com.back.pinco.domain.user.dto.UserResBody.JoinResponse;
 import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.domain.user.service.AuthService;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.rq.Rq;
 import com.back.pinco.global.rsData.RsData;
 import com.back.pinco.global.security.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +30,7 @@ public class UserController {
     private final UserService userService;
     private final LikesService likesService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthService authService;
     private final Rq rq;
 
     @PostMapping("/join")
@@ -72,6 +77,15 @@ public class UserController {
                         "accessToken", accessToken,
                         "refreshToken", refreshToken
                 )
+        );
+    }
+
+    @PostMapping("/logout")
+    public RsData<Void> logout(HttpServletRequest req, HttpServletResponse res) {
+        authService.logout(req, res);
+        return new RsData<>(
+                "200",
+                "로그아웃 성공"
         );
     }
 
