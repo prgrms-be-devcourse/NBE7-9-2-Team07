@@ -263,5 +263,12 @@ public class UserService {
         return privatePins;
     }
 
+    @Transactional(readOnly = true)
+    public List<PinDto> bookmarkList() {
+        List<PinDto> bookmarkList = getMyBookmarks().stream()
+                .map(b -> new PinDto(b.getPin()))
+                .toList();
+        return bookmarkList;
+    }
 
 }
