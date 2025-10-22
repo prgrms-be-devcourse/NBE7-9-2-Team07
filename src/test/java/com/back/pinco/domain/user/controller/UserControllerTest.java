@@ -1,5 +1,7 @@
 package com.back.pinco.domain.user.controller;
 
+import com.back.pinco.domain.likes.repository.LikesRepository;
+import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.domain.user.service.UserService;
@@ -21,11 +23,12 @@ import java.util.*;
 import static org.hamcrest.Matchers.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.handler;
 
 @SpringBootTest // 실제 스프링 부트 애플리케이션 컨텍스트 로드
 @AutoConfigureMockMvc(addFilters = false) // MockMvc 자동 구성
@@ -41,6 +44,8 @@ class UserControllerIntegrationTest {
     PasswordEncoder passwordEncoder;
     @Autowired
     UserService userService;
+    @Autowired
+    LikesRepository likesRepository;
 
 
     @Test
@@ -797,49 +802,33 @@ class UserControllerIntegrationTest {
         assertThat(passwordEncoder.matches("NewPassword123!", after.getPassword())).isFalse();
     }
 
-    // --- 디버깅용: JWT payload 디코드 (Base64URL) ---
-    private static String decodeJwtPayload(String jwt) {
-        try {
-            String[] parts = jwt.split("\\.");
-            if (parts.length < 2) return "<invalid-jwt-format>";
-            byte[] decoded = Base64.getUrlDecoder().decode(parts[1]);
-            return new String(decoded, StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            return "<decode-error: " + e.getMessage() + ">";
-        }
-    }
-
-    // JWT payload 디코드(서명검증 X, 디버깅용)
-    private static String payloadOf(String jwt) {
-        try {
-            String[] p = jwt.split("\\.");
-            return new String(Base64.getUrlDecoder().decode(p[1]), StandardCharsets.UTF_8);
-        } catch (Exception e) { return "<decode-error:" + e.getMessage() + ">"; }
-    }
 
     @Test
-    @DisplayName("로그인 → 로그인 응답의 쿠키(apiKey, accessToken) 그대로 전달하여 /api/user/mypage(200)")
+    @DisplayName("특정 사용자가 좋아요 누른 핀 목록 전달")
     @Transactional
-    void t25() throws Exception {
-        // 1) 로그인
-        var login = mvc.perform(post("/api/user/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                          {"email":"user1@example.com","password":"12345678"}
-                        """)
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andReturn();
+    void getPinsLikedByUser() throws Exception {
+        // given
+        Long userId = 1L;
 
-        // 2) 로그인 응답의 Set-Cookie 에서 그대로 꺼내기 (이게 제일 안전함)
-        var cookiesFromLogin = login.getResponse().getCookies();
-        // 참고: 여기엔 name=apiKey, name=accessToken 두 개가 들어있음 (둘 다 HttpOnly)
+        Integer[] pinIds = likesRepository.findPinsByUserIdAndLikedTrue(userId)
+                .stream()
+                .map(Pin::getId)
+                .map(id -> id.intValue())
+                .toArray(Integer[]::new);
 
-        // 3) 쿠키 그대로 들고 마이페이지 호출 (헤더 불필요)
-        mvc.perform(get("/api/user/mypage")
-                        .cookie(cookiesFromLogin)            // ✅ 쿠키 그대로 전달
-                        .accept(MediaType.APPLICATION_JSON))
+        // when & then
+        mvc.perform(
+                        get("/api/user/{userId}/likespins", userId)
+                )
+                .andDo(print())
+                .andExpect(handler().handlerType(UserController.class))
+                .andExpect(handler().methodName("getPinsLikedByUser"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.email").value("user1@example.com"));
+                .andExpect(jsonPath("$.errorCode").value("200"))
+                .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
+
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(likesRepository.countByUser_idAndLikedTrue(userId)))
+                .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(pinIds)));;
     }
 }
