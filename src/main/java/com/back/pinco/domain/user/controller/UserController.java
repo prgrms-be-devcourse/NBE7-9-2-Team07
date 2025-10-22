@@ -1,10 +1,12 @@
 package com.back.pinco.domain.user.controller;
 
+import com.back.pinco.domain.bookmark.controller.BookmarkController;
 import com.back.pinco.domain.bookmark.entity.Bookmark;
 import com.back.pinco.domain.bookmark.repository.BookmarkRepository;
 import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.likes.service.LikesService;
+import com.back.pinco.domain.pin.controller.PinController;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
@@ -36,8 +38,6 @@ public class UserController {
 
     private final UserService userService;
     private final LikesService likesService;
-    private final PinRepository pinRepository;
-    private final BookmarkRepository bookmarkRepository;
     private final LikesRepository likesRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final Rq rq;
@@ -167,45 +167,26 @@ public class UserController {
 
     @GetMapping("/mypage")
     public RsData<MyPageResponse> myPage() {
-        // 1) 로그인 사용자
+        // 로그인 사용자
         User user = rq.getActor();
         if (user == null) {
             throw new ServiceException(ErrorCode.AUTH_REQUIRED);
         }
 
-        // 2) 내가 작성한 핀 목록 & 개수(리스트의 사이즈)
-        List<Pin> myPins = pinRepository.findAccessibleByUser(user.getId(), user.getId());
-        List<PinDto> myPinDtos = myPins.stream()
-                .map(PinDto::new)
-                .toList();
+        // 2) 내가 작성한 핀 개수
+        int pinCount = userService.getMyPins().size();
 
-        // 3) 내가 북마크한(삭제되지 않은) 핀 목록 & 개수(리스트의 사이즈)
-        List<Bookmark> bookmarks = bookmarkRepository.findByUserAndDeletedFalse(user);
-        List<PinDto> bookmarkedPinDtos = bookmarks.stream()
-                .map(b -> new PinDto(b.getPin()))
-                .toList();
+        // 3) 내가 북마크한 핀 개수
+        int bookmarkCount = userService.getMyBookmarks().size();
 
-        Map<Long, Integer> likeCountsByPinId = new HashMap<>();
-        for (PinDto p : myPinDtos) {
-            likeCountsByPinId.put(p.id(),
-                    (int) likesRepository.countByPin_IdAndLikedTrue(p.id()));
-        }
-        for (PinDto p : bookmarkedPinDtos) {
-            likeCountsByPinId.computeIfAbsent(p.id(), id ->
-                    (int) likesRepository.countByPin_IdAndLikedTrue(id));
-        }
-
-
-        // 4) 내가 지금까지 받은 총 '좋아요 수' (각 핀별 liked=true 카운트를 합산)
-        long totalLikesReceived = myPins.stream()
-                .mapToLong(pin -> likesRepository.countByPin_IdAndLikedTrue(pin.getId()))
-                .sum();
+        // 내가 지금까지 받은 총 '좋아요 수'
+        long likesCount = userService.likesCount(userService.getMyPins());
 
         return new RsData<>(
                 "200",
                 "마이페이지 조회 성공",
                 new MyPageResponse(
-                        new UserDto(user), myPinDtos, bookmarkedPinDtos, totalLikesReceived)
+                        new UserDto(user), pinCount, bookmarkCount, likesCount)
                 );
     }
 }

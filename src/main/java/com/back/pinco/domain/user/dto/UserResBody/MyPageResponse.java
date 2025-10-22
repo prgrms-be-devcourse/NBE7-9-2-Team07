@@ -10,22 +10,18 @@ public record MyPageResponse(
         String email,
         String userName,
         int myPinCount,
-        List<PinDto> myPins,
         int bookmarkCount,
-        List<PinDto> bookmarkedPins,
         long totalLikesReceived
 ) {
     public MyPageResponse(UserDto userDto,
-                          List<PinDto> myPins,
-                          List<PinDto> bookmarkedPins,
+                          int myPinCount,
+                          int bookmarkCount,
                           long totalLikesReceived) {
         this(
                 userDto.email(),
                 userDto.userName(),
-                myPins.size(),
-                myPins,
-                bookmarkedPins.size(),
-                bookmarkedPins,
+                myPinCount,
+                bookmarkCount,
                 totalLikesReceived
         );
     }

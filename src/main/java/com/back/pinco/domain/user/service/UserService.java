@@ -1,6 +1,14 @@
 package com.back.pinco.domain.user.service;
 
+import com.back.pinco.domain.bookmark.dto.BookmarkDto;
+import com.back.pinco.domain.bookmark.entity.Bookmark;
+import com.back.pinco.domain.bookmark.repository.BookmarkRepository;
+import com.back.pinco.domain.bookmark.service.BookmarkService;
+import com.back.pinco.domain.likes.repository.LikesRepository;
+import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
+import com.back.pinco.domain.pin.repository.PinRepository;
+import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.exception.ErrorCode;
@@ -23,6 +31,9 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
+    private final BookmarkRepository bookmarkRepository;
+    private final LikesRepository likesRepository;
+    private final PinRepository pinRepository;
     private final Rq rq;
 
     @Transactional
@@ -212,4 +223,25 @@ public class UserService {
     public Optional<User> findByIdOptional(Long id) {
         return userRepository.findById(id);
     }
+
+    @Transactional(readOnly = true)
+    public List<Pin> getMyPins() {
+        Long userId = rq.getActor().getId();
+        return pinRepository.findAccessibleByUser(userId, userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Bookmark> getMyBookmarks() {
+        User actor = rq.getActor();
+        return bookmarkRepository.findByUserAndDeletedFalse(actor);
+    }
+
+    @Transactional
+    public Long likesCount(List<Pin> listPin) {
+        long totalLikesReceived = listPin.stream()
+                .mapToLong(pin -> likesRepository.countByPin_IdAndLikedTrue(pin.getId()))
+                .sum();
+        return totalLikesReceived;
+    }
+
 }
