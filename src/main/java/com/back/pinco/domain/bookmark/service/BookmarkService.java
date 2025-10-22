@@ -37,12 +37,19 @@ public class BookmarkService {
         User user = userService.findById(userId);
         Pin pin = pinService.findById(pinId, user);
 
-        Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndPinAndDeletedFalse(user, pin);
+        Optional<Bookmark> existingBookmarkOpt = bookmarkRepository.findByUserAndPin(user, pin);
 
-        if (existingBookmark.isPresent()) {
-            throw new ServiceException(ErrorCode.BOOKMARK_ALREADY_EXISTS);
+        Bookmark bookmark;
+        if (existingBookmarkOpt.isPresent()) {
+            bookmark = existingBookmarkOpt.get();
+            if (!bookmark.getDeleted()) {
+                throw new ServiceException(ErrorCode.BOOKMARK_ALREADY_EXISTS);
+            }
+            bookmark.restore();
+        } else {
+            bookmark = new Bookmark(user, pin);
         }
-        Bookmark bookmark = new Bookmark(user, pin);
+
         try {
             bookmarkRepository.save(bookmark);
         } catch (Exception ex) {
