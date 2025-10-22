@@ -9,14 +9,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
+import static org.hamcrest.Matchers.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -777,7 +781,7 @@ class UserControllerIntegrationTest {
       }
       """;
 
-        mvc.perform(delete("/api/user/delete/{id}", id)
+        mvc.perform(delete("/api/user/delete", id)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -793,4 +797,49 @@ class UserControllerIntegrationTest {
         assertThat(passwordEncoder.matches("NewPassword123!", after.getPassword())).isFalse();
     }
 
+    // --- 디버깅용: JWT payload 디코드 (Base64URL) ---
+    private static String decodeJwtPayload(String jwt) {
+        try {
+            String[] parts = jwt.split("\\.");
+            if (parts.length < 2) return "<invalid-jwt-format>";
+            byte[] decoded = Base64.getUrlDecoder().decode(parts[1]);
+            return new String(decoded, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return "<decode-error: " + e.getMessage() + ">";
+        }
+    }
+
+    // JWT payload 디코드(서명검증 X, 디버깅용)
+    private static String payloadOf(String jwt) {
+        try {
+            String[] p = jwt.split("\\.");
+            return new String(Base64.getUrlDecoder().decode(p[1]), StandardCharsets.UTF_8);
+        } catch (Exception e) { return "<decode-error:" + e.getMessage() + ">"; }
+    }
+
+    @Test
+    @DisplayName("로그인 → 로그인 응답의 쿠키(apiKey, accessToken) 그대로 전달하여 /api/user/mypage(200)")
+    @Transactional
+    void t25() throws Exception {
+        // 1) 로그인
+        var login = mvc.perform(post("/api/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                          {"email":"user1@example.com","password":"12345678"}
+                        """)
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // 2) 로그인 응답의 Set-Cookie 에서 그대로 꺼내기 (이게 제일 안전함)
+        var cookiesFromLogin = login.getResponse().getCookies();
+        // 참고: 여기엔 name=apiKey, name=accessToken 두 개가 들어있음 (둘 다 HttpOnly)
+
+        // 3) 쿠키 그대로 들고 마이페이지 호출 (헤더 불필요)
+        mvc.perform(get("/api/user/mypage")
+                        .cookie(cookiesFromLogin)            // ✅ 쿠키 그대로 전달
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value("user1@example.com"));
+    }
 }

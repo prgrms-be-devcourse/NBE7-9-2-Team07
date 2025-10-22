@@ -34,6 +34,10 @@ public enum ErrorCode {
     CURRENT_PASSWORD_REQUIRED(2009, HttpStatus.BAD_REQUEST, "현재 비밀번호가 필요합니다."),
     CURRENT_PASSWORD_NOT_MATCH(2010, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 일치하지 않습니다."),
     NO_FIELDS_TO_UPDATE(2011, HttpStatus.BAD_REQUEST, "변경할 내용이 없습니다."),
+    INVALID_API_KEY(2012, HttpStatus.UNAUTHORIZED, "API 키가 유효하지 않습니다."),
+    INVALID_ACCESS_TOKEN(2013, HttpStatus.UNAUTHORIZED, "Access Token이 유효하지 않습니다."),
+    AUTH_REQUIRED(2014, HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+    TOKEN_EXPIRED(2015, HttpStatus.UNAUTHORIZED, "Access Token이 만료되었습니다."),
 
     // Tag 도메인_3000번대
     TAG_NOT_FOUND(3001, HttpStatus.NOT_FOUND, "존재하지 않는 태그입니다."),

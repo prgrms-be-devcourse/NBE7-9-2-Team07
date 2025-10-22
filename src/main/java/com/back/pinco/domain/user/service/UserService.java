@@ -1,5 +1,6 @@
 package com.back.pinco.domain.user.service;
 
+import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.exception.ErrorCode;
@@ -11,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -210,5 +212,4 @@ public class UserService {
     public Optional<User> findByIdOptional(Long id) {
         return userRepository.findById(id);
     }
-
 }
