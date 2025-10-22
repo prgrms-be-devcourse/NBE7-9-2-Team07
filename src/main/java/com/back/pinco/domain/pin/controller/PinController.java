@@ -141,6 +141,7 @@ public class PinController {
     @GetMapping("/all")
     public RsData<List<PinDto>> getAll() {
         User actor = rq.getActor();
+        System.out.println("1234564897");
         List<Pin> pins = pinService.findAll(actor);
 
         List<PinDto> pinDtos = pins.stream()

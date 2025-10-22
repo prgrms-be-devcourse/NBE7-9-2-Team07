@@ -102,14 +102,21 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
             const apiKey = localStorage.getItem("apiKey");
             const accessToken = localStorage.getItem("accessToken");
 
+            // 1. 기본 헤더 설정
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+            };
+
+            // 2. ✅ 인증 정보가 모두 있을 때만 Authorization 헤더 추가
+            if (apiKey && accessToken) {
+                headers["Authorization"] = `Bearer ${apiKey} ${accessToken}`;
+            }
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/all`,
                 {
                     method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey} ${accessToken}`, // ✅ 인증 헤더 추가
-                    },
-                    credentials: "include", // ✅ 쿠키 포함
+                    headers: headers, // 수정된 headers 객체를 사용
+                    credentials: "include", // 쿠키 포함 (세션 기반 인증에 사용)
                 }
             );
             const data = await res.json();
@@ -139,21 +146,21 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
             const apiKey = localStorage.getItem("apiKey");
             const accessToken = localStorage.getItem("accessToken");
 
-            if (!apiKey || !accessToken) {
-                console.error("❌ 토큰이 없습니다. 로그인이 필요합니다.");
-                alert("로그인이 필요합니다.");
-                setLoading(false);
-                return;
+            // 1. 기본 헤더 설정
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+            };
+
+            // 2. ✅ 인증 정보가 모두 있을 때만 Authorization 헤더 추가
+            if (apiKey && accessToken) {
+                headers["Authorization"] = `Bearer ${apiKey} ${accessToken}`;
             }
 
             const res = await fetch(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}`,
                 {
                     method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey} ${accessToken}`, // ✅ 인증 헤더 추가
-                    },
+                    headers: headers, // 수정된 headers 객체를 사용
                     credentials: "include", // ✅ 쿠키 포함
                 }
             );
