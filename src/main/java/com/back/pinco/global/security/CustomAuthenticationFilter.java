@@ -142,7 +142,6 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
-    // ErrorCode 기반 오버로드 추가
     private void write401(HttpServletResponse res, ErrorCode ec) throws IOException {
         if (res.isCommitted()) return;
         res.setStatus(ec.getStatus().value());
