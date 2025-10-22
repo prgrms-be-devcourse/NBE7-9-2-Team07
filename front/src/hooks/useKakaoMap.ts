@@ -1,123 +1,160 @@
-import { useEffect, useRef } from "react";
-import { PinDto } from "../types/types";
+import {useEffect, useRef} from "react";
+import {PinDto} from "../types/types";
 
 export function useKakaoMap({
-  pins,
-  center,
-  onSelectPin,
-  kakaoReady,
-  onCenterChange, // ✅ 중심 좌표 변경 콜백 추가
-}: {
-  pins: PinDto[];
-  center: { lat: number; lng: number };
-  onSelectPin: (pin: PinDto) => void;
-  kakaoReady?: boolean;
-  onCenterChange?: (lat: number, lng: number) => void; // ✅ 추가
+                                pins,
+                                center,
+                                onSelectPin,
+                                kakaoReady,
+                                onCenterChange,
+                            }: {
+    pins: PinDto[];
+    center: { lat: number; lng: number };
+    onSelectPin: (pin: PinDto) => void;
+    kakaoReady?: boolean;
+    onCenterChange?: (lat: number, lng: number) => void;
 }) {
-  const mapRef = useRef<any>(null);
-  const clustererRef = useRef<any>(null);
-  const circleRef = useRef<any>(null);
+    const mapRef = useRef<any>(null);
+    const clustererRef = useRef<any>(null);
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const lastCenterRef = useRef({lat: center.lat, lng: center.lng});
+    const userZoomLevelRef = useRef<number>(4);
+    const isUpdatingCenterRef = useRef(false);
 
-  // ✅ 지도 초기화 (kakaoReady 이후에만)
-  useEffect(() => {
-    if (!kakaoReady) return;
+    // ✅ 지도 초기화 (kakaoReady 이후에만)
+    useEffect(() => {
+        if (!kakaoReady) return;
 
-    const kakao = (window as any).kakao;
-    if (!kakao?.maps) return;
+        const kakao = (window as any).kakao;
+        if (!kakao?.maps) return;
 
-    const el = document.getElementById("map");
-    if (!el) return;
+        const el = document.getElementById("map");
+        if (!el) return;
 
-    const map = new kakao.maps.Map(el, {
-      center: new kakao.maps.LatLng(center.lat, center.lng),
-      level: 4,
-    });
+        const map = new kakao.maps.Map(el, {
+            center: new kakao.maps.LatLng(center.lat, center.lng),
+            level: 4,
+        });
 
-    mapRef.current = map;
-    (window as any).mapRef = map;
+        mapRef.current = map;
+        (window as any).mapRef = map;
 
-    //=================
-    // 지도 이동/드래그 이벤트 리스너 등록
-    kakao.maps.event.addListener(map, 'dragend', () => {
-      const centerLatLng = map.getCenter();
-      const newLat = centerLatLng.getLat();
-      const newLng = centerLatLng.getLng();
-      
-      if (onCenterChange) {
-        onCenterChange(newLat, newLng);
-      }
-    });
+        userZoomLevelRef.current = 4;
 
-    // 지도 중심 좌표 변경 이벤트 (확대/축소 시에도 발생)
-    kakao.maps.event.addListener(map, 'center_changed', () => {
-      const centerLatLng = map.getCenter();
-      const newLat = centerLatLng.getLat();
-      const newLng = centerLatLng.getLng();
-      
-      if (onCenterChange) {
-        onCenterChange(newLat, newLng);
-      }
-    });
-    //=================
-  }, [kakaoReady, onCenterChange]);
+        // 줌 레벨 변경 이벤트 리스너
+        kakao.maps.event.addListener(map, 'zoom_changed', () => {
+            if (!isUpdatingCenterRef.current) {
+                const currentLevel = map.getLevel();
+                userZoomLevelRef.current = currentLevel;
+            }
+        });
 
-  // ✅ 중심 이동 + 반경 원 표시
-  useEffect(() => {
-    const kakao = (window as any).kakao;
-    if (!kakao?.maps || !mapRef.current) return;
+        // 드래그 이벤트 - onCenterChange 호출 제거
+        kakao.maps.event.addListener(map, 'dragend', () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
 
-    const map = mapRef.current;
-    const ll = new kakao.maps.LatLng(center.lat, center.lng);
-    map.setCenter(ll);
-/*
-    // ✅ 1km 반경 원 표시 (중심 고정)
-    if (circleRef.current) circleRef.current.setMap(null);
-    const circle = new kakao.maps.Circle({
-      center: ll,
-      radius: 1000, // ✅ 1km
-      strokeWeight: 2,
-      strokeColor: "#2563EB",
-      strokeOpacity: 0.8,
-      strokeStyle: "solid",
-      fillColor: "#60A5FA",
-      fillOpacity: 0.15,
-    });
-    circle.setMap(map);
-    circleRef.current = circle;
-    */
-  }, [center, kakaoReady]);
+            debounceTimerRef.current = setTimeout(() => {
+                const centerLatLng = map.getCenter();
+                const newLat = centerLatLng.getLat();
+                const newLng = centerLatLng.getLng();
 
-  // ✅ 마커 및 클러스터러 관리
-  useEffect(() => {
-    const kakao = (window as any).kakao;
-    const map = mapRef.current;
-    if (!kakao?.maps || !map) return;
+                const latDiff = Math.abs(newLat - lastCenterRef.current.lat);
+                const lngDiff = Math.abs(newLng - lastCenterRef.current.lng);
 
-    if (clustererRef.current) clustererRef.current.clear();
+                if (latDiff > 0.0001 || lngDiff > 0.0001) {
+                    lastCenterRef.current = {lat: newLat, lng: newLng};
 
-    const clusterer = new kakao.maps.MarkerClusterer({
-      map,
-      averageCenter: true,
-      minLevel: 3,
-      gridSize: 60,
-    });
+                    if (onCenterChange) {
+                      onCenterChange(newLat, newLng);
+                    }
 
-    const markers = pins.map((pin) => {
-      const marker = new kakao.maps.Marker({
-        position: new kakao.maps.LatLng(pin.latitude, pin.longitude),
-      });
-      kakao.maps.event.addListener(marker, "click", () => onSelectPin(pin));
-      return marker;
-    });
+                    // ✅ 대신 화면 표시용 좌표만 업데이트 (선택사항)
+                    console.log("📍 현재 중심:", {lat: newLat, lng: newLng});
+                }
+            }, 500);
+        });
 
-    clusterer.addMarkers(markers);
-    clustererRef.current = clusterer;
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
+    }, [kakaoReady]); // onCenterChange 의존성 제거
 
-    return () => {
-      clusterer.clear();
-      markers.forEach((m) => m.setMap(null));
-    };
-  }, [pins, onSelectPin, kakaoReady]);
+    // ✅ center prop이 외부에서 변경되었을 때만 지도 이동
+    useEffect(() => {
+        const kakao = (window as any).kakao;
+        if (!kakao?.maps || !mapRef.current) return;
 
-  return { map: mapRef.current };
+        const map = mapRef.current;
+
+        // 외부에서 center가 변경되었는지 확인 (드래그가 아닌 경우)
+        const currentMapCenter = map.getCenter();
+        const currentLat = currentMapCenter.getLat();
+        const currentLng = currentMapCenter.getLng();
+
+        const latDiff = Math.abs(currentLat - center.lat);
+        const lngDiff = Math.abs(currentLng - center.lng);
+
+        // 외부에서 center prop이 실제로 변경되었을 때만 실행
+        if (latDiff > 0.0001 || lngDiff > 0.0001) {
+            isUpdatingCenterRef.current = true;
+            const savedLevel = userZoomLevelRef.current;
+
+            const ll = new kakao.maps.LatLng(center.lat, center.lng);
+
+            // panTo 사용 (부드러운 이동 + 줌 레벨 유지)
+            map.panTo(ll);
+
+            // 줌 레벨 강제 유지
+            setTimeout(() => {
+                const afterLevel = map.getLevel();
+                if (afterLevel !== savedLevel) {
+                    map.setLevel(savedLevel);
+                }
+                isUpdatingCenterRef.current = false;
+            }, 100);
+
+            // lastCenterRef 업데이트
+            lastCenterRef.current = {lat: center.lat, lng: center.lng};
+        }
+    }, [center, kakaoReady]);
+
+    // ✅ 마커 및 클러스터러 관리
+    useEffect(() => {
+        const kakao = (window as any).kakao;
+        const map = mapRef.current;
+        if (!kakao?.maps || !map) return;
+
+        if (clustererRef.current) clustererRef.current.clear();
+
+        const clusterer = new kakao.maps.MarkerClusterer({
+            map,
+            averageCenter: true,
+            minLevel: 3,
+            gridSize: 60,
+            disableClickZoom: false,
+            calculator: [10, 30, 50],
+        });
+
+        const markers = pins.map((pin) => {
+            const marker = new kakao.maps.Marker({
+                position: new kakao.maps.LatLng(pin.latitude, pin.longitude),
+            });
+            kakao.maps.event.addListener(marker, "click", () => onSelectPin(pin));
+            return marker;
+        });
+
+        clusterer.addMarkers(markers);
+        clustererRef.current = clusterer;
+
+        return () => {
+            clusterer.clear();
+            markers.forEach((m) => m.setMap(null));
+        };
+    }, [pins, onSelectPin, kakaoReady]);
+
+    return {map: mapRef.current};
 }

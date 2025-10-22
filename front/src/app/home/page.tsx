@@ -98,7 +98,6 @@ export default function PinCoMainPage() {
                     onClickAll={async () => {
                         await clearTagFilter();         // 전체 보기 + 태그버튼 전부 해제 + 리스트 갱신
                     }}
-                    onClickNearby={() => loadNearbyPins()}
                     onClickMyBookmarks={() => loadMyBookmarks()}
                     onClickLikedPins={() => loadLikedPins()}
                     onSelectPin={async (p) => {
