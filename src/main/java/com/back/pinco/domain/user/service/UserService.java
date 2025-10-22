@@ -258,10 +258,10 @@ public class UserService {
                 .map(PinDto::new)
                 .toList();
 
-        // 비공개: isPublic != true && "내 것"만
+        // 비공개: isPublic != true
         List<PinDto> privateDtos = accessible.stream()
                 .filter(p -> !Boolean.TRUE.equals(p.getIsPublic()))
-                .filter(p -> p.getUser() != null && p.getUser().getId().equals(actor.getId()))
+                .filter(p -> p.getUser() != null)
                 .map(PinDto::new)
                 .toList();
 
