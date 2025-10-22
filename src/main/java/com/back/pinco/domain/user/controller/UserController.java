@@ -1,13 +1,22 @@
 package com.back.pinco.domain.user.controller;
 
+import com.back.pinco.domain.bookmark.controller.BookmarkController;
+import com.back.pinco.domain.bookmark.entity.Bookmark;
+import com.back.pinco.domain.bookmark.repository.BookmarkRepository;
 import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
+import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.likes.service.LikesService;
+import com.back.pinco.domain.pin.controller.PinController;
+import com.back.pinco.domain.pin.dto.PinDto;
+import com.back.pinco.domain.pin.entity.Pin;
+import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.user.dto.UserDto;
 import com.back.pinco.domain.user.dto.UserReqBody.*;
-import com.back.pinco.domain.user.dto.UserResBody.GetInfoResponse;
-import com.back.pinco.domain.user.dto.UserResBody.JoinResponse;
+import com.back.pinco.domain.user.dto.UserResBody.*;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
+import com.back.pinco.global.exception.ErrorCode;
+import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rq.Rq;
 import com.back.pinco.global.rsData.RsData;
 import com.back.pinco.global.security.JwtTokenProvider;
@@ -15,6 +24,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +38,7 @@ public class UserController {
     private final LikesService likesService;
     private final JwtTokenProvider jwtTokenProvider;
     private final Rq rq;
+
 
     @PostMapping("/join")
     public RsData<JoinResponse> join(
@@ -81,9 +93,7 @@ public class UserController {
     ) {
         String refreshToken = body.getOrDefault("refreshToken", "");
         if (refreshToken.isBlank() || !jwtTokenProvider.isValid(refreshToken)) {
-            return new RsData<>(
-                    "401",
-                    "유효하지 않은 리프레시 토큰입니다.");
+            throw new ServiceException(ErrorCode.INVALID_ACCESS_TOKEN);
         }
         Long userId = jwtTokenProvider.getUserId(refreshToken);
         User user = userService.findById(userId);
@@ -98,9 +108,9 @@ public class UserController {
                 "200",
                 "재발급 성공",
                 Map.of(
-                "apiKey", user.getApiKey(),
-                "accessToken", newAccess,
-                "refreshToken", newRefresh
+                        "apiKey", user.getApiKey(),
+                        "accessToken", newAccess,
+                        "refreshToken", newRefresh
                 )
         );
     }
@@ -150,6 +160,57 @@ public class UserController {
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다", likesService.getPinsLikedByUser(userId)
+        );
+    }
+
+    @GetMapping("/mypage")
+    public RsData<MyPageResponse> myPage() {
+        // 로그인 사용자
+        User user = rq.getActor();
+        List<Pin> listPin = userService.getMyPins(); // DB 접근은 한 번만
+        if (user == null) {
+            throw new ServiceException(ErrorCode.AUTH_REQUIRED);
+        }
+        // 2) 내가 작성한 핀 개수
+        int pinCount = listPin.size();
+
+        // 3) 내가 북마크한 핀 개수
+        int bookmarkCount = userService.getMyBookmarks().size();
+
+        // 내가 지금까지 받은 총 '좋아요 수'
+        long likesCount = userService.likesCount(listPin);
+
+        return new RsData<>(
+                "200",
+                "마이페이지 조회 성공",
+                new MyPageResponse(
+                        new UserDto(user), pinCount, bookmarkCount, likesCount)
+                );
+    }
+
+    @GetMapping("/mypin")
+    public RsData<MyPinResponse> myPin() {
+        // DB 한 번만 조회
+        MyPinResponse pinLists = userService.listPublicAndPrivate();
+
+        // PinLists 내부에는 두 개의 리스트(publicPins, privatePins)가 들어있음
+        List<PinDto> publicList = pinLists.publicPins();
+        List<PinDto> privateList = pinLists.privatePins();
+
+        return new RsData<>(
+                "200",
+                "공개 글, 비공개 글을 조회했습니다.",
+                new MyPinResponse(publicList, privateList)
+        );
+    }
+
+    @GetMapping("/mybookmark")
+    public RsData<MyBookmarkResponse> myBookmark() {
+        List<PinDto> bookmarkList = userService.bookmarkList();
+        return new RsData<>(
+                "200",
+                "북마크한 게시물을 모두 조회했습니다.",
+                new MyBookmarkResponse(bookmarkList)
         );
     }
 }
