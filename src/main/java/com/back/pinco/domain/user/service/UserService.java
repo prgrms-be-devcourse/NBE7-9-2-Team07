@@ -244,4 +244,24 @@ public class UserService {
         return totalLikesReceived;
     }
 
+    @Transactional(readOnly = true)
+    public List<PinDto> publicList() {
+        User actor = rq.getActor();
+        List<Pin> publicPins = pinRepository.findPublicByUser(actor.getId());
+        List<PinDto> publicList = publicPins.stream()
+                .map(PinDto::new)
+                .toList();
+        return publicList;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PinDto> privateList() {
+        List<PinDto> privatePins = getMyPins().stream()
+                .filter(pin -> !Boolean.TRUE.equals(pin.getIsPublic())) // 비공개만 필터링
+                .map(PinDto::new)
+                .toList();
+        return privatePins;
+    }
+
+
 }

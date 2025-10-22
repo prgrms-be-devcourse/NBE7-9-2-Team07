@@ -15,6 +15,7 @@ import com.back.pinco.domain.user.dto.UserReqBody.*;
 import com.back.pinco.domain.user.dto.UserResBody.GetInfoResponse;
 import com.back.pinco.domain.user.dto.UserResBody.JoinResponse;
 import com.back.pinco.domain.user.dto.UserResBody.MyPageResponse;
+import com.back.pinco.domain.user.dto.UserResBody.MyPinResponse;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
@@ -188,6 +189,20 @@ public class UserController {
                 new MyPageResponse(
                         new UserDto(user), pinCount, bookmarkCount, likesCount)
                 );
+    }
+
+    @GetMapping("/mypin")
+    public RsData<MyPinResponse> myPin() {
+        List<Pin> allList = userService.getMyPins();
+        // 공개 핀
+        List<PinDto> publicList = userService.publicList();
+        // 비공개 핀
+        List<PinDto> privateList = userService.privateList();
+       return new RsData<>(
+               "200",
+               "공개 글, 비공개 글을 불러왔습니다.",
+               new MyPinResponse(publicList, privateList)
+       );
     }
 }
 
