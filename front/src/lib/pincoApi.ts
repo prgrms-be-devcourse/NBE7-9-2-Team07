@@ -152,15 +152,18 @@ export const apiGetLikeUsers = (pinId: number) =>
   fetchApi<PinLikedUserDto[]>(`/api/pins/${pinId}/likesusers`, { method: "GET" });
 
 // ---------- Bookmarks ----------
-export const apiCreateBookmark = (userId: number, pinId: number) =>
-  fetchApi<BookmarkDto>("/api/bookmarks", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, pinId }),
-  });
+export const apiCreateBookmark = (pinId: number) => {
+    return fetchApi<BookmarkDto>(`/api/pins/${pinId}/bookmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pinId }), // 서버에서 pinId를 body로 받도록 수정
+    });
+};
 
-export const apiGetMyBookmarks = (userId: number) =>
-  fetchApi<BookmarkDto[]>(`/api/bookmarks?userId=${userId}`, { method: "GET" });
+export const apiGetMyBookmarks = () => {
+    return fetchApi<BookmarkDto[] | null>(`/api/bookmarks`, { method: "GET" });
+};
 
-export const apiDeleteBookmark = (bookmarkId: number, userId: number) =>
-  fetchApi<void>(`/api/bookmarks/${bookmarkId}?userId=${userId}`, { method: "DELETE" });
+export const apiDeleteBookmark = (bookmarkId: number) => {
+    return fetchApi<void>(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
+};

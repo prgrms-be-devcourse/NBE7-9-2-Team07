@@ -15,6 +15,7 @@ import {
   apiUpdatePin,
   apiCreateBookmark,
   apiRemoveTagFromPin,
+  apiGetMyBookmarks, // ✅ 1. (추가) apiGetMyBookmarks 임포트
 } from "../lib/pincoApi";
 
 export default function PostModal({
@@ -89,22 +90,23 @@ export default function PostModal({
 
       try {
         // 북마크 상태 불러오기
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookmarks?userId=${userId}`
-        );
-        const data = await res.json();
+        const myBookmarks = await apiGetMyBookmarks();
 
-        if (mounted && data.errorCode === "200" && Array.isArray(data.data)) {
-          const found = data.data.find((b: any) => b.pin?.id === pin.id);
-          if (found) {
-            setIsBookmarked(true);
-            setBookmarkId(found.id); // ✅ bookmarkId 저장
-          } else {
+          if (mounted && Array.isArray(myBookmarks)) {
+            const found = myBookmarks.find((b: any) => b.pin?.id === pin.id);
+            if (found) {
+                setIsBookmarked(true);
+                setBookmarkId(found.id); // ✅ bookmarkId 저장
+              } else {
+                setIsBookmarked(false);
+                setBookmarkId(null);
+              }
+          } else if (mounted) {
             setIsBookmarked(false);
             setBookmarkId(null);
           }
-        }
-      } catch {
+      } catch (err) {
+        console.error("북마크 로드 실패:", err);
         if (mounted) {
           setIsBookmarked(false);
           setBookmarkId(null);
