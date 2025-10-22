@@ -9,6 +9,7 @@ import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.pin.service.PinService;
+import com.back.pinco.domain.user.dto.UserResBody.MyPinResponse;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.exception.ErrorCode;
@@ -245,22 +246,26 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<PinDto> publicList() {
+    public MyPinResponse listPublicAndPrivate() {
         User actor = rq.getActor();
-        List<Pin> publicPins = pinRepository.findPublicByUser(actor.getId());
-        List<PinDto> publicList = publicPins.stream()
-                .map(PinDto::new)
-                .toList();
-        return publicList;
-    }
 
-    @Transactional(readOnly = true)
-    public List<PinDto> privateList() {
-        List<PinDto> privatePins = getMyPins().stream()
-                .filter(pin -> !Boolean.TRUE.equals(pin.getIsPublic())) // 비공개만 필터링
+        // DB 한 번
+        List<Pin> accessible = pinRepository.findAccessibleByUser(actor.getId(), actor.getId());
+
+        // 공개: isPublic == true
+        List<PinDto> publicDtos = accessible.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsPublic()))
                 .map(PinDto::new)
                 .toList();
-        return privatePins;
+
+        // 비공개: isPublic != true && "내 것"만
+        List<PinDto> privateDtos = accessible.stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsPublic()))
+                .filter(p -> p.getUser() != null && p.getUser().getId().equals(actor.getId()))
+                .map(PinDto::new)
+                .toList();
+
+        return new MyPinResponse(publicDtos, privateDtos);
     }
 
     @Transactional(readOnly = true)

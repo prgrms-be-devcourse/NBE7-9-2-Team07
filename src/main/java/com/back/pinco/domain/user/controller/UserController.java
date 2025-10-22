@@ -190,15 +190,18 @@ public class UserController {
 
     @GetMapping("/mypin")
     public RsData<MyPinResponse> myPin() {
-        // 공개 핀
-        List<PinDto> publicList = userService.publicList();
-        // 비공개 핀
-        List<PinDto> privateList = userService.privateList();
-       return new RsData<>(
-               "200",
-               "공개 글, 비공개 글을 조회했습니다.",
-               new MyPinResponse(publicList, privateList)
-       );
+        // DB 한 번만 조회
+        MyPinResponse pinLists = userService.listPublicAndPrivate();
+
+        // PinLists 내부에는 두 개의 리스트(publicPins, privatePins)가 들어있음
+        List<PinDto> publicList = pinLists.publicPins();
+        List<PinDto> privateList = pinLists.privatePins();
+
+        return new RsData<>(
+                "200",
+                "공개 글, 비공개 글을 조회했습니다.",
+                new MyPinResponse(publicList, privateList)
+        );
     }
 
     @GetMapping("/mybookmark")
