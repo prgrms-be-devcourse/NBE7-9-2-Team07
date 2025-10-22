@@ -14,7 +14,6 @@ export async function fetchApi<T>(url: string, options?: RequestInit): Promise<T
     },
     credentials: "include", // ✅ 세션 쿠키 유지
   });
-
   // ✅ JSON 파싱 (예외 처리)
   let rsData: RsData<T>;
   try {
