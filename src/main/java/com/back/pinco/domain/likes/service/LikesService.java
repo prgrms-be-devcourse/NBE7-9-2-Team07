@@ -13,6 +13,7 @@ import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LikesService {
 
     private final PinService pinService;
@@ -39,12 +41,22 @@ public class LikesService {
         User user = userService.findById(userId);
         Pin pin = pinService.findById(pinId, user);
 
-        Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
-                .map(like -> like.toggleLike(isLiked))
-                .orElse(new Likes(user, pin));
+        int likeCnt = pin.getLikeCount();
 
         try {
-            return likesRepository.save(likes);
+            Likes getLikes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
+                    .map(like -> like.toggleLike(isLiked))
+                    .orElse(new Likes(user, pin));
+
+            Likes rt_like = likesRepository.save(getLikes);
+
+            // 핀 테이블에 업데이트
+            likeCnt = isLiked ? likeCnt + 1
+                    : likeCnt == 0 ? 0 : likeCnt - 1;
+
+            pinService.updateLikes(pin, likeCnt);
+
+            return rt_like;
         } catch (Exception e){  // TODO : DataAccessException?
             throw new ServiceException(ErrorCode.LIKES_CHANGE_FAILED);
         }
@@ -52,6 +64,7 @@ public class LikesService {
 
     public createPinLikesResponse createPinLikes(Long pinId, Long userId) {
         Likes rt_like = toggleLike(pinId, userId, true);
+
         return new createPinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
     }
 
