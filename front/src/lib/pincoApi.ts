@@ -27,7 +27,9 @@ export const apiGetAllTags = async (): Promise<TagDto[]> => {
 };
 
 export const apiGetPinTags = async (pinId: number): Promise<TagDto[]> => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/tags`);
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/tags`
+  );
   const data = await res.json();
 
   // ✅ 새 구조 대응
@@ -57,8 +59,10 @@ export const apiRestoreTagOnPin = (pinId: number, tagId: number) =>
   fetchApi(`/api/pins/${pinId}/tags/${tagId}/restore`, { method: "PATCH" });
 
 export const apiFilterByTags = (keywords: string[]) => {
-  const qs = keywords.map(k => `keywords=${encodeURIComponent(k)}`).join("&");
-  return fetchApi<GetFilteredPinResponse[]>(`/api/tags/filter?${qs}`, { method: "GET" });
+  const qs = keywords.map((k) => `keywords=${encodeURIComponent(k)}`).join("&");
+  return fetchApi<GetFilteredPinResponse[]>(`/api/tags/filter?${qs}`, {
+    method: "GET",
+  });
 };
 
 // ---------- Pins ----------
@@ -78,6 +82,7 @@ export const apiCreatePin = async (
       longitude: Number(longitude),
       content: content.trim(), // ✅ 공백 제거
     }),
+    credentials: "include", // ✅ (수정) 인증 쿠키 포함
   });
 
   const json = await res.json();
@@ -92,7 +97,9 @@ export const apiGetPin = (id: number) =>
   fetchApi<PinDto>(`/api/pins/${id}`, { method: "GET" });
 
 export const apiGetNearbyPins = (lat: number, lng: number) =>
-  fetchApi<PinDto[] | null>(`/api/pins?latitude=${lat}&longitude=${lng}`, { method: "GET" });
+  fetchApi<PinDto[] | null>(`/api/pins?latitude=${lat}&longitude=${lng}`, {
+    method: "GET",
+  });
 
 export const apiGetAllPins = () =>
   fetchApi<PinDto[] | null>("/api/pins/all", { method: "GET" });
@@ -103,17 +110,16 @@ export const apiUpdatePin = async (
   longitude: number,
   content: string
 ): Promise<PinDto> => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${id}`, {
+  // ✅ (수정) fetchApi 사용
+  const updatedPin = await fetchApi<PinDto>(`/api/pins/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ latitude, longitude, content }),
   });
 
-  const json = await res.json();
-
-  // ✅ RsData 구조에 대응 (data 필드 추출)
-  if (json?.data) {
-    return json.data as PinDto;
+  // ✅ RsData 구조에 대응 (data 필드 추출) - fetchApi가 data를 추출해줌
+  if (updatedPin) {
+    return updatedPin;
   } else {
     throw new Error("핀 수정 실패: 서버 응답에 data가 없습니다");
   }
@@ -130,40 +136,55 @@ export const apiDeletePin = (id: number) =>
 
 // ✅ 좋아요 추가
 export const apiAddLike = async (pinId: number, userId: number) => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
-  });
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+      credentials: "include", // ✅ (수정) 인증 쿠키 포함
+    }
+  );
   return await res.json(); // ✅ { data: { isLiked, likeCount } }
 };
 
 // ✅ 좋아요 취소
 export const apiRemoveLike = async (pinId: number, userId: number) => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
-  });
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+      credentials: "include", // ✅ (수정) 인증 쿠키 포함
+    }
+  );
   return await res.json(); // ✅ { data: { isLiked, likeCount } }
 };
 
 export const apiGetLikeUsers = (pinId: number) =>
-  fetchApi<PinLikedUserDto[]>(`/api/pins/${pinId}/likesusers`, { method: "GET" });
+  fetchApi<PinLikedUserDto[]>(`/api/pins/${pinId}/likesusers`, {
+    method: "GET",
+  });
 
 // ---------- Bookmarks ----------
+
+// ✅ (수정) apiCreateBookmark 함수
 export const apiCreateBookmark = (pinId: number) => {
-    return fetchApi<BookmarkDto>(`/api/pins/${pinId}/bookmarks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pinId }), // 서버에서 pinId를 body로 받도록 수정
-    });
+  // ❌ "/api/bookmarks"가 아니라 아래 주소로 수정
+  return fetchApi<BookmarkDto>(`/api/pins/${pinId}/bookmarks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pinId }), // 👈 이 body는 PinController가 받는 addBookmarkRequest와 일치
+  });
 };
 
+// ✅ (수정) apiGetMyBookmarks 함수 (userId 제거)
 export const apiGetMyBookmarks = () => {
-    return fetchApi<BookmarkDto[] | null>(`/api/bookmarks`, { method: "GET" });
+  return fetchApi<BookmarkDto[] | null>(`/api/bookmarks`, { method: "GET" });
 };
 
+// ✅ (수정) apiDeleteBookmark 함수 (userId 제거)
 export const apiDeleteBookmark = (bookmarkId: number) => {
-    return fetchApi<void>(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
+  return fetchApi<void>(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
 };
