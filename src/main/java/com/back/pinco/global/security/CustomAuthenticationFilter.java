@@ -148,8 +148,6 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
-
-
     private void write401(HttpServletResponse res, ErrorCode ec) throws IOException {
         if (res.isCommitted()) return;
         res.setStatus(ec.getStatus().value());
