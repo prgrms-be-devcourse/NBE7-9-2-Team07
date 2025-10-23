@@ -172,8 +172,7 @@ public class PinController {
             @PathVariable("pinId") Long pinId,
             @Valid @RequestBody UpdatePinContentRequest putPinReqbody
             ){
-        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
-        User actor = userService.findByEmail("user1@example.com");
+        User actor = rq.getActor();
         Pin pin = pinService.update(actor, pinId, putPinReqbody);
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
@@ -188,8 +187,7 @@ public class PinController {
     public RsData<PinDto> changePinPublic(
             @PathVariable("pinId") Long pinId
     ){
-        //jwt 구현 후 변경 예정. 일단 id 1번 넣음
-        User actor = userService.findByEmail("user1@example.com");
+        User actor = rq.getActor();
         Pin pin = pinService.changePublic(actor, pinId);
         PinDto pinDto = new PinDto(pin);
         return new RsData<>(
