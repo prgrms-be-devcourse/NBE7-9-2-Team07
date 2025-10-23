@@ -186,6 +186,13 @@ export default function PostModal({
 
   // ✅ 공개 토글
   const togglePublic = async () => {
+      if (!userId) {
+          alert("로그인 후 이용 가능합니다.");
+          return;
+      } else if (userId != pin.userId) {
+          alert("수정 권한이 없습니다.");
+          return;
+      }
     const next = !localPublic;
     setLocalPublic(next);
 
@@ -210,37 +217,51 @@ export default function PostModal({
 
   // ✅ 내용 수정 저장
   const saveEdit = async () => {
-    try {
-      await apiUpdatePin(currentPin.id, currentPin.latitude, currentPin.longitude, content);
-
-      // 서버에서 최신 핀 가져오기
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${currentPin.id}`);
-      const json = await res.json();
-
-      setEditing(false);
-
-      if (json?.data) {
-        const updated = json.data as PinDto;
-        // ✅ 모달 내부 즉시 반영
-        setCurrentPin(updated);
-        setContent(updated.content);
-        // ✅ 부모 리스트도 갱신
-        onChanged?.(updated);
-      } else {
-        // 혹시 실패하면 내용만 반영
-        setCurrentPin({ ...currentPin, content });
-        onChanged?.({ ...currentPin, content });
+      if (!userId) {
+          alert("로그인 후 이용 가능합니다.");
+          return;
+      } else if (userId != pin.userId) {
+          alert("수정 권한이 없습니다.");
+          return;
       }
+      try {
+          await apiUpdatePin(currentPin.id, currentPin.latitude, currentPin.longitude, content);
 
-      alert("게시글이 수정되었습니다 ✅");
-    } catch (err) {
-      console.error("게시글 수정 실패:", err);
-      alert("게시글 수정 중 오류가 발생했습니다.");
-    }
+          // 서버에서 최신 핀 가져오기
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${currentPin.id}`);
+          const json = await res.json();
+
+          setEditing(false);
+
+          if (json?.data) {
+              const updated = json.data as PinDto;
+              // ✅ 모달 내부 즉시 반영
+              setCurrentPin(updated);
+              setContent(updated.content);
+              // ✅ 부모 리스트도 갱신
+              onChanged?.(updated);
+          } else {
+              // 혹시 실패하면 내용만 반영
+              setCurrentPin({ ...currentPin, content });
+              onChanged?.({ ...currentPin, content });
+          }
+
+          alert("게시글이 수정되었습니다 ✅");
+      } catch (err) {
+          console.error("게시글 수정 실패:", err);
+          alert("게시글 수정 중 오류가 발생했습니다.");
+      }
   };
 
   // ✅ 삭제
   const deletePin = async () => {
+      if (!userId) {
+          alert("로그인 후 이용 가능합니다.");
+          return;
+      } else if (userId != pin.userId) {
+          alert("수정 권한이 없습니다.");
+          return;
+      }
     if (!confirm("이 핀을 삭제할까요?")) return;
     await apiDeletePin(pin.id);
     onChanged?.();
