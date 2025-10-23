@@ -15,7 +15,7 @@ import {
   apiUpdatePin,
   apiCreateBookmark,
   apiRemoveTagFromPin,
-  apiGetMyBookmarks, // ✅ 1. (추가) apiGetMyBookmarks 임포트
+  apiGetMyBookmarks,
 } from "../lib/pincoApi";
 
 export default function PostModal({
