@@ -2,6 +2,7 @@ package com.back.pinco.global.security;
 
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
+import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rq.Rq;
 import jakarta.servlet.FilterChain;
@@ -53,7 +54,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = rq.getHeader("Authorization", "");
         if (!authHeader.isBlank()) {
             if (!authHeader.startsWith("Bearer ")) {
-                write401(res, "401-2", "Authorization 헤더가 Bearer 형식이 아닙니다.");
+                write401(res, ErrorCode.INVALID_ACCESS_TOKEN);
                 return;
             }
             String[] bits = authHeader.split(" ", 3); // Bearer, apiKey, access
@@ -94,14 +95,14 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
             try {
                 user = userService.findByApiKey(apiKey);
             } catch (ServiceException e) {
-                write401(res, "401-3", "API 키가 유효하지 않습니다.");
+                write401(res, ErrorCode.INVALID_API_KEY);
                 return;
             }
         }
 
 
         if (user == null) {
-            write401(res, "401-2", "인증 정보가 유효하지 않습니다.");
+            write401(res, ErrorCode.INVALID_ACCESS_TOKEN);
             return;
         }
 
@@ -119,16 +120,47 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         chain.doFilter(req, res);
+
+        if (hasAccess) {
+            long remainMillis = tokenProvider.getRemainingValidityMillis(accessToken);
+
+            // 남은 유효시간이 0이면 만료 처리
+            if (remainMillis <= 0L) {
+                write401(res, ErrorCode.TOKEN_EXPIRED);
+                return;
+            }
+
+            if (tokenProvider.isValid(accessToken)) {
+                Map<String, Object> payload = tokenProvider.payloadOrNull(accessToken);
+                if (payload != null) {
+                    long id = ((Number) payload.get("id")).longValue();
+                    Optional<User> u = userService.findByIdOptional(id);
+                    if (u.isPresent()) {
+                        user = u.get();
+                        accessValid = true;
+                    }
+                }
+            } else {
+                // 유효하지 않은 토큰 (서명 위조 등)
+                write401(res, ErrorCode.INVALID_ACCESS_TOKEN);
+                return;
+            }
+        }
     }
 
-    private void write401(HttpServletResponse res, String code, String msg) throws IOException {
-        res.setStatus(401);
+
+
+    private void write401(HttpServletResponse res, ErrorCode ec) throws IOException {
+        if (res.isCommitted()) return;
+        res.setStatus(ec.getStatus().value());
         res.setContentType("application/json;charset=UTF-8");
         res.getWriter().write("""
-            {"resultCode":"%s","msg":"%s"}
-        """.formatted(code, msg));
+        {"errorCode":"%s","msg":"%s"}
+    """.formatted(ec.getCode(), ec.getMessage()));
+        res.getWriter().flush();
     }
 }
+
 
 
 
