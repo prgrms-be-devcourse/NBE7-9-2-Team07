@@ -62,11 +62,13 @@ public enum ErrorCode {
     BOOKMARK_RESTORE_FAILED(4006, HttpStatus.INTERNAL_SERVER_ERROR, "북마크 복구 중 오류가 발생했습니다."),
 
     // Likes 도메인_5000번대
-    LIKES_NOT_FOUND(5001, HttpStatus.NOT_FOUND, "좋아요 조회 중 오류가 발생했습니다."),
-    LIKES_PIN_NOT_FOUND(5002, HttpStatus.NOT_FOUND, "핀을 찾을 수 없습니다."),
+    LIKES_INVALID_USER_INPUT(5001, HttpStatus.NOT_FOUND, "잘못된 사용자 정보입니다."),
+    LIKES_INVALID_PIN_INPUT(5002, HttpStatus.NOT_FOUND, "잘못된 핀 정보입니다."),
     LIKES_CREATE_FAILED(5003, HttpStatus.INTERNAL_SERVER_ERROR, "좋아요 등록 중 오류가 발생했습니다."),
     LIKES_REVOKE_FAILED(5004, HttpStatus.INTERNAL_SERVER_ERROR, "좋아요 변경 중 오류가 발생했습니다."),
-    LIKES_INVALID_INPUT(5005, HttpStatus.BAD_REQUEST, "잘못된 입력 값입니다.");
+    LIKES_UPDATE_PIN_FAILED(5005, HttpStatus.NOT_FOUND, "좋아요 갱신 중 오류가 발생했습니다.")
+    ;
+
 
 
     private final int code;
