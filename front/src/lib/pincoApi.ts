@@ -169,9 +169,8 @@ export const apiGetLikeUsers = (pinId: number) =>
 
 // ---------- Bookmarks ----------
 
-// ✅ (수정) apiCreateBookmark 함수
+// ✅ apiCreateBookmark 함수
 export const apiCreateBookmark = (pinId: number) => {
-  // ❌ "/api/bookmarks"가 아니라 아래 주소로 수정
   return fetchApi<BookmarkDto>(`/api/pins/${pinId}/bookmarks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -179,12 +178,12 @@ export const apiCreateBookmark = (pinId: number) => {
   });
 };
 
-// ✅ (수정) apiGetMyBookmarks 함수 (userId 제거)
+// ✅ apiGetMyBookmarks 함수
 export const apiGetMyBookmarks = () => {
   return fetchApi<BookmarkDto[] | null>(`/api/bookmarks`, { method: "GET" });
 };
 
-// ✅ (수정) apiDeleteBookmark 함수 (userId 제거)
+// ✅ apiDeleteBookmark 함수
 export const apiDeleteBookmark = (bookmarkId: number) => {
   return fetchApi<void>(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
 };

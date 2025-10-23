@@ -15,13 +15,13 @@ import {
   apiUpdatePin,
   apiCreateBookmark,
   apiRemoveTagFromPin,
-  apiGetMyBookmarks, // ✅ 1. (추가) apiGetMyBookmarks 임포트
+  apiGetMyBookmarks, //
 } from "../lib/pincoApi";
 
 export default function PostModal({
   pin,
   onClose,
-  userId = 1,
+  userId = 1, // (참고: userId는 '좋아요' 로직에만 사용됨)
   onChanged,
 }: {
   pin: PinDto;
@@ -88,23 +88,23 @@ export default function PostModal({
         console.error("좋아요 로드 실패:", err);
       }
 
+      // ✅ 북마크 상태 불러오기
       try {
-        // 북마크 상태 불러오기
         const myBookmarks = await apiGetMyBookmarks();
 
-          if (mounted && Array.isArray(myBookmarks)) {
-            const found = myBookmarks.find((b: any) => b.pin?.id === pin.id);
-            if (found) {
-                setIsBookmarked(true);
-                setBookmarkId(found.id); // ✅ bookmarkId 저장
-              } else {
-                setIsBookmarked(false);
-                setBookmarkId(null);
-              }
-          } else if (mounted) {
+        if (mounted && Array.isArray(myBookmarks)) {
+          const found = myBookmarks.find((b: any) => b.pin?.id === pin.id);
+          if (found) {
+            setIsBookmarked(true);
+            setBookmarkId(found.id); // ✅ bookmarkId 저장
+          } else {
             setIsBookmarked(false);
             setBookmarkId(null);
           }
+        } else if (mounted) {
+          setIsBookmarked(false);
+          setBookmarkId(null);
+        }
       } catch (err) {
         console.error("북마크 로드 실패:", err);
         if (mounted) {
@@ -144,7 +144,7 @@ export default function PostModal({
     try {
       let res;
       if (!isLiked) {
-        res = await apiAddLike(pin.id, userId);
+        res = await apiAddLike(pin.id, userId); // (참고: 좋아요는 userId를 쓰도록 되어있음)
       } else {
         res = await apiRemoveLike(pin.id, userId);
       }
@@ -155,7 +155,7 @@ export default function PostModal({
         setLikeCount(updated.likeCount);
       }
 
-      onChanged?.({ ...pin, likeCount: updated?.likeCount ?? likeCount });
+      onChanged?.();
     } catch (err) {
       console.error("좋아요 요청 실패:", err);
     }
@@ -170,9 +170,10 @@ export default function PostModal({
         setBookmarkId(null);
         console.log("🔖 북마크 해제 완료");
       } else {
-        const res = await apiCreateBookmark(userId);
-        if (res?.data) {
-          setBookmarkId(res.data.id);
+        const newBookmark = await apiCreateBookmark(pin.id);
+
+        if (newBookmark) {
+          setBookmarkId(newBookmark.id);
           setIsBookmarked(true);
           console.log("📌 북마크 생성 완료");
         }
@@ -211,25 +212,23 @@ export default function PostModal({
   // ✅ 내용 수정 저장
   const saveEdit = async () => {
     try {
-      await apiUpdatePin(currentPin.id, currentPin.latitude, currentPin.longitude, content);
-
-      // 서버에서 최신 핀 가져오기
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${currentPin.id}`);
-      const json = await res.json();
+      const updatedPin = await apiUpdatePin(
+        currentPin.id,
+        currentPin.latitude,
+        currentPin.longitude,
+        content
+      );
 
       setEditing(false);
 
-      if (json?.data) {
-        const updated = json.data as PinDto;
+      if (updatedPin) {
         // ✅ 모달 내부 즉시 반영
-        setCurrentPin(updated);
-        setContent(updated.content);
+        setCurrentPin(updatedPin);
+        setContent(updatedPin.content);
         // ✅ 부모 리스트도 갱신
-        onChanged?.(updated);
+        onChanged?.();
       } else {
-        // 혹시 실패하면 내용만 반영
-        setCurrentPin({ ...currentPin, content });
-        onChanged?.({ ...currentPin, content });
+        throw new Error("서버에서 핀 정보를 반환하지 않았습니다.");
       }
 
       alert("게시글이 수정되었습니다 ✅");
@@ -273,13 +272,15 @@ export default function PostModal({
           {/* 날짜: 상세 포맷으로 */}
           <div className="text-xs text-gray-500 flex justify-between">
             <span>
-              작성: {new Date(currentPin.createdAt).toLocaleString("ko-KR", {
+              작성:{" "}
+              {new Date(currentPin.createdAt).toLocaleString("ko-KR", {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}
             </span>
             <span>
-              수정: {new Date(currentPin.modifiedAt).toLocaleString("ko-KR", {
+              수정:{" "}
+              {new Date(currentPin.modifiedAt).toLocaleString("ko-KR", {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}
@@ -353,30 +354,33 @@ export default function PostModal({
               <>
                 <button
                   onClick={toggleLike}
-                  className={`px-3 py-1 rounded-md border transition ${isLiked
-                    ? "bg-red-100 text-red-600 border-red-300"
-                    : "border-gray-300"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    isLiked
+                      ? "bg-red-100 text-red-600 border-red-300"
+                      : "border-gray-300"
+                  }`}
                 >
                   {isLiked ? "💔 좋아요 취소" : "👍 좋아요"} ({likeCount})
                 </button>
 
                 <button
                   onClick={togglePublic}
-                  className={`px-3 py-1 rounded-md border transition ${localPublic
-                    ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
-                    : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    localPublic
+                      ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
+                      : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                  }`}
                 >
                   {localPublic ? "🔓 공개 중" : "🔒 비공개"}
                 </button>
 
                 <button
                   onClick={toggleBookmark}
-                  className={`px-3 py-1 rounded-md border transition ${isBookmarked
-                    ? "bg-blue-100 text-blue-600 border-blue-300"
-                    : "border-gray-300"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    isBookmarked
+                      ? "bg-blue-100 text-blue-600 border-blue-300"
+                      : "border-gray-300"
+                  }`}
                 >
                   {isBookmarked ? "🔖 북마크됨" : "📌 북마크"}
                 </button>
