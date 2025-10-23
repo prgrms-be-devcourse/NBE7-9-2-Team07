@@ -292,10 +292,17 @@ export default function MyPage() {
           </div>
           <button
             className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 rounded-lg transition"
-            onClick={() => router.push("/user/mypage/check")}
+            onClick={() => router.push("/user/mypage/edit")}
           >
             회원 정보 수정
           </button>
+          {/* 회원 탈퇴 버튼 */}
+            <button
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 rounded-lg transition"
+              onClick={() => router.push("/user/mypage/delete")}
+            >
+              회원 탈퇴
+            </button>
         </aside>
 
         {/* 가운데 핀 목록 */}
