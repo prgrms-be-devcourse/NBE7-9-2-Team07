@@ -66,7 +66,7 @@ public class PinController {
         User actor = rq.getActor();
         Pin pin = pinService.findById(pinId, actor);
         // pin 좋아요 개수 설정
-        pin.setLikeCount(likesService.getLikesCount(pinId));
+        //pin.setLikeCount(likesService.getLikesCount(pinId));
 
         PinDto pinDto = new PinDto(pin);
 
@@ -93,10 +93,7 @@ public class PinController {
         List<Pin> pins = pinService.findNearPins(latitude, longitude, actor);
 
         List<PinDto> pinDtos = pins.stream()
-                .map((pin)->{
-                    pin.setLikeCount(likesService.getLikesCount(pin.getId()));
-                    return new PinDto(pin);
-                })
+                .map(PinDto::new)
                 .collect(Collectors.toList());
 
         if (pinDtos.isEmpty()) {
@@ -124,10 +121,7 @@ public class PinController {
         User writer = userService.findById(userId);
         List<Pin> pins = pinService.findByUserId(actor, writer);
         List<PinDto> pinDtos = pins.stream()
-                .map((pin)->{
-                    pin.setLikeCount(likesService.getLikesCount(pin.getId()));
-                    return new PinDto(pin);
-                })
+                .map(PinDto::new)
                 .collect(Collectors.toList());
         return new RsData<>(
                 "200",
@@ -144,10 +138,7 @@ public class PinController {
         List<Pin> pins = pinService.findAll(actor);
 
         List<PinDto> pinDtos = pins.stream()
-                .map((pin)->{
-                    pin.setLikeCount(likesService.getLikesCount(pin.getId()));
-                    return new PinDto(pin);
-                })
+                .map(PinDto::new)
                 .toList();
 
         if (pins.isEmpty()) {

@@ -152,14 +152,20 @@ public class PinService {
     /**
      * 핀 좋아요 수 갱신
      * @param pin
-     * @param likecount
+     * @param type
      * @return Pin
      */
     @Transactional
-    public Pin updateLikes(Pin pin, int likecount) {
-        pin.setLikeCount(likecount);
+    public Pin updateLikes(Pin pin, boolean type) {
+        int likeCnt = pin.getLikeCount();
+
+        if (type) {
+            pin.setLikeCount(likeCnt + 1);
+        } else if (pin.getLikeCount() > 0) {
+            pin.setLikeCount(likeCnt - 1);
+        }
+
         return pinRepository.save(pin);
     }
-
 
 }
