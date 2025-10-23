@@ -214,7 +214,10 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
        ✅ 북마크 핀 로드
     ========================================================= */
     const loadMyBookmarks = async () => {
-        if (!userId) return;
+        if (!userId) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
         setLoading(true);
         try {
             const apiKey = localStorage.getItem("apiKey");
@@ -255,7 +258,10 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
        ✅ 좋아요한 핀 로드
     ========================================================= */
     const loadLikedPins = async () => {
-        if (!userId) return;
+        if (!userId) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
         setLoading(true);
         try {
             const apiKey = localStorage.getItem("apiKey");
