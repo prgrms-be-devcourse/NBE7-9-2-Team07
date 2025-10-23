@@ -74,6 +74,7 @@ public class InitData {
         likesService.createPinLikes(pinA.getId(), user2.getId());
 
         likesService.createPinLikes(pinB.getId(), user1.getId());
+        likesService.createPinLikes(pinB.getId(), user2.getId());
 
         likesService.createPinLikes(pinC.getId(), user1.getId());
         likesService.createPinLikes(pinC.getId(), user2.getId());
