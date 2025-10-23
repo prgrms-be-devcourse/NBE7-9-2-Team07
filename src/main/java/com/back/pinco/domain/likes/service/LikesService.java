@@ -53,7 +53,7 @@ public class LikesService {
     @Transactional
     public PinLikesResponse changeLikes(Long pinId, Long userId, boolean isLiked) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_INVALID_USER_INPUT));
+                .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_INVALID_USER_INPUT));
 
         Pin pin = pinRepository.findAccessiblePinById(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_INVALID_PIN_INPUT));
@@ -103,7 +103,7 @@ public class LikesService {
     /** 특정 사용자가 좋아요 누른 핀 목록 전달 */
     public List<PinsLikedByUserResponse> getPinsLikedByUser(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new ServiceException(ErrorCode.LIKES_INVALID_USER_INPUT);
+            throw new ServiceException(ErrorCode.BOOKMARK_INVALID_USER_INPUT);
         }
 
         return likesRepository.findPinsByUserIdAndLikedTrue(userId)
