@@ -21,7 +21,7 @@ import {
 export default function PostModal({
   pin,
   onClose,
-  userId = null, //id 1은 사용 중이라 null
+  userId = 1,
   onChanged,
 }: {
   pin: PinDto;

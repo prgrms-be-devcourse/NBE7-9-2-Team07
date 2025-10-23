@@ -139,7 +139,7 @@ export default function PinCoMainPage() {
                         <PostModal
                             pin={selectedPin}
                             onClose={() => setSelectedPin(null)}
-                            userId={user?.id ?? 0} //id 1은 사용 중이라 0
+                            userId={user?.id ?? 1}
                             onChanged={async () => {
                                 if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
