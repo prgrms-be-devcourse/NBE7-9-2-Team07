@@ -2,6 +2,7 @@ package com.back.pinco.domain.pin.repository;
 
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.global.geometry.GeometryUtil;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,13 +11,14 @@ import java.util.Optional;
 
 public interface PinRepository extends JpaRepository<Pin,Long> {
 
-    @Query(value = """
-    SELECT * FROM pins p
-    WHERE ST_DWithin(p.point,ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,:radiusInMeters) 
-          AND p.is_deleted=false
-          AND (user_id = :userId OR is_public = true)
-    """,
-            nativeQuery = true)
+    String BASE_QUERY =
+            "SELECT * FROM pins p " +
+                    "WHERE ST_DWithin(p.point, ST_SetSRID(ST_MakePoint(:longitude, :latitude), "
+                    + GeometryUtil.SRID +
+                    ")::geography, :radiusInMeters) " +
+                    "AND p.is_deleted = false ";
+
+    @Query(value = BASE_QUERY + "AND (user_id = :userId OR is_public = true)", nativeQuery = true)
     List<Pin> findPinsWithinRadius(
             @Param("latitude") Double latitude,
             @Param("longitude") Double longitude,
@@ -24,18 +26,13 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
             @Param("userId") Long userId
     );
 
-    @Query(value = """
-    SELECT * FROM pins p
-    WHERE ST_DWithin(p.point,ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,:radiusInMeters) 
-          AND p.is_deleted=false
-          AND is_public = true
-    """,
-            nativeQuery = true)
+    @Query(value = BASE_QUERY + "AND is_public = true", nativeQuery = true)
     List<Pin> findPublicPinsWithinRadius(
             @Param("latitude") Double latitude,
             @Param("longitude") Double longitude,
             @Param("radiusInMeters") Double radiusInMeters
     );
+
 
 
 
