@@ -165,12 +165,12 @@ export default function PostModal({
   const toggleBookmark = async () => {
     try {
       if (isBookmarked && bookmarkId) {
-        await apiDeleteBookmark(bookmarkId, userId);
+        await apiDeleteBookmark(bookmarkId);
         setIsBookmarked(false);
         setBookmarkId(null);
         console.log("🔖 북마크 해제 완료");
       } else {
-        const res = await apiCreateBookmark(userId, pin.id);
+        const res = await apiCreateBookmark(userId);
         if (res?.data) {
           setBookmarkId(res.data.id);
           setIsBookmarked(true);
