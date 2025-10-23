@@ -63,7 +63,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
     // 북마크 복구
     public void restore() {
-        this.deleted = false;
+        if (this.deleted) {
+            this.deleted = false;
+        }
     }
 
 }
