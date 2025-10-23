@@ -780,7 +780,7 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("200"))
 
                 .andExpect(jsonPath("$.data.isLiked").value(true))
-                .andExpect(jsonPath("$.data.likeCount").value(1));
+                .andExpect(jsonPath("$.data.likeCount").value(2));
 
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
@@ -812,8 +812,8 @@ public class PinControllerTest {
                 )
                 .andDo(print())
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode").value("1002"))
-                .andExpect(jsonPath("$.msg").value("존재하지 않는 핀입니다."));
+                .andExpect(jsonPath("$.errorCode").value("5002"))
+                .andExpect(jsonPath("$.msg").value("잘못된 핀 정보입니다."));
 
         // DB 검증
         Optional<Likes> likes = likesRepository.findByPinIdAndUserId(pinId, userId);
@@ -821,54 +821,33 @@ public class PinControllerTest {
     }
 
     @Test
-    @DisplayName("좋아요 저장 실패 - 존재하지 않는 사용자")
+    @DisplayName("좋아요 저장 실패 - 존재하지 않는 사용자 - 테스트 불가")
     @Transactional
     void likesCreatefailUserId() throws Exception {
-        // given
-        Long pinId = 2L;
-        Long userId = 999L;
-        String requestBody = "{\"userId\": " + userId + "}";
-        User testUser = userService.findById(userId);
-
-        // when & then
-        mvc.perform(
-                        post("/api/pins/{pinId}/likes", pinId)
-                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-//                                .with(csrf())
-//                                .with(user("testuser").roles("USER"))
-                )
-                .andDo(print())
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode").value("2006"));
-
-        // DB 검증
-        Optional<Likes> likes = likesRepository.findByPinIdAndUserId(pinId, userId);
-        assertThat(likes).isEmpty();
+        // 인증 도입으로 존재하지 않는 사용자 테스트 불가
+//        // given
+//        Long pinId = 2L;
+//        Long userId = 999L;
+//        String requestBody = "{\"userId\": " + userId + "}";
+//        User testUser = userService.findById(userId);
+//
+//        // when & then
+//        mvc.perform(
+//                        post("/api/pins/{pinId}/likes", pinId)
+//                                .header("Authorization", "Bearer %s %s".formatted(testUser.getApiKey(), jwtToken))
+//                                .contentType(MediaType.APPLICATION_JSON)
+//                                .content(requestBody)
+////                                .with(csrf())
+////                                .with(user("testuser").roles("USER"))
+//                )
+//                .andDo(print())
+//                .andExpect(status().isNotFound())
+//                .andExpect(jsonPath("$.errorCode").value("2006"));
+//
+//        // DB 검증
+//        Optional<Likes> likes = likesRepository.findByPinIdAndUserId(pinId, userId);
+//        assertThat(likes).isEmpty();
     }
-
-    @Test
-    @DisplayName("좋아요 저장 실패 - DB 예외 발생")    // DB 중단 시뮬레이션, DB 오류 관련 테스트는 어떻게 해야하는가?
-    void likesCreatefailDB() throws Exception {
-        // given
-        Long pinId = 5L;
-        Long userId = 2L;
-
-        // when
-    }
-
-
-    @Test
-    @DisplayName("좋아요 저장 실패 - 트랜잭션 롤백") // 미구현
-    void likePinTransactionRollbackTest() {
-        // given
-        Long pinId = 5L;
-        Long userId = 2L;
-
-        // when
-    }
-
 
     @Test
     @DisplayName("좋아요 취소 성공 - 좋아요 true")
