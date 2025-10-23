@@ -139,7 +139,7 @@ export default function PinCoMainPage() {
                         <PostModal
                             pin={selectedPin}
                             onClose={() => setSelectedPin(null)}
-                            userId={user?.id ?? 1}
+                            userId={user?.id ?? 0} //id 1은 사용 중이라 0
                             onChanged={async () => {
                                 if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
@@ -170,7 +170,14 @@ export default function PinCoMainPage() {
                     {/* ✅ 핀 추가 버튼 */}
                     <button
                         className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-lg shadow-lg hover:bg-blue-700 z-50"
-                        onClick={() => setShowCreate(true)}
+                        onClick={() => {
+                            if (!user) {
+                                alert("로그인 후 이용 가능합니다.");
+                                return;
+                            }
+                            setShowCreate(true);
+                        }
+                    }
                     >
                         + 핀 추가
                     </button>

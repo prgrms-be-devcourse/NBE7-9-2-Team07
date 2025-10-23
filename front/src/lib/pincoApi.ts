@@ -70,7 +70,7 @@ export const apiCreatePin = async (
 ): Promise<PinDto> => {
   console.log("📤 보내는 요청:", { latitude, longitude, content });
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins`, {
+  const res:PinDto = await fetchApi(`/api/pins`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -80,11 +80,7 @@ export const apiCreatePin = async (
     }),
   });
 
-  const json = await res.json();
-  console.log("🧭 좌표값 확인:", latitude, longitude);
-  console.log("📥 서버 응답:", json);
-
-  if (json?.data) return json.data as PinDto;
+  if (res) return res;
   throw new Error("핀 생성 실패: 서버 응답에 data가 없습니다");
 };
 
@@ -103,20 +99,12 @@ export const apiUpdatePin = async (
   longitude: number,
   content: string
 ): Promise<PinDto> => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${id}`, {
+  const res :PinDto = await fetchApi(`/api/pins/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ latitude, longitude, content }),
   });
-
-  const json = await res.json();
-
-  // ✅ RsData 구조에 대응 (data 필드 추출)
-  if (json?.data) {
-    return json.data as PinDto;
-  } else {
-    throw new Error("핀 수정 실패: 서버 응답에 data가 없습니다");
-  }
+    return res;
 };
 
 // 컨트롤러가 PUT 으로 공개 토글
