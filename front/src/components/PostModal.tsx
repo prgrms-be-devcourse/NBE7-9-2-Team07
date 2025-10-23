@@ -15,13 +15,13 @@ import {
   apiUpdatePin,
   apiCreateBookmark,
   apiRemoveTagFromPin,
-  apiGetMyBookmarks, //
+  apiGetMyBookmarks, // ✅ 1. (추가) apiGetMyBookmarks 임포트
 } from "../lib/pincoApi";
 
 export default function PostModal({
   pin,
   onClose,
-  userId = 1, // (참고: userId는 '좋아요' 로직에만 사용됨)
+  userId = 1,
   onChanged,
 }: {
   pin: PinDto;
@@ -144,7 +144,7 @@ export default function PostModal({
     try {
       let res;
       if (!isLiked) {
-        res = await apiAddLike(pin.id, userId); // (참고: 좋아요는 userId를 쓰도록 되어있음)
+        res = await apiAddLike(pin.id, userId);
       } else {
         res = await apiRemoveLike(pin.id, userId);
       }
@@ -155,7 +155,7 @@ export default function PostModal({
         setLikeCount(updated.likeCount);
       }
 
-      onChanged?.();
+      onChanged?.({ ...pin, likeCount: updated?.likeCount ?? likeCount });
     } catch (err) {
       console.error("좋아요 요청 실패:", err);
     }
@@ -187,6 +187,13 @@ export default function PostModal({
 
   // ✅ 공개 토글
   const togglePublic = async () => {
+      if (!userId) {
+          alert("로그인 후 이용 가능합니다.");
+          return;
+      } else if (userId != pin.userId) {
+          alert("수정 권한이 없습니다.");
+          return;
+      }
     const next = !localPublic;
     setLocalPublic(next);
 
@@ -211,35 +218,51 @@ export default function PostModal({
 
   // ✅ 내용 수정 저장
   const saveEdit = async () => {
-    try {
-      const updatedPin = await apiUpdatePin(
-        currentPin.id,
-        currentPin.latitude,
-        currentPin.longitude,
-        content
-      );
-
-      setEditing(false);
-
-      if (updatedPin) {
-        // ✅ 모달 내부 즉시 반영
-        setCurrentPin(updatedPin);
-        setContent(updatedPin.content);
-        // ✅ 부모 리스트도 갱신
-        onChanged?.();
-      } else {
-        throw new Error("서버에서 핀 정보를 반환하지 않았습니다.");
+      if (!userId) {
+          alert("로그인 후 이용 가능합니다.");
+          return;
+      } else if (userId != pin.userId) {
+          alert("수정 권한이 없습니다.");
+          return;
       }
+      try {
+          await apiUpdatePin(currentPin.id, currentPin.latitude, currentPin.longitude, content);
 
-      alert("게시글이 수정되었습니다 ✅");
-    } catch (err) {
-      console.error("게시글 수정 실패:", err);
-      alert("게시글 수정 중 오류가 발생했습니다.");
-    }
+          // 서버에서 최신 핀 가져오기
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${currentPin.id}`);
+          const json = await res.json();
+
+          setEditing(false);
+
+          if (json?.data) {
+              const updated = json.data as PinDto;
+              // ✅ 모달 내부 즉시 반영
+              setCurrentPin(updated);
+              setContent(updated.content);
+              // ✅ 부모 리스트도 갱신
+              onChanged?.(updated);
+          } else {
+              // 혹시 실패하면 내용만 반영
+              setCurrentPin({ ...currentPin, content });
+              onChanged?.({ ...currentPin, content });
+          }
+
+          alert("게시글이 수정되었습니다 ✅");
+      } catch (err) {
+          console.error("게시글 수정 실패:", err);
+          alert("게시글 수정 중 오류가 발생했습니다.");
+      }
   };
 
   // ✅ 삭제
   const deletePin = async () => {
+      if (!userId) {
+          alert("로그인 후 이용 가능합니다.");
+          return;
+      } else if (userId != pin.userId) {
+          alert("수정 권한이 없습니다.");
+          return;
+      }
     if (!confirm("이 핀을 삭제할까요?")) return;
     await apiDeletePin(pin.id);
     onChanged?.();
@@ -272,15 +295,13 @@ export default function PostModal({
           {/* 날짜: 상세 포맷으로 */}
           <div className="text-xs text-gray-500 flex justify-between">
             <span>
-              작성:{" "}
-              {new Date(currentPin.createdAt).toLocaleString("ko-KR", {
+              작성: {new Date(currentPin.createdAt).toLocaleString("ko-KR", {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}
             </span>
             <span>
-              수정:{" "}
-              {new Date(currentPin.modifiedAt).toLocaleString("ko-KR", {
+              수정: {new Date(currentPin.modifiedAt).toLocaleString("ko-KR", {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}
