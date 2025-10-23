@@ -40,6 +40,9 @@ export default function PostModal({
   const [content, setContent] = useState(pin.content);
   const [currentPin, setCurrentPin] = useState(pin);
 
+  // ✅ 작성자 여부 확인
+  const isOwner = currentPin.userId === userId;
+
   // pin이 바뀌면 모달 내부도 동기화 (content까지)
   useEffect(() => {
     setCurrentPin(pin);
@@ -355,24 +358,26 @@ export default function PostModal({
           </div>
 
           {/* ✅ 컨트롤 버튼 */}
-          <div className="flex flex-wrap gap-2">
-            {editing ? (
-              <>
-                <button
-                  onClick={saveEdit}
-                  className="px-3 py-1 rounded-md bg-blue-600 text-white"
-                >
-                  저장
-                </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-3 py-1 rounded-md border text-gray-600"
-                >
-                  취소
-                </button>
-              </>
-            ) : (
-              <>
+          <div className="flex flex-col gap-2">
+          {editing ? (
+            <>
+              <button
+                onClick={saveEdit}
+                className="px-3 py-1 rounded-md bg-blue-600 text-white"
+              >
+                저장
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="px-3 py-1 rounded-md border text-gray-600"
+              >
+                취소
+              </button>
+            </>
+          ) : (
+            <>
+              {/* 1번 줄: 좋아요, 북마크 */}
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={toggleLike}
                   className={`px-3 py-1 rounded-md border transition ${
@@ -385,17 +390,6 @@ export default function PostModal({
                 </button>
 
                 <button
-                  onClick={togglePublic}
-                  className={`px-3 py-1 rounded-md border transition ${
-                    localPublic
-                      ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
-                      : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                  }`}
-                >
-                  {localPublic ? "🔓 공개 중" : "🔒 비공개"}
-                </button>
-
-                <button
                   onClick={toggleBookmark}
                   className={`px-3 py-1 rounded-md border transition ${
                     isBookmarked
@@ -405,23 +399,40 @@ export default function PostModal({
                 >
                   {isBookmarked ? "🔖 북마크됨" : "📌 북마크"}
                 </button>
+              </div>
 
-                <button
-                  onClick={() => setEditing(true)}
-                  className="px-3 py-1 rounded-md border"
-                >
-                  ✏️ 편집
-                </button>
+              {/* 2번 줄: 공개여부, 편집, 삭제 버튼 (isOwner일 경우)*/}
+                {isOwner && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={togglePublic}
+                      className={`px-3 py-1 rounded-md border transition ${
+                        localPublic
+                          ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
+                          : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                      }`}
+                    >
+                      {localPublic ? "🔓 공개 중" : "🔒 비공개"}
+                    </button>
 
-                <button
-                  onClick={deletePin}
-                  className="px-3 py-1 rounded-md border text-red-600"
-                >
-                  🗑 삭제
-                </button>
-              </>
-            )}
-          </div>
+                    <button
+                      onClick={() => setEditing(true)}
+                      className="px-3 py-1 rounded-md border"
+                    >
+                      ✏️ 편집
+                    </button>
+
+                    <button
+                      onClick={deletePin}
+                      className="px-3 py-1 rounded-md border text-red-600"
+                    >
+                      🗑 삭제
+                    </button>
+                  </div>
+                )}
+            </>
+          )}
+        </div>
 
           <div className="text-sm">
             <span className="font-medium">좋아요한 유저:</span>{" "}
