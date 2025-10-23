@@ -11,18 +11,18 @@ public record MyPageResponse(
         String userName,
         int myPinCount,
         int bookmarkCount,
-        long totalLikesReceived
+        long likesCount
 ) {
     public MyPageResponse(UserDto userDto,
                           int myPinCount,
                           int bookmarkCount,
-                          long totalLikesReceived) {
+                          long likesCount) {
         this(
                 userDto.email(),
                 userDto.userName(),
                 myPinCount,
                 bookmarkCount,
-                totalLikesReceived
+                likesCount
         );
     }
 }
