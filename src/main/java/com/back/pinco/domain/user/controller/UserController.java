@@ -51,8 +51,8 @@ public class UserController {
     ) {
         User user = userService.createUser(reqBody.email(), reqBody.password(), reqBody.userName());
         String apiKey = userService.ensureApiKey(user);
-        String access = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getUserName());
-        String refresh = jwtTokenProvider.generateRefreshToken(user.getId());
+        String access = authService.genAccessToken(user);
+        String refresh = authService.genRefreshToken(user);
 
         rq.setCookie("apiKey", apiKey);
         rq.setCookie("accessToken", access);
@@ -74,8 +74,8 @@ public class UserController {
         // apiKey 보장
         String apiKey = userService.ensureApiKey(user);
         // 토큰 발급
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getUserName());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+        String accessToken = authService.genAccessToken(user);
+        String refreshToken = authService.genRefreshToken(user);
 
         // 쿠키
         rq.setCookie("apiKey", apiKey);
@@ -112,8 +112,8 @@ public class UserController {
         Long userId = jwtTokenProvider.getUserId(refreshToken);
         User user = userService.findById(userId);
 
-        String newAccess = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getUserName());
-        String newRefresh = jwtTokenProvider.generateRefreshToken(user.getId());
+        String newAccess = authService.genAccessToken(user);
+        String newRefresh = authService.genRefreshToken(user);
 
         rq.setCookie("accessToken", newAccess);
         rq.setHeader("Authorization", "Bearer " + user.getApiKey() + " " + newAccess);
