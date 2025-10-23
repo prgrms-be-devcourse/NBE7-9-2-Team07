@@ -127,12 +127,13 @@ export const apiAddLike = async (pinId: number, userId: number) => {
       return;
   }
   
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`, {
+  const res:LikesStatusDto = await fetchApi(`/api/pins/${pinId}/likes`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey} ${accessToken}` },
     body: JSON.stringify({ userId }),
   });
-  return await res.json(); // ✅ { data: { isLiked, likeCount } }
+
+    if (res) return res; // ✅ { data: { isLiked, likeCount } }
 };
 
 // ✅ 좋아요 취소
@@ -140,12 +141,12 @@ export const apiRemoveLike = async (pinId: number, userId: number) => {
   const apiKey = localStorage.getItem("apiKey");
   const accessToken = localStorage.getItem("accessToken");
   
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`, {
+  const res:LikesStatusDto = await fetchApi(`/api/pins/${pinId}/likes`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey} ${accessToken}` },
     body: JSON.stringify({ userId }),
   });
-  return await res.json(); // ✅ { data: { isLiked, likeCount } }
+    if (res) return res; // ✅ { data: { isLiked, likeCount } }
 };
 
 export const apiGetLikeUsers = (pinId: number) =>
