@@ -118,9 +118,18 @@ export const apiDeletePin = (id: number) =>
 
 // ✅ 좋아요 추가
 export const apiAddLike = async (pinId: number, userId: number) => {
+  const apiKey = localStorage.getItem("apiKey");
+  const accessToken = localStorage.getItem("accessToken");
+
+  if (!apiKey || !accessToken) {
+      console.error("❌ 토큰이 없습니다. 로그인이 필요합니다.");
+      alert("로그인이 필요합니다.");
+      return;
+  }
+  
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey} ${accessToken}` },
     body: JSON.stringify({ userId }),
   });
   return await res.json(); // ✅ { data: { isLiked, likeCount } }
@@ -128,9 +137,12 @@ export const apiAddLike = async (pinId: number, userId: number) => {
 
 // ✅ 좋아요 취소
 export const apiRemoveLike = async (pinId: number, userId: number) => {
+  const apiKey = localStorage.getItem("apiKey");
+  const accessToken = localStorage.getItem("accessToken");
+  
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pinId}/likes`, {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey} ${accessToken}` },
     body: JSON.stringify({ userId }),
   });
   return await res.json(); // ✅ { data: { isLiked, likeCount } }
