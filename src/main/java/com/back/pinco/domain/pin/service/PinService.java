@@ -134,38 +134,4 @@ public class PinService {
         pinRepository.save(pin);
     }
 
-    public void unDeleteById(Long pinId, User actor) {
-        Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
-        if(pin.getUser().getId().equals(actor.getId())){
-            try {
-                pin.unSetDeleted();
-            }catch(Exception e){
-                throw new ServiceException(ErrorCode.PIN_DELETE_FAILED);
-            }
-        }else{
-            throw new ServiceException(ErrorCode.PIN_NO_PERMISSION);
-        }
-
-        pinRepository.save(pin);
-    }
-
-    /**
-     * 핀 좋아요 수 갱신
-     * @param pin
-     * @param type
-     * @return Pin
-     */
-    @Transactional
-    public Pin updateLikes(Pin pin, boolean type) {
-        int likeCnt = pin.getLikeCount();
-
-        if (type) {
-            pin.setLikeCount(likeCnt + 1);
-        } else if (pin.getLikeCount() > 0) {
-            pin.setLikeCount(likeCnt - 1);
-        }
-
-        return pinRepository.save(pin);
-    }
-
 }
