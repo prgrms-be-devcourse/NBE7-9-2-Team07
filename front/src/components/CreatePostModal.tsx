@@ -7,13 +7,13 @@ import { TagDto } from "@/types/types";
 export default function CreatePostModal({
   lat,
   lng,
-  userId = 1,
+  userId,
   onClose,
   onCreated,
 }: {
   lat: number;
   lng: number;
-  userId?: number;
+  userId?: number | null;
   onClose: () => void;
   onCreated?: () => void;
 }) {

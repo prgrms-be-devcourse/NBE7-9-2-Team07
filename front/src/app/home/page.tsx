@@ -30,7 +30,7 @@ export default function PinCoMainPage() {
         loadMyBookmarks,
         loadLikedPins, // ✅ 좋아요한 핀 보기
         ensurePinTagsLoaded,
-    } = usePins({ lat: 37.5665, lng: 126.978 }, user?.id); // ✅ userId 전달
+    } = usePins({ lat: 37.5665, lng: 126.978 }, user?.id ?? null); // ✅ userId 전달
 
     const [kakaoReady, setKakaoReady] = useState(false);
     useEffect(() => {
@@ -139,7 +139,7 @@ export default function PinCoMainPage() {
                         <PostModal
                             pin={selectedPin}
                             onClose={() => setSelectedPin(null)}
-                            userId={user?.id ?? 1}
+                            userId={user?.id ?? null}
                             onChanged={async () => {
                                 if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
@@ -154,7 +154,7 @@ export default function PinCoMainPage() {
                         <CreatePostModal
                             lat={center.lat}        // ✅ 중심 좌표 전달
                             lng={center.lng}
-                            userId={user?.id ?? 1}
+                            userId={user?.id ?? null}
                             onClose={() => setShowCreate(false)}
                             onCreated={async () => {
                                 // 새로 등록한 핀 반영
