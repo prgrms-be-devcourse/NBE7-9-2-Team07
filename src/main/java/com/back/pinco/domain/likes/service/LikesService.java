@@ -1,17 +1,18 @@
 package com.back.pinco.domain.likes.service;
 
 import com.back.pinco.domain.likes.dto.PinLikedUserResponse;
+import com.back.pinco.domain.likes.dto.PinLikesResponse;
 import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
-import com.back.pinco.domain.likes.dto.createPinLikesResponse;
-import com.back.pinco.domain.likes.dto.deletePinLikesResponse;
 import com.back.pinco.domain.likes.entity.Likes;
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
+import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,54 +28,78 @@ public class LikesService {
     private final PinService pinService;
     private final UserService userService;
     private final LikesRepository likesRepository;
+    private final PinRepository pinRepository;
+    private final EntityManager entityManager;
 
 
-    /** 특정 핀에 대한 좋아요 수 조회 */
+    /**
+     * 특정 핀에 대한 좋아요 수 조회
+     */
     @Transactional(readOnly = true)
     public int getLikesCount(Long pinId) {
         return (int) likesRepository.countByPin_IdAndLikedTrue(pinId);
     }
 
+    @Transactional(readOnly = true)
+    public Pin findById(long id, User actor) {
+        if(actor==null){
+            return pinRepository.findPublicPinById(id)
+                    .orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
+        }
 
-    /** 좋아요 있으면 상태변경, 없으면 신규 생성 */
-    private Likes toggleLike(Long pinId, Long userId, boolean isLiked) {
+        return pinRepository.findAccessiblePinById(id, actor.getId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.PIN_NOT_FOUND));
+    }
+
+
+    @Transactional
+    public PinLikesResponse changeLikes(Long pinId, Long userId, boolean isLiked) {
         User user = userService.findById(userId);
-        Pin pin = pinService.findById(pinId, user);
+        Pin pin = findById(pinId, user);
 
-        int likeCnt = pin.getLikeCount();
+        Likes likes = likesRepository.save(toggleLikes(isLiked, pin, user));
 
+        entityManager.flush();
+        entityManager.clear();
         try {
-            Likes getLikes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
-                    .map(like -> like.toggleLike(isLiked))
-                    .orElse(new Likes(user, pin));
-
-            Likes rt_like = likesRepository.save(getLikes);
-
-            // 핀 테이블에 업데이트
-            likeCnt = isLiked ? likeCnt + 1
-                    : likeCnt == 0 ? 0 : likeCnt - 1;
-
-            pinService.updateLikes(pin, likeCnt);
-
-            return rt_like;
-        } catch (Exception e){  // TODO : DataAccessException?
-            throw new ServiceException(ErrorCode.LIKES_CHANGE_FAILED);
+            updateLikes(pin, isLiked);
+            return new PinLikesResponse(likes.getLiked(), getLikesCount(pinId));
+        } catch (Exception e) {
+            if (isLiked) {
+                throw new ServiceException(ErrorCode.LIKES_CREATE_FAILED);
+            } else {
+                throw new ServiceException(ErrorCode.LIKES_REVOKE_FAILED);
+            }
         }
     }
 
-    public createPinLikesResponse createPinLikes(Long pinId, Long userId) {
-        Likes rt_like = toggleLike(pinId, userId, true);
+    @Transactional
+    public void updateLikes(Pin pin, boolean type) {
+        int likeCnt = pin.getLikeCount();
 
-        return new createPinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
+        if (type) {
+            pin.setLikeCount(likeCnt + 1);
+        } else if (pin.getLikeCount() > 0) {
+            pin.setLikeCount(likeCnt - 1);
+        }
+
+        pinRepository.save(pin);
     }
 
-    public deletePinLikesResponse togglePinLikes(Long pinId, Long userId) {
-        Likes rt_like = toggleLike(pinId, userId, false);
-        return new deletePinLikesResponse(rt_like.getLiked(), getLikesCount(pinId));
+    private Likes toggleLikes(boolean isLiked, Pin pin, User user) {
+        try {
+            return likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
+                    .map(like -> like.toggleLike(isLiked))
+                    .orElse(new Likes(user, pin));
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.LIKES_NOT_FOUND);
+        }
     }
 
 
-    /** 해당 핀을 좋아요 누른 유저 ID 목록 전달 */
+    /**
+     * 해당 핀을 좋아요 누른 유저 ID 목록 전달
+     */
     public List<PinLikedUserResponse> getUsersWhoLikedPin(Long pinId) {
         if (!pinService.checkId(pinId)) {
             throw new ServiceException(ErrorCode.LIKES_PIN_NOT_FOUND);
@@ -85,11 +110,14 @@ public class LikesService {
                 .toList();
     }
 
-    /** 특정 사용자가 좋아요 누른 핀 목록 전달 */
+    /**
+     * 특정 사용자가 좋아요 누른 핀 목록 전달
+     */
     public List<PinsLikedByUserResponse> getPinsLikedByUser(Long userId) {
         userService.existsUserId(userId);
         return likesRepository.findPinsByUserIdAndLikedTrue(userId)
                 .stream()
+                .filter(Pin::getIsPublic)
                 .map(PinsLikedByUserResponse::formEntry)
                 .toList();
     }

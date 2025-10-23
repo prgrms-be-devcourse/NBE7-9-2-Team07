@@ -69,19 +69,21 @@ public class InitData {
 
 
         // 좋아요 등록
-        // A(2), B(1), C(1), D(0)
-        likesService.createPinLikes(pinA.getId(), user1.getId());
-        likesService.createPinLikes(pinA.getId(), user2.getId());
+        // A(2), B(1), C(1), D(0), E(1)
+        likesService.changeLikes(pinA.getId(), user1.getId(), true);
+        likesService.changeLikes(pinA.getId(), user2.getId(), true);
 
-        likesService.createPinLikes(pinB.getId(), user1.getId());
-        likesService.createPinLikes(pinB.getId(), user2.getId());
+        likesService.changeLikes(pinB.getId(), user1.getId(), true);
+        likesService.changeLikes(pinB.getId(), user2.getId(), true);
 
-        likesService.createPinLikes(pinC.getId(), user1.getId());
-        likesService.createPinLikes(pinC.getId(), user2.getId());
-        likesService.togglePinLikes(pinC.getId(), user1.getId());   // 취소
+        likesService.changeLikes(pinC.getId(), user1.getId(), true);
+        likesService.changeLikes(pinC.getId(), user2.getId(), true);
+        likesService.changeLikes(pinC.getId(), user1.getId(), false);   // 취소
 
-        likesService.createPinLikes(pinD.getId(), user1.getId());
-        likesService.togglePinLikes(pinD.getId(), user1.getId());
+        likesService.changeLikes(pinD.getId(), user1.getId(), true);
+        likesService.changeLikes(pinD.getId(), user1.getId(), false);   // 취소
+
+        likesService.changeLikes(pinE.getId(), user1.getId(), true);
 
 
 

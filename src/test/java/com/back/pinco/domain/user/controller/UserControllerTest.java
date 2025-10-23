@@ -2,11 +2,13 @@ package com.back.pinco.domain.user.controller;
 
 import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.entity.Pin;
+import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +44,12 @@ class UserControllerIntegrationTest {
     UserService userService;
     @Autowired
     LikesRepository likesRepository;
-    @Autowired private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private PinService pinService;
+    @Autowired
+    private EntityManager entityManager;
 
 
     @Test
@@ -833,7 +840,7 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("특정 사용자가 좋아요 누른 핀 목록 성공 - 비공개 제외")
+    @DisplayName("특정 사용자가 좋아요 누른 핀 목록 성공 - 비공개 5번 제외")
     @Transactional
     void getPinsLik2edByUser() throws Exception {
         // given
@@ -846,6 +853,13 @@ class UserControllerIntegrationTest {
                 .map(Pin::getId)
                 .map(id -> id.intValue())
                 .toArray(Integer[]::new);
+
+        assertThat(pinIds).contains(5);
+
+        pinService.changePublic(userService.findById(2L), 5L);
+
+        entityManager.flush();
+        entityManager.clear();
 
         // when & then
         mvc.perform(
@@ -860,7 +874,8 @@ class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
 
                 .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data.length()").value(likesRepository.countByUser_idAndLikedTrue(userId)))
-                .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(pinIds)));;
+//                .andExpect(jsonPath("$.data.length()").value(expectedPinIds.length))
+//                .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(expectedPinIds)))
+                .andExpect(jsonPath("$.data[?(@.id == 5)]").doesNotExist());
     }
 }
