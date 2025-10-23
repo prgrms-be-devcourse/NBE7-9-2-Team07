@@ -15,7 +15,7 @@ import {
   apiUpdatePin,
   apiCreateBookmark,
   apiRemoveTagFromPin,
-  apiGetMyBookmarks, // ✅ 1. (추가) apiGetMyBookmarks 임포트
+  apiGetMyBookmarks,
 } from "../lib/pincoApi";
 
 export default function PostModal({
@@ -88,23 +88,23 @@ export default function PostModal({
         console.error("좋아요 로드 실패:", err);
       }
 
+      // ✅ 북마크 상태 불러오기
       try {
-        // 북마크 상태 불러오기
         const myBookmarks = await apiGetMyBookmarks();
 
-          if (mounted && Array.isArray(myBookmarks)) {
-            const found = myBookmarks.find((b: any) => b.pin?.id === pin.id);
-            if (found) {
-                setIsBookmarked(true);
-                setBookmarkId(found.id); // ✅ bookmarkId 저장
-              } else {
-                setIsBookmarked(false);
-                setBookmarkId(null);
-              }
-          } else if (mounted) {
+        if (mounted && Array.isArray(myBookmarks)) {
+          const found = myBookmarks.find((b: any) => b.pin?.id === pin.id);
+          if (found) {
+            setIsBookmarked(true);
+            setBookmarkId(found.id); // ✅ bookmarkId 저장
+          } else {
             setIsBookmarked(false);
             setBookmarkId(null);
           }
+        } else if (mounted) {
+          setIsBookmarked(false);
+          setBookmarkId(null);
+        }
       } catch (err) {
         console.error("북마크 로드 실패:", err);
         if (mounted) {
@@ -165,14 +165,15 @@ export default function PostModal({
   const toggleBookmark = async () => {
     try {
       if (isBookmarked && bookmarkId) {
-        await apiDeleteBookmark(bookmarkId, userId);
+        await apiDeleteBookmark(bookmarkId);
         setIsBookmarked(false);
         setBookmarkId(null);
         console.log("🔖 북마크 해제 완료");
       } else {
-        const res = await apiCreateBookmark(userId, pin.id);
-        if (res?.data) {
-          setBookmarkId(res.data.id);
+        const newBookmark = await apiCreateBookmark(pin.id);
+
+        if (newBookmark) {
+          setBookmarkId(newBookmark.id);
           setIsBookmarked(true);
           console.log("📌 북마크 생성 완료");
         }
@@ -374,30 +375,33 @@ export default function PostModal({
               <>
                 <button
                   onClick={toggleLike}
-                  className={`px-3 py-1 rounded-md border transition ${isLiked
-                    ? "bg-red-100 text-red-600 border-red-300"
-                    : "border-gray-300"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    isLiked
+                      ? "bg-red-100 text-red-600 border-red-300"
+                      : "border-gray-300"
+                  }`}
                 >
                   {isLiked ? "💔 좋아요 취소" : "👍 좋아요"} ({likeCount})
                 </button>
 
                 <button
                   onClick={togglePublic}
-                  className={`px-3 py-1 rounded-md border transition ${localPublic
-                    ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
-                    : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    localPublic
+                      ? "bg-green-100 text-green-700 border-green-400 hover:bg-green-200"
+                      : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                  }`}
                 >
                   {localPublic ? "🔓 공개 중" : "🔒 비공개"}
                 </button>
 
                 <button
                   onClick={toggleBookmark}
-                  className={`px-3 py-1 rounded-md border transition ${isBookmarked
-                    ? "bg-blue-100 text-blue-600 border-blue-300"
-                    : "border-gray-300"
-                    }`}
+                  className={`px-3 py-1 rounded-md border transition ${
+                    isBookmarked
+                      ? "bg-blue-100 text-blue-600 border-blue-300"
+                      : "border-gray-300"
+                  }`}
                 >
                   {isBookmarked ? "🔖 북마크됨" : "📌 북마크"}
                 </button>

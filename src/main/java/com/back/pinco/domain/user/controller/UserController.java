@@ -14,14 +14,18 @@ import com.back.pinco.domain.user.dto.UserDto;
 import com.back.pinco.domain.user.dto.UserReqBody.*;
 import com.back.pinco.domain.user.dto.UserResBody.*;
 import com.back.pinco.domain.user.entity.User;
+import com.back.pinco.domain.user.service.AuthService;
 import com.back.pinco.domain.user.service.UserService;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.rq.Rq;
 import com.back.pinco.global.rsData.RsData;
 import com.back.pinco.global.security.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -37,6 +41,7 @@ public class UserController {
     private final UserService userService;
     private final LikesService likesService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthService authService;
     private final Rq rq;
 
 
@@ -46,8 +51,8 @@ public class UserController {
     ) {
         User user = userService.createUser(reqBody.email(), reqBody.password(), reqBody.userName());
         String apiKey = userService.ensureApiKey(user);
-        String access = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getUserName());
-        String refresh = jwtTokenProvider.generateRefreshToken(user.getId());
+        String access = authService.genAccessToken(user);
+        String refresh = authService.genRefreshToken(user);
 
         rq.setCookie("apiKey", apiKey);
         rq.setCookie("accessToken", access);
@@ -69,8 +74,8 @@ public class UserController {
         // apiKey 보장
         String apiKey = userService.ensureApiKey(user);
         // 토큰 발급
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getUserName());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+        String accessToken = authService.genAccessToken(user);
+        String refreshToken = authService.genRefreshToken(user);
 
         // 쿠키
         rq.setCookie("apiKey", apiKey);
@@ -87,6 +92,15 @@ public class UserController {
         );
     }
 
+    @PostMapping("/logout")
+    public RsData<Void> logout(HttpServletRequest req, HttpServletResponse res) {
+        authService.logout(req, res);
+        return new RsData<>(
+                "200",
+                "로그아웃 성공"
+        );
+    }
+
     @PostMapping("/reissue")
     public RsData<Map<String, String>> reissue(
             @RequestBody Map<String, String> body
@@ -98,8 +112,8 @@ public class UserController {
         Long userId = jwtTokenProvider.getUserId(refreshToken);
         User user = userService.findById(userId);
 
-        String newAccess = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getUserName());
-        String newRefresh = jwtTokenProvider.generateRefreshToken(user.getId());
+        String newAccess = authService.genAccessToken(user);
+        String newRefresh = authService.genRefreshToken(user);
 
         rq.setCookie("accessToken", newAccess);
         rq.setHeader("Authorization", "Bearer " + user.getApiKey() + " " + newAccess);

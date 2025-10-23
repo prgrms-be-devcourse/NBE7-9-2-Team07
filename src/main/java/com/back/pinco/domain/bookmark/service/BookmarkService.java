@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,25 +36,19 @@ public class BookmarkService {
         User user = userService.findById(userId);
         Pin pin = pinService.findById(pinId, user);
 
-        Optional<Bookmark> existingBookmarkOpt = bookmarkRepository.findByUserAndPin(user, pin);
+        Bookmark bookmark = bookmarkRepository.findByUserAndPin(user, pin)
+                .map(existingBookmark -> {
+                    if (!existingBookmark.getDeleted()) {
+                        throw new ServiceException(ErrorCode.BOOKMARK_ALREADY_EXISTS);
+                    }
+                    existingBookmark.restore();
+                    return existingBookmark;
+                })
+                .orElseGet(() -> new Bookmark(user, pin));
 
-        Bookmark bookmark;
-        if (existingBookmarkOpt.isPresent()) {
-            bookmark = existingBookmarkOpt.get();
-            if (!bookmark.getDeleted()) {
-                throw new ServiceException(ErrorCode.BOOKMARK_ALREADY_EXISTS);
-            }
-            bookmark.restore();
-        } else {
-            bookmark = new Bookmark(user, pin);
-        }
+        Bookmark savedBookmark = bookmarkRepository.save(bookmark);
 
-        try {
-            bookmarkRepository.save(bookmark);
-        } catch (Exception ex) {
-            throw new ServiceException(ErrorCode.BOOKMARK_CREATE_FAILED);
-        }
-        return new BookmarkDto(bookmark);
+        return new BookmarkDto(savedBookmark);
     }
 
     /**

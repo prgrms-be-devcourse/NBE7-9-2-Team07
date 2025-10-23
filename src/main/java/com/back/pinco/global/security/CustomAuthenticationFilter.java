@@ -40,8 +40,15 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         final String uri = req.getRequestURI();
+        final String method = req.getMethod();
 
-        // /api/* 가 아니거나 공개 경로면 바로 통과 (여기서 난 예외는 전역 핸들러가 처리)
+        // /api/pins 와 /api/pins/** 둘 다 허용
+        if (method.equals("GET") && (uri.equals("/api/pins") || uri.startsWith("/api/pins/"))) {
+            chain.doFilter(req, res);
+            return;
+        }
+
+        // /api/* 가 아니거나 공개 경로(join, login)면 바로 통과
         if (!uri.startsWith("/api/") || PERMIT_PATHS.stream().anyMatch(uri::equals)) {
             chain.doFilter(req, res);
             return;
