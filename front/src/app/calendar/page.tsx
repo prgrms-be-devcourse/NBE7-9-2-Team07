@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import {fetchApi} from "@/lib/client";
 import {PinDto} from "@/types/types";
 import {useAuth} from "@/context/AuthContext";
+import {Loader2, MapPin} from "lucide-react";
+import PostModal from "@/components/PostModal";
 
 
 const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
@@ -120,7 +122,11 @@ export default function CalendarPage() {
     }, [selectedYear, selectedMonth, month]); // 년/월 변경 시 재호출
 
 
-
+    const [selectedPin, setSelectedPin] = useState<PinDto | null>(null);
+    useEffect(() => {
+        setPostsByDay(Array.from({ length: 32 }, () => []));
+        fetchData();
+    }, [selectedPin]);
   return (
     <div className="[color-scheme:light] min-h-screen bg-gray-50 p-6">
       {/* 2열 레이아웃 */}
@@ -220,7 +226,8 @@ export default function CalendarPage() {
               {postsByDay[selectedDay].map((p) => (
                 <li key={p.id} className="border rounded-xl p-4 hover:bg-gray-50">
 
-                  <div className="text-sm text-gray-600">{p.content}</div>
+                    <div className="text-sm text-gray-600" onClick={()=>setSelectedPin(p)}>{p.content}</div>
+
                 </li>
               ))}
             </ul>
@@ -231,6 +238,16 @@ export default function CalendarPage() {
           </div>
               ) }
         </section>
+
+          {selectedPin && (
+              <PostModal
+                  pin={selectedPin}
+                  onClose={() => setSelectedPin(null)}
+                  userId={user?.id ?? 1}
+                  onChanged={async () => {
+                  }}
+              />
+          )}
       </div>
     </div>
   );
