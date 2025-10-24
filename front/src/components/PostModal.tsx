@@ -21,13 +21,13 @@ import {
 export default function PostModal({
   pin,
   onClose,
-  userId = 1,
+  userId,
   onChanged,
 }: {
   pin: PinDto;
   onClose: () => void;
-  userId?: number;
-  onChanged?: () => void;
+  userId?: number | null;
+  onChanged?: (updatedPin?: PinDto) => void;
 }) {
   const [tags, setTags] = useState<TagDto[]>([]);
   const [likeUsers, setLikeUsers] = useState<PinLikedUserDto[]>([]);
@@ -41,7 +41,7 @@ export default function PostModal({
   const [currentPin, setCurrentPin] = useState(pin);
 
   // ✅ 작성자 여부 확인
-  const isOwner = currentPin.userId === userId;
+  const isOwner = userId !== null && currentPin.userId === userId;
 
   // pin이 바뀌면 모달 내부도 동기화 (content까지)
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function PostModal({
       try {
         // 좋아요 유저
         const u = await apiGetLikeUsers(pin.id);
-        const likeUserList = Array.isArray(u) ? u : u?.data ?? [];
+        const likeUserList: PinLikedUserDto[] = Array.isArray(u) ? u : [];
         if (mounted) {
           setLikeUsers(likeUserList);
           setIsLiked(likeUserList.some((usr) => usr.id === userId));
@@ -144,6 +144,11 @@ export default function PostModal({
 
   // ✅ 좋아요 토글
   const toggleLike = async () => {
+    if (!userId) { // 💡 수정: userId가 null인 경우 체크
+      alert("로그인 후 이용 가능합니다.");
+      return;
+    }
+
     try {
       let res;
       if (!isLiked) {
@@ -152,13 +157,14 @@ export default function PostModal({
         res = await apiRemoveLike(pin.id, userId);
       }
 
-      const updated = res?.data;
+      const updated = res;
+
       if (updated) {
         setIsLiked(updated.isLiked);
         setLikeCount(updated.likeCount);
       }
 
-      onChanged?.({ ...pin, likeCount: updated?.likeCount ?? likeCount });
+      onChanged?.({ ...pin, likeCount });
     } catch (err) {
       console.error("좋아요 요청 실패:", err);
     }
@@ -166,6 +172,11 @@ export default function PostModal({
 
   // ✅ 북마크 토글
   const toggleBookmark = async () => {
+    if (!userId) {
+          alert("로그인 후 이용 가능합니다.");
+          return;
+      }
+      
     try {
       if (isBookmarked && bookmarkId) {
         await apiDeleteBookmark(bookmarkId);
