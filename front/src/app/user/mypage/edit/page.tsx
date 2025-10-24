@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE!; // 예: http://localhost:8080
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!; // 예: http://localhost:8080
 
 export default function EditMyInfoPage() {
   const router = useRouter();
