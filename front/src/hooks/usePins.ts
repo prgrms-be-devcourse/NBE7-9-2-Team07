@@ -21,7 +21,7 @@ export interface TagDto {
     createdAt: string;
 }
 
-export type Mode = "all" | "nearby" | "tag" | "bookmark" | "liked";
+export type Mode = "screen" | "nearby" | "tag" | "bookmark" | "liked";
 
 interface UsePinsProps {
     lat: number;
@@ -31,7 +31,7 @@ interface UsePinsProps {
 export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     const [pins, setPins] = useState<PinDto[]>([]);
     const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState<Mode>("all");
+    const [mode, setMode] = useState<Mode>("nearby");
     const [center, setCenter] = useState(initialCenter);
     const [selectedPin, setSelectedPin] = useState<PinDto | null>(null);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -94,9 +94,10 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     }, []);
 
     /* =========================================================
-       ✅ 모든 핀 조회
+       ✅ 화면상 모든 핀 조회
     ========================================================= */
-    const loadAllPins = async () => {
+    const loadAllPins = async (lat?: number, lng?: number, radius?:number) => {
+
         setLoading(true);
         try {
             const apiKey = localStorage.getItem("apiKey");
@@ -112,20 +113,24 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
                 headers["Authorization"] = `Bearer ${apiKey} ${accessToken}`;
             }
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/all`,
+            //url 설정
+            const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}&radius=${radius}`;
+
+            const res = await fetch(
+                url,
                 {
                     method: "GET",
                     headers: headers, // 수정된 headers 객체를 사용
-                    credentials: "include", // 쿠키 포함 (세션 기반 인증에 사용)
+                    credentials: "include", // ✅ 쿠키 포함
                 }
             );
             const data = await res.json();
 
             const pinArray = extractArray(data.data);
             setPins(normalizePins(pinArray));
-            setMode("all");
+            setMode("screen");
         } catch (e) {
-            console.error("전체 핀 로드 실패:", e);
+            console.error("화면 전체 핀 로드 실패:", e);
             setPins([]);
         } finally {
             setLoading(false);
@@ -156,8 +161,11 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
                 headers["Authorization"] = `Bearer ${apiKey} ${accessToken}`;
             }
 
+            //url 설정
+            const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}`;
+
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}`,
+                url,
                 {
                     method: "GET",
                     headers: headers, // 수정된 headers 객체를 사용
@@ -168,7 +176,7 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
 
             const pinArray = extractArray(data.data);
             setPins(normalizePins(pinArray));
-            setMode("all");
+            setMode("nearby");
         } catch (e) {
             console.error("주변 핀 로드 실패:", e);
             setPins([]);
@@ -206,7 +214,7 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     ========================================================= */
     const clearTagFilter = async () => {
         setSelectedTags([]);
-        setMode("all");
+        setMode("screen");
         await loadNearbyPins()
     };
 

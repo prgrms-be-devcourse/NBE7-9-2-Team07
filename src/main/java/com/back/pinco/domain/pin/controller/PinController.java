@@ -65,8 +65,6 @@ public class PinController {
     public RsData<PinDto> getPinById(@PathVariable("pinId") Long pinId){
         User actor = rq.getActor();
         Pin pin = pinService.findById(pinId, actor);
-        // pin 좋아요 개수 설정
-        //pin.setLikeCount(likesService.getLikesCount(pinId));
 
         PinDto pinDto = new PinDto(pin);
 
@@ -87,22 +85,16 @@ public class PinController {
             @NotNull
             @Min(-180)
             @Max(180)
-            @RequestParam double longitude
+            @RequestParam double longitude,
+            @RequestParam(defaultValue = "1000.0") double radius
     ) {
         User actor = rq.getActor();
-        List<Pin> pins = pinService.findNearPins(latitude, longitude, actor);
+        List<Pin> pins = pinService.findNearPins(latitude, longitude, radius, actor);
 
         List<PinDto> pinDtos = pins.stream()
                 .map(PinDto::new)
                 .collect(Collectors.toList());
 
-        if (pinDtos.isEmpty()) {
-            return new RsData<>(
-                    "204",
-                    "조회된 값이 없습니다.",
-                    null
-            );
-        }
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
@@ -141,13 +133,7 @@ public class PinController {
                 .map(PinDto::new)
                 .toList();
 
-        if (pins.isEmpty()) {
-            return new RsData<>(
-                    "204",
-                    "조회된 값이 없습니다.",
-                    null
-            );
-        }
+
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",

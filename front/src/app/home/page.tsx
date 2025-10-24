@@ -58,6 +58,52 @@ export default function PinCoMainPage() {
     }, // ✅ 추가
     });
 
+    const [radius, setRadius] = useState(1000.0);
+    // ✅ 화면 대각선 길이 기반으로 반지름 자동 계산
+    const updateRadiusFromScreen = () => {
+        const kakao = (window as any).kakao;
+        const map = (window as any).mapRef;
+        if (!kakao?.maps || !map) return;
+
+        const bounds = map.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+
+        // 🔹 geometry 없이 거리 계산 (Haversine)
+        const R = 6371000; // m
+        const toRad = (deg: number) => (deg * Math.PI) / 180;
+        const dLat = toRad(ne.getLat() - sw.getLat());
+        const dLng = toRad(ne.getLng() - sw.getLng());
+        const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(sw.getLat())) *
+            Math.cos(toRad(ne.getLat())) *
+            Math.sin(dLng / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const diagonal = R * c;
+
+        const newRadius = diagonal / 2;
+        setRadius(newRadius);
+        console.log("📏 화면 반지름:", newRadius.toFixed(2), "m");
+    };
+
+
+    // ✅ 지도 이동/확대/축소 시 반지름 갱신
+    useEffect(() => {
+        if (!kakaoReady) return;
+
+        const kakao = (window as any).kakao;
+        const map = (window as any).mapRef;
+        if (!kakao?.maps || !map) return;
+
+        kakao.maps.event.addListener(map, "idle", updateRadiusFromScreen);
+        updateRadiusFromScreen(); // 초기 한 번 실행
+
+        return () => {
+            kakao.maps.event.removeListener(map, "idle", updateRadiusFromScreen);
+        };
+    }, [kakaoReady]);
+
     const [showCreate, setShowCreate] = useState(false);
     const handleCreate = async (content: string) => {
         try {
@@ -67,6 +113,7 @@ export default function PinCoMainPage() {
             else if (mode === "tag") await applyTagFilter(selectedTags);
             else if (mode === "bookmark") await loadMyBookmarks();
             else if (mode === "liked") await loadLikedPins();
+            else if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
             else await loadAllPins();
             alert("등록 완료 🎉");
         } catch (e) {
@@ -77,7 +124,7 @@ export default function PinCoMainPage() {
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-            {/* ✅ KakaoMap SDK */}
+            {/* ✅ KakaoMap SDK 필요 라이브러리 추가*/}
             <Script
                 src={`//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=clusterer`}
                 strategy="afterInteractive"
@@ -95,7 +142,8 @@ export default function PinCoMainPage() {
                         // ✅ 실제 선택/해제 모두 훅 메서드로 처리
                         await applyTagFilter(next);     // 빈 배열이면 내부에서 clearTagFilter 호출됨
                     }}
-                    onClickAll={async () => {
+                    onClickAll={() => loadAllPins(center.lat,center.lng,radius)}
+                    onClickNearBy={async () => {
                         await clearTagFilter();         // 전체 보기 + 태그버튼 전부 해제 + 리스트 갱신
                     }}
                     onClickMyBookmarks={() => loadMyBookmarks()}
@@ -218,3 +266,7 @@ export default function PinCoMainPage() {
         </div>
     );
 }
+function setRadius(newRadius: number) {
+    throw new Error("Function not implemented.");
+}
+

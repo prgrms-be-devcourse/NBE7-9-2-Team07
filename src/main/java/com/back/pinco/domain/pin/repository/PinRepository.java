@@ -41,6 +41,7 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
     SELECT p FROM Pin p
     WHERE p.user.id = :writerId
       AND (p.user.id = :actorId OR p.isPublic = true)
+      AND p.deleted=false 
 """)
     List<Pin> findAccessibleByUser(Long writerId, Long actorId);
 
@@ -48,6 +49,7 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
     SELECT p FROM Pin p
     WHERE p.user.id = :writerId
       AND p.isPublic = true
+      AND p.deleted=false 
 """)
     List<Pin> findPublicByUser(Long writerId);
 
