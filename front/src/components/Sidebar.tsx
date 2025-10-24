@@ -11,6 +11,7 @@ interface SidebarProps {
   selectedTags: string[];
   onChangeTags: (next: string[]) => void;
   onClickAll: () => void;
+  onClickNearBy: () => void;
   onClickMyBookmarks: () => void;
   onClickLikedPins: () => void;
   onSelectPin: (pin: PinDto) => void;
@@ -24,6 +25,7 @@ export default function Sidebar({
   selectedTags,
   onChangeTags,
   onClickAll,
+  onClickNearBy,
   onClickMyBookmarks,
   onClickLikedPins,
   onSelectPin,
@@ -33,6 +35,11 @@ export default function Sidebar({
     if (selectedTags.length > 0) onChangeTags([]); // 태그 선택 해제
     onClickAll(); // 전체 보기 로직 실행
   };
+
+    const handleClickNearBy = () => {
+        if (selectedTags.length > 0) onChangeTags([]); // 태그 선택 해제
+        onClickNearBy(); // 전체 보기 로직 실행
+    };
 
   // ✅ 전체 해제 버튼 클릭 시 태그 해제
   const handleClearTags = () => {
@@ -44,12 +51,20 @@ export default function Sidebar({
 
       {/* 필터 버튼 영역 */}
       <div className="p-3 border-b flex flex-wrap gap-2">
+          <button
+              onClick={handleClickAll}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "screen" ? "bg-green-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+              }`}
+          >
+              <Globe size={16} /> 전체 보기
+          </button>
+
         <button
-          onClick={handleClickAll}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "all" ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+          onClick={handleClickNearBy}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "nearby" ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"
             }`}
         >
-          <Globe size={16} /> 내 주변 전체 보기
+          <Globe size={16} /> 내 주변 보기
         </button>
 
 

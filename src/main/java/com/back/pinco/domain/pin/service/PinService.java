@@ -58,19 +58,17 @@ public class PinService {
         }else {
             pins = pinRepository.findAllAccessiblePins(actor.getId());
         }
-        if(pins.isEmpty()){ throw new ServiceException(ErrorCode.PINS_NOT_FOUND);}
 
         return pins;
     }
 
-    public List<Pin> findNearPins(double latitude,double longitude, User actor) {
+    public List<Pin> findNearPins(double latitude,double longitude, double radius, User actor) {
         List<Pin> pins;
         if(actor==null){
-            pins=  pinRepository.findPublicPinsWithinRadius(latitude,longitude,1000.0);
+            pins=  pinRepository.findPublicPinsWithinRadius(latitude,longitude,radius);
         }else {
-            pins =  pinRepository.findPinsWithinRadius(latitude,longitude,1000.0, actor.getId());
+            pins =  pinRepository.findPinsWithinRadius(latitude,longitude,radius, actor.getId());
         }
-        if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
 
@@ -82,7 +80,6 @@ public class PinService {
             pins = pinRepository.findAccessibleByUser(writer.getId(), actor.getId());
         }
 
-        if(pins.isEmpty()) throw new ServiceException(ErrorCode.PINS_NOT_FOUND);
         return pins;
     }
 
