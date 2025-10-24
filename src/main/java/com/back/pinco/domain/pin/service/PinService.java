@@ -74,12 +74,12 @@ public class PinService {
         return pins;
     }
 
-    public List<Pin> findScreenPins(double LaxMax, double LonMax,double LaxMin,double LonMin, User actor) {
+    public List<Pin> findScreenPins(double latMax, double lonMax,double latMin,double lonMin, User actor) {
         List<Pin> pins;
         if(actor==null){
-            pins=  pinRepository.findPublicScreenPins(LaxMax,LonMax,LaxMin,LonMin);
+            pins=  pinRepository.findPublicScreenPins(latMax,lonMax,latMin,lonMin);
         }else {
-            pins =  pinRepository.findScreenPins(LaxMax,LonMax,LaxMin,LonMin, actor.getId());
+            pins =  pinRepository.findScreenPins(latMax,lonMax,latMin,lonMin, actor.getId());
         }
         return pins;
     }
