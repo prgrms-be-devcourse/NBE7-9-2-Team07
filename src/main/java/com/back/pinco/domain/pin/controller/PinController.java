@@ -87,10 +87,11 @@ public class PinController {
             @NotNull
             @Min(-180)
             @Max(180)
-            @RequestParam double longitude
+            @RequestParam double longitude,
+            @RequestParam(defaultValue = "1000.0") double radius
     ) {
         User actor = rq.getActor();
-        List<Pin> pins = pinService.findNearPins(latitude, longitude, actor);
+        List<Pin> pins = pinService.findNearPins(latitude, longitude, radius, actor);
 
         List<PinDto> pinDtos = pins.stream()
                 .map(PinDto::new)
