@@ -100,13 +100,26 @@ export default function PinCoMainPage() {
         const map = (window as any).mapRef;
         if (!kakao?.maps || !map) return;
 
-        kakao.maps.event.addListener(map, "idle", updateRadiusFromScreen);
-        updateRadiusFromScreen(); // 초기 한 번 실행
+        // 🔹 지도 이동이 멈추거나 줌 레벨이 변경되면 발생하는 'idle' 이벤트 핸들러
+        const handleMapIdle = () => {
+            updateRadiusFromScreen();
+
+            if (mode === "screen") {
+                loadAllPins(center.lat, center.lng, radius);
+            }
+        };
+
+        kakao.maps.event.addListener(map, "idle", handleMapIdle);
+
+        updateRadiusFromScreen();
+        if (mode === "screen") {
+            loadAllPins(center.lat, center.lng, radius);
+        }
 
         return () => {
-            kakao.maps.event.removeListener(map, "idle", updateRadiusFromScreen);
+            kakao.maps.event.removeListener(map, "idle", handleMapIdle);
         };
-    }, [kakaoReady]);
+    }, [kakaoReady, mode, center.lat, center.lng, radius]);
 
     const [showCreate, setShowCreate] = useState(false);
 
@@ -123,12 +136,17 @@ export default function PinCoMainPage() {
     }, [rightClickCenter, user]);
 
     const handleCreate = async (content: string) => {
+        const lat = rightClickCenter?.lat ?? center.lat;
+        const lng = rightClickCenter?.lng ?? center.lng;
+
         try {
-            await apiCreatePin(center.lat, center.lng, content);
+            await apiCreatePin(lat, lng, content);
+
             setShowCreate(false);
             setRightClickCenter(null);
 
-            if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
+            if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
+            else if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
             else if (mode === "tag") await applyTagFilter(selectedTags);
             else if (mode === "bookmark") await loadMyBookmarks();
             else if (mode === "liked") await loadLikedPins();
@@ -162,7 +180,11 @@ export default function PinCoMainPage() {
                         // ✅ 실제 선택/해제 모두 훅 메서드로 처리
                         await applyTagFilter(next);     // 빈 배열이면 내부에서 clearTagFilter 호출됨
                     }}
-                    onClickAll={() => loadAllPins(center.lat, center.lng, radius)}
+                    // onClickAll={() => loadAllPins(center.lat, center.lng, radius)}
+                    onClickAll={async () => {
+                        await clearTagFilter(); // 태그 필터 해제 및 모드 리셋
+                        loadAllPins(center.lat, center.lng, radius);
+                    }}
                     onClickNearBy={async () => {
                         await clearTagFilter();         // 전체 보기 + 태그버튼 전부 해제 + 리스트 갱신
                     }}
@@ -214,7 +236,8 @@ export default function PinCoMainPage() {
                             onClose={() => setSelectedPin(null)}
                             userId={user?.id ?? null}
                             onChanged={async () => {
-                                if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
+                                if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
+                                else if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
                                 else if (mode === "bookmark") await loadMyBookmarks();
                                 else if (mode === "liked") await loadLikedPins();
@@ -235,7 +258,8 @@ export default function PinCoMainPage() {
                             }}
                             onCreated={async () => {
                                 // 새로 등록한 핀 반영
-                                if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
+                                if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
+                                else if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
                                 else if (mode === "bookmark") await loadMyBookmarks();
                                 else if (mode === "liked") await loadLikedPins();
