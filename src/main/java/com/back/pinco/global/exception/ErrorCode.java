@@ -60,6 +60,7 @@ public enum ErrorCode {
     BOOKMARK_CREATE_FAILED(4004, HttpStatus.INTERNAL_SERVER_ERROR, "북마크 생성 중 오류가 발생했습니다."),
     BOOKMARK_DELETE_FAILED(4005, HttpStatus.INTERNAL_SERVER_ERROR, "북마크 삭제 중 오류가 발생했습니다."),
     BOOKMARK_RESTORE_FAILED(4006, HttpStatus.INTERNAL_SERVER_ERROR, "북마크 복구 중 오류가 발생했습니다."),
+    BOOKMARK_INVALID_USER_INPUT(4007, HttpStatus.NOT_FOUND, "잘못된 사용자 정보입니다."),
 
     // Likes 도메인_5000번대
     LIKES_INVALID_USER_INPUT(5001, HttpStatus.NOT_FOUND, "잘못된 사용자 정보입니다."),

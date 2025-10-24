@@ -5,6 +5,7 @@ import com.back.pinco.domain.bookmark.entity.Bookmark;
 import com.back.pinco.domain.bookmark.repository.BookmarkRepository;
 import com.back.pinco.domain.bookmark.service.BookmarkService;
 import com.back.pinco.domain.likes.repository.LikesRepository;
+import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.repository.PinRepository;
@@ -32,9 +33,9 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
-    private final BookmarkRepository bookmarkRepository;
-    private final LikesRepository likesRepository;
-    private final PinRepository pinRepository;
+    private final BookmarkService bookmarkService;
+    private final LikesService likesService;
+    private final PinService pinService;
     private final Rq rq;
 
     @Transactional
@@ -225,32 +226,33 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    // 마이페이지를 위한 정보 조회
     @Transactional(readOnly = true)
     public List<Pin> getMyPins() {
-        Long userId = rq.getActor().getId();
-        return pinRepository.findAccessibleByUser(userId, userId);
+        User user = rq.getActor();
+        return pinService.findByUserId(user, user);
     }
 
     @Transactional(readOnly = true)
-    public List<Bookmark> getMyBookmarks() {
-        User actor = rq.getActor();
-        return bookmarkRepository.findByUserAndDeletedFalse(actor);
+    public List<BookmarkDto> getMyBookmarks() {
+        User user = rq.getActor();
+        return bookmarkService.getMyBookmarks(user.getId());
     }
 
     @Transactional
-    public Long likesCount(List<Pin> listPin) {
-        long totalLikesReceived = listPin.stream()
-                .mapToLong(pin -> likesRepository.countByPin_IdAndLikedTrue(pin.getId()))
+    public int likesCount(List<Pin> listPin) {
+        int totalLikesReceived = listPin.stream()
+                .mapToInt(pin -> likesService.getLikesCount(pin.getId()))
                 .sum();
         return totalLikesReceived;
     }
 
     @Transactional(readOnly = true)
     public MyPinResponse listPublicAndPrivate() {
-        User actor = rq.getActor();
+        User user = rq.getActor();
 
         // DB 한 번
-        List<Pin> accessible = pinRepository.findAccessibleByUser(actor.getId(), actor.getId());
+        List<Pin> accessible = pinService.findByUserId(user, user);
 
         // 공개: isPublic == true
         List<PinDto> publicDtos = accessible.stream()
@@ -261,7 +263,7 @@ public class UserService {
         // 비공개: isPublic != true && "내 것"만
         List<PinDto> privateDtos = accessible.stream()
                 .filter(p -> !Boolean.TRUE.equals(p.getIsPublic()))
-                .filter(p -> p.getUser() != null && p.getUser().getId().equals(actor.getId()))
+                .filter(p -> p.getUser() != null && p.getUser().getId().equals(user.getId()))
                 .map(PinDto::new)
                 .toList();
 
@@ -271,7 +273,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<PinDto> bookmarkList() {
         List<PinDto> bookmarkList = getMyBookmarks().stream()
-                .map(b -> new PinDto(b.getPin()))
+                .map(BookmarkDto::pin)
                 .toList();
         return bookmarkList;
     }

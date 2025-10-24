@@ -6,7 +6,7 @@ import com.back.pinco.domain.bookmark.repository.BookmarkRepository;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
-import com.back.pinco.domain.user.service.UserService;
+import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class BookmarkService {
     private final BookmarkRepository bookmarkRepository;
-    private final UserService userService;
+    private final UserRepository userRepository;
     private final PinService pinService;
 
     /**
@@ -33,7 +33,8 @@ public class BookmarkService {
      */
     @Transactional
     public BookmarkDto addBookmark(Long userId, Long pinId) {
-        User user = userService.findById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_INVALID_USER_INPUT));
         Pin pin = pinService.findById(pinId, user);
 
         Bookmark bookmark = bookmarkRepository.findByUserAndPin(user, pin)
@@ -58,7 +59,8 @@ public class BookmarkService {
      * @return 북마크 DTO 목록
      */
     public List<BookmarkDto> getMyBookmarks(Long userId) {
-        User user = userService.findById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_INVALID_USER_INPUT));
 
         // 삭제되지 않은 북마크 목록만 조회
         List<Bookmark> bookmarks = bookmarkRepository.findByUserAndDeletedFalse(user);
@@ -100,7 +102,8 @@ public class BookmarkService {
      */
     @Transactional
     public void restoreBookmark(Long userId, Long bookmarkId) {
-        User user = userService.findById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_INVALID_USER_INPUT));
 
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.BOOKMARK_NOT_FOUND));
