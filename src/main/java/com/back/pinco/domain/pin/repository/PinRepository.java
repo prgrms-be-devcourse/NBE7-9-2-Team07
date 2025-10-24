@@ -53,6 +53,33 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
 """)
     List<Pin> findPublicByUser(Long writerId);
 
+    @Query(value = "SELECT p.* FROM pins p " +
+            "WHERE p.is_deleted = false " +
+            "AND p.user_id = :userId " +
+            "AND EXTRACT(YEAR FROM p.created_at) = :year " +
+            "AND EXTRACT(MONTH FROM p.created_at) = :month " +
+            "AND p.is_public = true",
+            nativeQuery = true)
+    List<Pin> findPublicByUserDate(
+            @Param("userId") Long id,
+            @Param("year") Integer year,
+            @Param("month") Integer month
+    );
+    @Query(value = "SELECT p.* FROM pins p " +
+            "WHERE p.is_deleted = false " +
+            "AND p.user_id = :userId " +
+            "AND EXTRACT(YEAR FROM p.created_at) = :year " +
+            "AND EXTRACT(MONTH FROM p.created_at) = :month " +
+            "AND (p.user.id = :actorId OR p.isPublic = true)",
+            nativeQuery = true)
+    List<Pin> findAccessibleByUserDate(
+            Long writerId, Long actorId,
+            @Param("year") Integer year,
+            @Param("month") Integer month
+    );
+
+
+
     // 전체 핀 조회
     @Query(value = """
     SELECT p FROM Pin p

@@ -107,6 +107,32 @@ public class PinController {
     @GetMapping("/user/{userId}")
     public RsData<List<PinDto>> getUserPins(
             @NotNull
+            @PathVariable Long userId,
+            @NotNull
+            @RequestParam double year,
+            @NotNull
+            @Min(1)
+            @Max(12)
+            @RequestParam double month
+    ){
+        User actor = rq.getActor();
+        User writer = userService.findById(userId);
+        List<Pin> pins = pinService.findByUserIdDate(actor, writer,year,month);
+        List<PinDto> pinDtos = pins.stream()
+                .map(PinDto::new)
+                .collect(Collectors.toList());
+        return new RsData<>(
+                "200",
+        "성공적으로 처리되었습니다",
+                pinDtos
+        );
+    }
+
+    //사용자로, 날짜로 조회
+    @Operation(summary = "핀 조회 - 다건 (작성자+연도+월)", description = "작성자로 핀을 다건 조회")
+    @GetMapping("/user/{userId}/date")
+    public RsData<List<PinDto>> getUserPinsByDate(
+            @NotNull
             @PathVariable Long userId
     ){
         User actor = rq.getActor();
@@ -117,7 +143,7 @@ public class PinController {
                 .collect(Collectors.toList());
         return new RsData<>(
                 "200",
-        "성공적으로 처리되었습니다",
+                "성공적으로 처리되었습니다",
                 pinDtos
         );
     }
