@@ -1,15 +1,9 @@
 package com.back.pinco.domain.user.controller;
 
-import com.back.pinco.domain.bookmark.controller.BookmarkController;
-import com.back.pinco.domain.bookmark.entity.Bookmark;
-import com.back.pinco.domain.bookmark.repository.BookmarkRepository;
 import com.back.pinco.domain.likes.dto.PinsLikedByUserResponse;
-import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.likes.service.LikesService;
-import com.back.pinco.domain.pin.controller.PinController;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
-import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.user.dto.UserDto;
 import com.back.pinco.domain.user.dto.UserReqBody.*;
 import com.back.pinco.domain.user.dto.UserResBody.*;
@@ -23,13 +17,9 @@ import com.back.pinco.global.rsData.RsData;
 import com.back.pinco.global.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
