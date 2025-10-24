@@ -33,7 +33,7 @@ export default function Sidebar({
   // ✅ 전체 보기 클릭 시 태그 상태도 초기화
   const handleClickAll = () => {
     if (selectedTags.length > 0) onChangeTags([]); // 태그 선택 해제
-    onClickAll(); // 전체 보기 로직 실행
+    onClickAll();
   };
 
     const handleClickNearBy = () => {

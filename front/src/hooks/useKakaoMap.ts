@@ -7,12 +7,14 @@ export function useKakaoMap({
                                 onSelectPin,
                                 kakaoReady,
                                 onCenterChange,
+                                onRightClick,
                             }: {
     pins: PinDto[];
     center: { lat: number; lng: number };
     onSelectPin: (pin: PinDto) => void;
     kakaoReady?: boolean;
     onCenterChange?: (lat: number, lng: number) => void;
+    onRightClick?: (lat: number, lng: number) => void;
 }) {
     const mapRef = useRef<any>(null);
     const clustererRef = useRef<any>(null);
@@ -74,6 +76,20 @@ export function useKakaoMap({
                     console.log("📍 현재 중심:", {lat: newLat, lng: newLng});
                 }
             }, 500);
+        });
+
+        kakao.maps.event.addListener(map, 'rightclick', (mouseEvent: any) => {
+            const latlng = mouseEvent.latLng;
+            const lat = latlng.getLat();
+            const lng = latlng.getLng();
+
+            // onRightClick 콜백 함수가 존재하면 호출
+            if (onRightClick) {
+                onRightClick(lat, lng);
+            }
+
+            // ✅ 우클릭 좌표 확인 (선택사항)
+            console.log("🖱️ 우클릭 좌표:", {lat, lng});
         });
 
         return () => {

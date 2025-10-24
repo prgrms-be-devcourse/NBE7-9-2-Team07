@@ -28,7 +28,7 @@ interface UsePinsProps {
     lng: number;
 }
 
-export function usePins(initialCenter: UsePinsProps, userId?: number) {
+export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     const [pins, setPins] = useState<PinDto[]>([]);
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState<Mode>("nearby");
