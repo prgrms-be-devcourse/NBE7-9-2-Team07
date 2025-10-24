@@ -28,9 +28,9 @@ export default function PinCoMainPage() {
         applyTagFilter,
         clearTagFilter,
         loadMyBookmarks,
-        loadLikedPins, // ✅ 좋아요한 핀 보기
+        loadLikedPins,
         ensurePinTagsLoaded,
-    } = usePins({lat: 37.5665, lng: 126.978}, user?.id ?? null); // ✅ userId 전달
+    } = usePins({lat: 37.5665, lng: 126.978}, user?.id ?? null);
 
     const [kakaoReady, setKakaoReady] = useState(false);
     const [rightClickCenter, setRightClickCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -92,7 +92,7 @@ export default function PinCoMainPage() {
     };
 
 
-    // ✅ 지도 이동/확대/축소 시 반지름 갱신
+    // ✅ 지도 이동/확대/축소 시 반지름 갱신 및 핀 자동 갱신 로직 추가
     useEffect(() => {
         if (!kakaoReady) return;
 
@@ -100,13 +100,27 @@ export default function PinCoMainPage() {
         const map = (window as any).mapRef;
         if (!kakao?.maps || !map) return;
 
-        kakao.maps.event.addListener(map, "idle", updateRadiusFromScreen);
-        updateRadiusFromScreen(); // 초기 한 번 실행
+        // 🔹 지도 이동이 멈추거나 줌 레벨이 변경되면 발생하는 'idle' 이벤트 핸들러
+        const handleMapIdle = () => {
+            updateRadiusFromScreen(); // 1. 화면 대각선 길이 기반으로 반지름 갱신
+
+            // 2. 현재 모드가 "screen" (지도에서 찾기)일 때만 핀을 자동으로 다시 불러옴
+            if (mode === "screen") {
+                loadAllPins(center.lat, center.lng, radius);
+            }
+        };
+
+        kakao.maps.event.addListener(map, "idle", handleMapIdle);
+
+        updateRadiusFromScreen();
+        if (mode === "screen") {
+            loadAllPins(center.lat, center.lng, radius);
+        }
 
         return () => {
-            kakao.maps.event.removeListener(map, "idle", updateRadiusFromScreen);
+            kakao.maps.event.removeListener(map, "idle", handleMapIdle);
         };
-    }, [kakaoReady]);
+    }, [kakaoReady, mode, center.lat, center.lng, radius]);
 
     const [showCreate, setShowCreate] = useState(false);
 
@@ -121,26 +135,6 @@ export default function PinCoMainPage() {
             setShowCreate(true);
         }
     }, [rightClickCenter, user]);
-
-    const handleCreate = async (content: string) => {
-        try {
-            await apiCreatePin(center.lat, center.lng, content);
-            setShowCreate(false);
-            setRightClickCenter(null);
-
-            if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
-            else if (mode === "tag") await applyTagFilter(selectedTags);
-            else if (mode === "bookmark") await loadMyBookmarks();
-            else if (mode === "liked") await loadLikedPins();
-            else if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
-            else await loadAllPins();
-            alert("등록 완료 🎉");
-        } catch (e) {
-            alert("등록 실패 ❌");
-            console.error(e);
-        }
-    };
-
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
@@ -162,7 +156,9 @@ export default function PinCoMainPage() {
                         // ✅ 실제 선택/해제 모두 훅 메서드로 처리
                         await applyTagFilter(next);     // 빈 배열이면 내부에서 clearTagFilter 호출됨
                     }}
-                    onClickAll={() => loadAllPins(center.lat, center.lng, radius)}
+                    onClickAll={() => {
+                        loadAllPins(center.lat, center.lng, radius)
+                    }}
                     onClickNearBy={async () => {
                         await clearTagFilter();         // 전체 보기 + 태그버튼 전부 해제 + 리스트 갱신
                     }}
@@ -214,7 +210,8 @@ export default function PinCoMainPage() {
                             onClose={() => setSelectedPin(null)}
                             userId={user?.id ?? null}
                             onChanged={async () => {
-                                if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
+                                if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
+                                else if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
                                 else if (mode === "bookmark") await loadMyBookmarks();
                                 else if (mode === "liked") await loadLikedPins();
@@ -235,7 +232,8 @@ export default function PinCoMainPage() {
                             }}
                             onCreated={async () => {
                                 // 새로 등록한 핀 반영
-                                if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
+                                if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
+                                else if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
                                 else if (mode === "bookmark") await loadMyBookmarks();
                                 else if (mode === "liked") await loadLikedPins();
@@ -258,7 +256,7 @@ export default function PinCoMainPage() {
                         }
                         }
                     >
-                        + 핀 추가
+                        + 핀 등록
                     </button>
 
                     {/* ✅ 확대/축소 컨트롤 */}

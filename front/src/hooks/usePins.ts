@@ -214,7 +214,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     ========================================================= */
     const clearTagFilter = async () => {
         setSelectedTags([]);
-        setMode("screen");
         await loadNearbyPins()
     };
 
