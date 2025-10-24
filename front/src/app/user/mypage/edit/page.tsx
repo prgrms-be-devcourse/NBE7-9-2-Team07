@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE!; // 예: http://localhost:8080
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!; // 예: http://localhost:8080
+
+// ✅ [추가] 서버 표준 응답 타입 (RsData)
+type RsData<T = unknown> = {
+  errorCode: string;
+  msg: string;
+  data?: T;
+};
 
 export default function EditMyInfoPage() {
   const router = useRouter();
@@ -52,21 +59,32 @@ export default function EditMyInfoPage() {
       });
 
       const contentType = res.headers.get("content-type") || "";
-      const body = contentType.includes("application/json")
-        ? await res.json()
-        : await res.text();
-      const rs: any = typeof body === "string" ? null : body;
 
+      // ❌ (기존) const rs: any = ...
+      // ✅ [수정] 명시적 타입 + 안전한 파싱
+      let rs: RsData | null = null;
+      if (contentType.includes("application/json")) {
+        rs = (await res.json()) as RsData;
+      } else {
+        // JSON 이 아닌 응답 방어
+        console.error("서버 응답이 JSON이 아닙니다.");
+      }
+
+      // ✅ [수정] 타입 기반 검사
       if (!res.ok || rs?.errorCode !== "200") {
         const msg =
-          rs?.msg || (typeof body === "string" ? body : `요청 실패 (${res.status})`);
+          rs?.msg ||
+          (contentType.includes("text/")
+            ? await res.text()
+            : `요청 실패 (${res.status})`);
         alert(msg);
         return;
       }
 
       alert(rs.msg || "회원정보 수정 완료 🎉");
       router.replace("/user/mypage");
-    } catch (_) {
+    } catch (err) {
+      console.error(err);
       alert("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setLoading(false);
