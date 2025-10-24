@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-// ✅ 북마크는 PinDto[]를 직접 받음
 import { apiGetMyBookmarks } from "@/lib/pincoApi";
 import { PinDto as ImportedPinDto } from "@/types/types";
 import { fetchApi } from "@/lib/client";
@@ -34,7 +33,7 @@ export default function MyPage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [visibility, setVisibility] = useState<"all" | "public" | "private">("all");
 
-  // === 북마크 목록 === (이제 PinDto[])
+  // === 북마크 목록 ===
   const [bookmarks, setBookmarks] = useState<ImportedPinDto[]>([]);
   const [bookmarksLoading, setBookmarksLoading] = useState(true);
   const [bookmarksError, setBookmarksError] = useState<string | null>(null);

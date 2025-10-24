@@ -7,8 +7,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("");       // 기본값 X
-  const [password, setPassword] = useState(""); // 기본값 X
+  const [email, setEmail] = useState("user1@example.com");       // 기본값 X
+  const [password, setPassword] = useState("12345678"); // 기본값 X
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
