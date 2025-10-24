@@ -139,7 +139,7 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
 
     // ✅ 첫 렌더링 시 자동 전체 핀 로드
     useEffect(() => {
-        loadNearbyPins();
+        loadAllPins();
     }, []);
 
     /* =========================================================
