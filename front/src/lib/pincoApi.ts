@@ -126,7 +126,6 @@ export const apiAddLike = async (pinId: number, userId: number) => {
       alert("로그인이 필요합니다.");
       return;
   }
-
   const res:LikesStatusDto = await fetchApi(`/api/pins/${pinId}/likes`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey} ${accessToken}` },
@@ -140,7 +139,6 @@ export const apiAddLike = async (pinId: number, userId: number) => {
 export const apiRemoveLike = async (pinId: number, userId: number) => {
   const apiKey = localStorage.getItem("apiKey");
   const accessToken = localStorage.getItem("accessToken");
-
   const res:LikesStatusDto = await fetchApi(`/api/pins/${pinId}/likes`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey} ${accessToken}` },
