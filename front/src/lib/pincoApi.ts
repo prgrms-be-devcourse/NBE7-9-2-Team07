@@ -169,3 +169,19 @@ type MyBookmarkResponse = { bookmarkList?: PinDto[] };
 export const apiDeleteBookmark = (bookmarkId: number) => {
     return fetchApi<void>(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
 };
+
+// ---------- User ----------
+export const apiJoin = (email: string, password: string, userName: string) =>
+  fetchApi<void>(`/api/user/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, userName }),
+  });
+
+export const apiLogin = (email: string, password: string) =>
+  fetchApi<void>(`/api/user/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
