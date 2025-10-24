@@ -12,6 +12,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -68,6 +70,16 @@ public class PinService {
             pins=  pinRepository.findPublicPinsWithinRadius(latitude,longitude,radius);
         }else {
             pins =  pinRepository.findPinsWithinRadius(latitude,longitude,radius, actor.getId());
+        }
+        return pins;
+    }
+
+    public List<Pin> findScreenPins(double latMax, double lonMax,double latMin,double lonMin, User actor) {
+        List<Pin> pins;
+        if(actor==null){
+            pins=  pinRepository.findPublicScreenPins(latMax,lonMax,latMin,lonMin);
+        }else {
+            pins =  pinRepository.findScreenPins(latMax,lonMax,latMin,lonMin, actor.getId());
         }
         return pins;
     }

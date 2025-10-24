@@ -3,6 +3,8 @@ package com.back.pinco.domain.pin.repository;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.geometry.GeometryUtil;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,14 +13,14 @@ import java.util.Optional;
 
 public interface PinRepository extends JpaRepository<Pin,Long> {
 
-    String BASE_QUERY =
+    String Radius_BASE_QUERY =
             "SELECT * FROM pins p " +
                     "WHERE ST_DWithin(p.point, ST_SetSRID(ST_MakePoint(:longitude, :latitude), "
                     + GeometryUtil.SRID +
                     ")::geography, :radiusInMeters) " +
                     "AND p.is_deleted = false ";
 
-    @Query(value = BASE_QUERY + "AND (user_id = :userId OR is_public = true)", nativeQuery = true)
+    @Query(value = Radius_BASE_QUERY + "AND (user_id = :userId OR is_public = true)", nativeQuery = true)
     List<Pin> findPinsWithinRadius(
             @Param("latitude") Double latitude,
             @Param("longitude") Double longitude,
@@ -26,15 +28,36 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
             @Param("userId") Long userId
     );
 
-    @Query(value = BASE_QUERY + "AND is_public = true", nativeQuery = true)
+    @Query(value = Radius_BASE_QUERY + "AND is_public = true", nativeQuery = true)
     List<Pin> findPublicPinsWithinRadius(
             @Param("latitude") Double latitude,
             @Param("longitude") Double longitude,
             @Param("radiusInMeters") Double radiusInMeters
     );
 
+    String Rectangle_BASE_QUERY =
+            "SELECT p.* FROM pins p " +
+                    "WHERE p.is_deleted = false " +
+                    "AND p.point && ST_MakeEnvelope(" +
+                    ":lonMin, " +
+                    ":latMin, " +
+                    ":lonMax, " +
+                    ":latMax" +
+                    ", " + GeometryUtil.SRID +
+                    ") ";
 
-
+    @Query(value = Rectangle_BASE_QUERY + " AND p.is_public = true", nativeQuery = true)
+    List<Pin> findPublicScreenPins(
+            @Param("latMax") Double latMax,
+            @Param("lonMax") Double lonMax,
+            @Param("latMin") Double latMin,
+            @Param("lonMin") Double lonMin
+    );
+    @Query(value = Rectangle_BASE_QUERY + " AND (p.user_id = :userId OR p.is_public = true)", nativeQuery = true)
+    List<Pin> findScreenPins(@Param("latMax") Double latMax,
+                             @Param("lonMax") Double lonMax,
+                             @Param("latMin") Double latMin,
+                             @Param("lonMin") Double lonMin,@Param("userId") Long userId);
 
     // 특정 사용자의 핀 조회
     @Query(value = """

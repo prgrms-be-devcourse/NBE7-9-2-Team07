@@ -96,7 +96,9 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
     /* =========================================================
        ✅ 화면상 모든 핀 조회
     ========================================================= */
-    const loadAllPins = async (lat?: number, lng?: number, radius?:number) => {
+    const loadAllPins = async (
+        latMax:number,lonMax:number,latMin:number,lonMin:number
+    ) => {
 
         setLoading(true);
         try {
@@ -113,9 +115,9 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
                 headers["Authorization"] = `Bearer ${apiKey} ${accessToken}`;
             }
 
-            //url 설정
-            const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}&radius=${radius}`;
+            const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/screen?latMax=${latMax}&lonMax=${lonMax}&latMin=${latMin}&lonMin=${lonMin}`;
 
+            console.log("url: "+url);
             const res = await fetch(
                 url,
                 {
@@ -127,6 +129,8 @@ export function usePins(initialCenter: UsePinsProps, userId?: number) {
             const data = await res.json();
 
             const pinArray = extractArray(data.data);
+            console.log("latMax: "+latMax+" lonMax: "+lonMax+" latMin: "+latMin+" lonMin: "+lonMin);
+            console.log(pinArray);
             setPins(normalizePins(pinArray));
             setMode("screen");
         } catch (e) {

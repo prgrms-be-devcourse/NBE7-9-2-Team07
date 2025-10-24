@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -75,7 +76,7 @@ public class PinController {
         );
     }
     //범위로 조회
-    @Operation(summary = "핀 조회 - 다건 (범위)", description = "범위로 핀을 다건 조회")
+    @Operation(summary = "핀 조회 - 다건 (범위-원)", description = "범위로 핀을 다건 조회")
     @GetMapping
     public RsData<List<PinDto>> getRadiusPins(
             @NotNull
@@ -90,6 +91,41 @@ public class PinController {
     ) {
         User actor = rq.getActor();
         List<Pin> pins = pinService.findNearPins(latitude, longitude, radius, actor);
+
+        List<PinDto> pinDtos = pins.stream()
+                .map(PinDto::new)
+                .collect(Collectors.toList());
+
+        return new RsData<>(
+                "200",
+                "성공적으로 처리되었습니다",
+                pinDtos
+        );
+    }
+
+    @Operation(summary = "핀 조회 - 다건 (범위-사각형)", description = "범위로 핀을 다건 조회")
+    @GetMapping("/screen")
+    public RsData<List<PinDto>> getRectanglePins(
+            @NotNull
+            @Min(-90)
+            @Max(90)
+            @RequestParam double latMax,
+            @NotNull
+            @Min(-180)
+            @Max(180)
+            @RequestParam double lonMax,
+            @NotNull
+            @Min(-90)
+            @Max(90)
+            @RequestParam double latMin,
+            @NotNull
+            @Min(-180)
+            @Max(180)
+            @RequestParam double lonMin
+
+    ) {
+        User actor = rq.getActor();
+        List<Pin> pins = pinService.findScreenPins(latMax,lonMax,latMin,lonMin, actor);
 
         List<PinDto> pinDtos = pins.stream()
                 .map(PinDto::new)

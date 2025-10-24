@@ -58,37 +58,43 @@ export default function PinCoMainPage() {
     }, // ✅ 추가
     });
 
-    const [radius, setRadius] = useState(1000.0);
-    // ✅ 화면 대각선 길이 기반으로 반지름 자동 계산
-    const updateRadiusFromScreen = () => {
+    interface ScreenBoundsType {
+        latMin: number;
+        lonMin: number;
+        latMax: number;
+        lonMax: number;
+    }
+
+    const [screenBounds, setScreenBounds] = useState<ScreenBoundsType>({
+        latMin: 0,
+        lonMin: 0,
+        latMax: 0,
+        lonMax: 0,
+    });
+
+
+    // ✅ 화면 끝점 계산
+    const updateScreenBounds = () => {
         const kakao = (window as any).kakao;
         const map = (window as any).mapRef;
         if (!kakao?.maps || !map) return;
 
         const bounds = map.getBounds();
-        const sw = bounds.getSouthWest();
-        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest(); // 왼쪽 아래
+        const ne = bounds.getNorthEast(); // 오른쪽 위
 
-        // 🔹 geometry 없이 거리 계산 (Haversine)
-        const R = 6371000; // m
-        const toRad = (deg: number) => (deg * Math.PI) / 180;
-        const dLat = toRad(ne.getLat() - sw.getLat());
-        const dLng = toRad(ne.getLng() - sw.getLng());
-        const a =
-            Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(sw.getLat())) *
-            Math.cos(toRad(ne.getLat())) *
-            Math.sin(dLng / 2) ** 2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const diagonal = R * c;
+        const latMin = sw.getLat();
+        const lonMin = sw.getLng();
+        const latMax = ne.getLat();
+        const lonMax = ne.getLng();
 
-        const newRadius = diagonal / 2;
-        setRadius(newRadius);
-        console.log("📏 화면 반지름:", newRadius.toFixed(2), "m");
+        setScreenBounds({ latMin, lonMin, latMax, lonMax });
+        console.log("화면 끝 점"+screenBounds);
     };
 
 
-    // ✅ 지도 이동/확대/축소 시 반지름 갱신
+
+    // ✅ 지도 이동/확대/축소 시 화면 경계 갱신
     useEffect(() => {
         if (!kakaoReady) return;
 
@@ -96,13 +102,15 @@ export default function PinCoMainPage() {
         const map = (window as any).mapRef;
         if (!kakao?.maps || !map) return;
 
-        kakao.maps.event.addListener(map, "idle", updateRadiusFromScreen);
-        updateRadiusFromScreen(); // 초기 한 번 실행
+        // 지도 이벤트에 등록
+        kakao.maps.event.addListener(map, "idle", updateScreenBounds);
+        updateScreenBounds(); // 초기 한 번 실행
 
         return () => {
-            kakao.maps.event.removeListener(map, "idle", updateRadiusFromScreen);
+            kakao.maps.event.removeListener(map, "idle", updateScreenBounds);
         };
     }, [kakaoReady]);
+
 
     const [showCreate, setShowCreate] = useState(false);
     const handleCreate = async (content: string) => {
@@ -113,8 +121,8 @@ export default function PinCoMainPage() {
             else if (mode === "tag") await applyTagFilter(selectedTags);
             else if (mode === "bookmark") await loadMyBookmarks();
             else if (mode === "liked") await loadLikedPins();
-            else if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
-            else await loadAllPins();
+            else if (mode === "screen") await loadAllPins(screenBounds.latMax,screenBounds.lonMax,screenBounds.latMin,screenBounds.lonMin);
+            else await loadNearbyPins(center.lat, center.lng);
             alert("등록 완료 🎉");
         } catch (e) {
             alert("등록 실패 ❌");
@@ -142,7 +150,7 @@ export default function PinCoMainPage() {
                         // ✅ 실제 선택/해제 모두 훅 메서드로 처리
                         await applyTagFilter(next);     // 빈 배열이면 내부에서 clearTagFilter 호출됨
                     }}
-                    onClickAll={() => loadAllPins(center.lat,center.lng,radius)}
+                    onClickAll={() => loadAllPins(screenBounds.latMax,screenBounds.lonMax,screenBounds.latMin,screenBounds.lonMin)}
                     onClickNearBy={async () => {
                         await clearTagFilter();         // 전체 보기 + 태그버튼 전부 해제 + 리스트 갱신
                     }}
@@ -193,7 +201,7 @@ export default function PinCoMainPage() {
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
                                 else if (mode === "bookmark") await loadMyBookmarks();
                                 else if (mode === "liked") await loadLikedPins();
-                                else await loadAllPins();
+                                else await loadAllPins(screenBounds.latMax,screenBounds.lonMax,screenBounds.latMin,screenBounds.lonMin);
                             }}
                         />
                     )}
@@ -210,7 +218,7 @@ export default function PinCoMainPage() {
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
                                 else if (mode === "bookmark") await loadMyBookmarks();
                                 else if (mode === "liked") await loadLikedPins();
-                                else await loadAllPins();
+                                else await loadAllPins(screenBounds.latMax,screenBounds.lonMax,screenBounds.latMin,screenBounds.lonMin);
                             }}
                         />
                     )}
