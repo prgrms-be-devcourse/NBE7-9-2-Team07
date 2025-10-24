@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import type { BookmarkDto } from "../types/types"; // 🔧 find 콜백에 타입 명시용
 import { PinDto, PinLikedUserDto, TagDto } from "../types/types";
 import {
   apiAddTagToPin,
@@ -16,7 +17,11 @@ import {
   apiCreateBookmark,
   apiRemoveTagFromPin,
   apiGetMyBookmarks,
+  apiListBookmarks, // bookmarkId 조회
 } from "../lib/pincoApi";
+
+// 서버 공통 래퍼 타입 (json.data 접근용)
+type RsData<T> = { code?: string; message?: string; data?: T };
 
 export default function PostModal({
   pin,
@@ -40,36 +45,33 @@ export default function PostModal({
   const [content, setContent] = useState(pin.content);
   const [currentPin, setCurrentPin] = useState(pin);
 
-  // ✅ 작성자 여부 확인
   const isOwner = userId !== null && currentPin.userId === userId;
 
-  // pin이 바뀌면 모달 내부도 동기화 (content까지)
   useEffect(() => {
     setCurrentPin(pin);
     setContent(pin.content);
   }, [pin.id, pin.content]);
 
-  // ✅ 공개 상태는 즉시 반영 위해 로컬 상태 따로 유지
   const [localPublic, setLocalPublic] = useState(pin.isPublic);
   useEffect(() => {
     setLocalPublic(pin.isPublic);
   }, [pin.isPublic]);
 
-  /** ✅ 어떤 응답이 와도 태그 배열로 변환 */
-  const parseTags = (resp: any): TagDto[] => {
-    if (Array.isArray(resp?.data?.tags)) return resp.data.tags as TagDto[];
-    if (Array.isArray(resp?.data)) return resp.data as TagDto[];
-    if (Array.isArray(resp)) return resp as TagDto[];
+  // any 지양: unknown으로 받고 내부에서 좁히기
+  const parseTags = (resp: unknown): TagDto[] => {
+    const r = resp as any;
+    if (Array.isArray(r?.data?.tags)) return r.data.tags as TagDto[];
+    if (Array.isArray(r?.data)) return r.data as TagDto[];
+    if (Array.isArray(r)) return r as TagDto[];
     return [];
   };
 
-  // ✅ 초기 데이터 로드
+  // 초기 로드
   useEffect(() => {
     let mounted = true;
 
     const loadData = async () => {
       try {
-        // 태그
         const t = await apiGetPinTags(pin.id);
         const parsedTags = parseTags(t);
         if (mounted) setTags(parsedTags);
@@ -79,7 +81,6 @@ export default function PostModal({
       }
 
       try {
-        // 좋아요 유저
         const u = await apiGetLikeUsers(pin.id);
         const likeUserList: PinLikedUserDto[] = Array.isArray(u) ? u : [];
         if (mounted) {
@@ -91,22 +92,24 @@ export default function PostModal({
         console.error("좋아요 로드 실패:", err);
       }
 
-      // ✅ 북마크 상태 불러오기
+      // 북마크 상태 + bookmarkId
       try {
-        const myBookmarks = await apiGetMyBookmarks();
+        const myPins = await apiGetMyBookmarks(); // PinDto[]
+        const bookmarkedNow =
+          Array.isArray(myPins) && myPins.some((p) => p.id === pin.id);
 
-        if (mounted && Array.isArray(myBookmarks)) {
-          const found = myBookmarks.find((b: any) => b.pin?.id === pin.id);
-          if (found) {
-            setIsBookmarked(true);
-            setBookmarkId(found.id); // ✅ bookmarkId 저장
-          } else {
-            setIsBookmarked(false);
-            setBookmarkId(null);
-          }
-        } else if (mounted) {
-          setIsBookmarked(false);
-          setBookmarkId(null);
+        let id: number | null = null;
+        if (bookmarkedNow) {
+          const list = await apiListBookmarks(); // BookmarkDto[] | null
+          const found = (list ?? []).find(
+            (b: BookmarkDto) => b.pin?.id === pin.id
+          );
+          id = found ? found.id : null;
+        }
+
+        if (mounted) {
+          setIsBookmarked(Boolean(bookmarkedNow));
+          setBookmarkId(id);
         }
       } catch (err) {
         console.error("북마크 로드 실패:", err);
@@ -118,13 +121,12 @@ export default function PostModal({
     };
 
     loadData();
-
     return () => {
       mounted = false;
     };
   }, [pin.id, userId]);
 
-  // ✅ 태그 추가
+  // 태그 추가/삭제
   const addTag = async () => {
     if (!newTag.trim()) return;
     await apiAddTagToPin(pin.id, newTag.trim());
@@ -134,7 +136,6 @@ export default function PostModal({
     onChanged?.();
   };
 
-  // ✅ 태그 제거
   const removeTag = async (tagId: number) => {
     await apiRemoveTagFromPin(pin.id, tagId);
     const res = await apiGetPinTags(pin.id);
@@ -142,86 +143,105 @@ export default function PostModal({
     onChanged?.();
   };
 
-  // ✅ 좋아요 토글
+  // 이 컴포넌트 안 어딘가, useState 들 아래에 추가  <<< ADD
+  const getBookmarkIdForPin = async (pinId: number) => {
+    const list = await apiListBookmarks(); // BookmarkDto[] | null
+    return (list ?? []).find((b: BookmarkDto) => b.pin?.id === pinId)?.id ?? null;
+  };
+
+
+  // 좋아요 토글
   const toggleLike = async () => {
-    if (!userId) { // 💡 수정: userId가 null인 경우 체크
+    if (!userId) {
       alert("로그인 후 이용 가능합니다.");
       return;
     }
-
     try {
-      let res;
-      if (!isLiked) {
-        res = await apiAddLike(pin.id, userId);
-      } else {
-        res = await apiRemoveLike(pin.id, userId);
+      const res = !isLiked
+        ? await apiAddLike(pin.id, userId)
+        : await apiRemoveLike(pin.id, userId);
+
+      if (res) {
+        setIsLiked(res.isLiked);
+        setLikeCount(res.likeCount);
+        onChanged?.({ ...pin, likeCount: res.likeCount }); // 최신 값 전달
       }
-
-      const updated = res;
-
-      if (updated) {
-        setIsLiked(updated.isLiked);
-        setLikeCount(updated.likeCount);
-      }
-
-      onChanged?.({ ...pin, likeCount });
     } catch (err) {
       console.error("좋아요 요청 실패:", err);
     }
   };
 
-  // ✅ 북마크 토글
-  const toggleBookmark = async () => {
-    if (!userId) {
-          alert("로그인 후 이용 가능합니다.");
-          return;
-      }
-      
-    try {
-      if (isBookmarked && bookmarkId) {
-        await apiDeleteBookmark(bookmarkId);
-        setIsBookmarked(false);
-        setBookmarkId(null);
-        console.log("🔖 북마크 해제 완료");
-      } else {
-        const newBookmark = await apiCreateBookmark(pin.id);
-
-        if (newBookmark) {
-          setBookmarkId(newBookmark.id);
-          setIsBookmarked(true);
-          console.log("📌 북마크 생성 완료");
-        }
-      }
-
-      onChanged?.();
-    } catch (err) {
-      console.error("북마크 토글 실패:", err);
-    }
-  };
-
-  // ✅ 공개 토글
-  const togglePublic = async () => {
+  // 북마크 토글
+    const toggleBookmark = async () => {
       if (!userId) {
-          alert("로그인 후 이용 가능합니다.");
-          return;
-      } else if (userId != pin.userId) {
-          alert("수정 권한이 없습니다.");
-          return;
+        alert("로그인 후 이용 가능합니다.");
+        return;
       }
+
+      try {
+        if (isBookmarked) {
+          // 현재 '북마크됨' → 삭제
+          const id = bookmarkId ?? (await getBookmarkIdForPin(pin.id));
+          if (!id) throw new Error("북마크 ID를 찾을 수 없습니다.");
+          await apiDeleteBookmark(id);
+          setIsBookmarked(false);
+          setBookmarkId(null);
+          onChanged?.();
+          return;
+        }
+
+        // 현재 '북마크 안됨' → 생성 시도
+        try {
+          const created = await apiCreateBookmark(pin.id);
+          if (created) {
+            setIsBookmarked(true);
+            setBookmarkId(created.id);
+            onChanged?.();
+          }
+        } catch (err: unknown) {
+          const e = err as { status?: number; message?: string };
+          const msg = e?.message ?? "";
+          // 서버가 "이미 북마크됨"으로 409를 던지면 → 즉시 삭제로 폴백
+          if (e?.status === 409 || /이미 북마크된/.test(msg)) {
+            const id = await getBookmarkIdForPin(pin.id);
+            if (id) {
+              await apiDeleteBookmark(id);
+              setIsBookmarked(false);
+              setBookmarkId(null);
+              onChanged?.();
+              return;
+            }
+          }
+          throw err; // 다른 에러는 그대로 노출
+        }
+      } catch (err) {
+        console.error("북마크 토글 실패:", err);
+      }
+    };
+
+
+  // 공개 토글
+  const togglePublic = async () => {
+    if (!userId) {
+      alert("로그인 후 이용 가능합니다.");
+      return;
+    } else if (userId != pin.userId) {
+      alert("수정 권한이 없습니다.");
+      return;
+    }
     const next = !localPublic;
     setLocalPublic(next);
 
     try {
       const res = await apiTogglePublic(pin.id);
       const updatedPin =
-        res?.data && res.data.isPublic !== undefined ? res.data : res;
-      const confirmed = updatedPin?.isPublic ?? next;
+        (res as any)?.data && (res as any).data.isPublic !== undefined
+          ? (res as any).data
+          : res;
+      const confirmed = (updatedPin as PinDto)?.isPublic ?? next;
       setLocalPublic(confirmed);
 
-      alert(
-        confirmed ? "🌍 공개로 전환되었습니다" : "🔒 비공개로 전환되었습니다"
-      );
-
+      alert(confirmed ? "🌍 공개로 전환되었습니다" : "🔒 비공개로 전환되었습니다");
       await onChanged?.();
     } catch (err) {
       console.error("공개 토글 실패:", err);
@@ -230,53 +250,56 @@ export default function PostModal({
     }
   };
 
-  // ✅ 내용 수정 저장
+  // 내용 수정 저장
   const saveEdit = async () => {
-      if (!userId) {
-          alert("로그인 후 이용 가능합니다.");
-          return;
-      } else if (userId != pin.userId) {
-          alert("수정 권한이 없습니다.");
-          return;
+    if (!userId) {
+      alert("로그인 후 이용 가능합니다.");
+      return;
+    } else if (userId != pin.userId) {
+      alert("수정 권한이 없습니다.");
+      return;
+    }
+    try {
+      await apiUpdatePin(
+        currentPin.id,
+        currentPin.latitude,
+        currentPin.longitude,
+        content
+      );
+
+      // 응답 타입 명시(RsData<PinDto>) → json.data 접근 에러 해결
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${currentPin.id}`
+      );
+      const json = (await res.json()) as RsData<PinDto>;
+
+      setEditing(false);
+
+      if (json.data) {
+        const updated = json.data;
+        setCurrentPin(updated);
+        setContent(updated.content);
+        onChanged?.(updated);
+      } else {
+        setCurrentPin({ ...currentPin, content });
+        onChanged?.({ ...currentPin, content });
       }
-      try {
-          await apiUpdatePin(currentPin.id, currentPin.latitude, currentPin.longitude, content);
 
-          // 서버에서 최신 핀 가져오기
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${currentPin.id}`);
-          const json = await res.json();
-
-          setEditing(false);
-
-          if (json?.data) {
-              const updated = json.data as PinDto;
-              // ✅ 모달 내부 즉시 반영
-              setCurrentPin(updated);
-              setContent(updated.content);
-              // ✅ 부모 리스트도 갱신
-              onChanged?.(updated);
-          } else {
-              // 혹시 실패하면 내용만 반영
-              setCurrentPin({ ...currentPin, content });
-              onChanged?.({ ...currentPin, content });
-          }
-
-          alert("게시글이 수정되었습니다 ✅");
-      } catch (err) {
-          console.error("게시글 수정 실패:", err);
-          alert("게시글 수정 중 오류가 발생했습니다.");
-      }
+      alert("게시글이 수정되었습니다 ✅");
+    } catch (err) {
+      console.error("게시글 수정 실패:", err);
+      alert("게시글 수정 중 오류가 발생했습니다.");
+    }
   };
 
-  // ✅ 삭제
   const deletePin = async () => {
-      if (!userId) {
-          alert("로그인 후 이용 가능합니다.");
-          return;
-      } else if (userId != pin.userId) {
-          alert("수정 권한이 없습니다.");
-          return;
-      }
+    if (!userId) {
+      alert("로그인 후 이용 가능합니다.");
+      return;
+    } else if (userId != pin.userId) {
+      alert("수정 권한이 없습니다.");
+      return;
+    }
     if (!confirm("이 핀을 삭제할까요?")) return;
     await apiDeletePin(pin.id);
     onChanged?.();
@@ -306,23 +329,24 @@ export default function PostModal({
             <p className="text-gray-800 leading-relaxed">{currentPin.content}</p>
           )}
 
-          {/* 날짜: 상세 포맷으로 */}
           <div className="text-xs text-gray-500 flex justify-between">
             <span>
-              작성: {new Date(currentPin.createdAt).toLocaleString("ko-KR", {
+              작성:{" "}
+              {new Date(currentPin.createdAt).toLocaleString("ko-KR", {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}
             </span>
             <span>
-              수정: {new Date(currentPin.modifiedAt).toLocaleString("ko-KR", {
+              수정:{" "}
+              {new Date(currentPin.modifiedAt).toLocaleString("ko-KR", {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}
             </span>
           </div>
 
-          {/* ✅ 태그 섹션 */}
+          {/* 태그 */}
           <div className="mt-3">
             <div className="text-sm font-medium mb-2">🏷️ 태그</div>
 
@@ -368,51 +392,49 @@ export default function PostModal({
             )}
           </div>
 
-          {/* ✅ 컨트롤 버튼 */}
+          {/* 컨트롤 버튼들 */}
           <div className="flex flex-col gap-2">
-          {editing ? (
-            <>
-              <button
-                onClick={saveEdit}
-                className="px-3 py-1 rounded-md bg-blue-600 text-white"
-              >
-                저장
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="px-3 py-1 rounded-md border text-gray-600"
-              >
-                취소
-              </button>
-            </>
-          ) : (
-            <>
-              {/* 1번 줄: 좋아요, 북마크 */}
-              <div className="flex flex-wrap gap-2">
+            {editing ? (
+              <>
                 <button
-                  onClick={toggleLike}
-                  className={`px-3 py-1 rounded-md border transition ${
-                    isLiked
-                      ? "bg-red-100 text-red-600 border-red-300"
-                      : "border-gray-300"
-                  }`}
+                  onClick={saveEdit}
+                  className="px-3 py-1 rounded-md bg-blue-600 text-white"
                 >
-                  {isLiked ? "💔 좋아요 취소" : "👍 좋아요"} ({likeCount})
+                  저장
                 </button>
-
                 <button
-                  onClick={toggleBookmark}
-                  className={`px-3 py-1 rounded-md border transition ${
-                    isBookmarked
-                      ? "bg-blue-100 text-blue-600 border-blue-300"
-                      : "border-gray-300"
-                  }`}
+                  onClick={() => setEditing(false)}
+                  className="px-3 py-1 rounded-md border text-gray-600"
                 >
-                  {isBookmarked ? "🔖 북마크됨" : "📌 북마크"}
+                  취소
                 </button>
-              </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={toggleLike}
+                    className={`px-3 py-1 rounded-md border transition ${
+                      isLiked
+                        ? "bg-red-100 text-red-600 border-red-300"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {isLiked ? "💔 좋아요 취소" : "👍 좋아요"} ({likeCount})
+                  </button>
 
-              {/* 2번 줄: 공개여부, 편집, 삭제 버튼 (isOwner일 경우)*/}
+                  <button
+                    onClick={toggleBookmark}
+                    className={`px-3 py-1 rounded-md border transition ${
+                      isBookmarked
+                        ? "bg-blue-100 text-blue-600 border-blue-300"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {isBookmarked ? "🔖 북마크됨" : "📌 북마크"}
+                  </button>
+                </div>
+
                 {isOwner && (
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -441,9 +463,9 @@ export default function PostModal({
                     </button>
                   </div>
                 )}
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
 
           <div className="text-sm">
             <span className="font-medium">좋아요한 유저:</span>{" "}

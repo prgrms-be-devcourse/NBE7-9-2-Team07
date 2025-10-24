@@ -159,6 +159,9 @@ export const apiCreateBookmark = (pinId: number) => {
     });
 };
 
+export const apiListBookmarks = () =>
+  fetchApi<BookmarkDto[] | null>("/api/bookmarks", { method: "GET" });
+
 export const apiGetMyBookmarks = () =>
   fetchApi<MyBookmarkResponse>("/api/user/mybookmark", { method: "GET" })
     .then(d => Array.isArray(d?.bookmarkList) ? d.bookmarkList : []);
