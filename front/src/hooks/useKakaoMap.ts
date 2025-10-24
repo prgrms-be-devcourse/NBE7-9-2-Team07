@@ -97,7 +97,7 @@ export function useKakaoMap({
                 clearTimeout(debounceTimerRef.current);
             }
         };
-    }, [kakaoReady]); // onCenterChange 의존성 제거
+    }, [kakaoReady, onRightClick]); // onCenterChange 의존성 제거
 
     // ✅ center prop이 외부에서 변경되었을 때만 지도 이동
     useEffect(() => {
