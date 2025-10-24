@@ -9,6 +9,9 @@ import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
 import com.back.pinco.global.geometry.GeometryUtil;
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
@@ -83,6 +86,18 @@ public class PinService {
         return pins;
     }
 
+    public List<Pin> findByUserIdDate(User actor, User writer, double year,double month) {
+        System.out.println(year+" "+month+"-------------");
+        List<Pin> pins;
+        if(actor==null){
+            pins= pinRepository.findPublicByUserDate(writer.getId(), (int) year, (int) month);
+        }else {
+            pins = pinRepository.findAccessibleByUserDate(writer.getId(), actor.getId(), (int) year, (int) month);
+        }
+
+        return pins;
+    }
+
     @Transactional
     public Pin update(User actor, Long pinId, UpdatePinContentRequest updatePinContentRequest) {
         Pin pin = pinRepository.findById(pinId).orElseThrow(()->new ServiceException(ErrorCode.PIN_NOT_FOUND));
@@ -130,5 +145,6 @@ public class PinService {
 
         pinRepository.save(pin);
     }
+
 
 }
