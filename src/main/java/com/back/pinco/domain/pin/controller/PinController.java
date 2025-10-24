@@ -103,9 +103,9 @@ public class PinController {
     }
 
     //사용자로 조회
-    @Operation(summary = "핀 조회 - 다건 (작성자)", description = "작성자로 핀을 다건 조회")
-    @GetMapping("/user/{userId}")
-    public RsData<List<PinDto>> getUserPins(
+    @Operation(summary = "핀 조회 - 다건 (작성자+연도+월)", description = "작성자로 핀을 다건 조회")
+    @GetMapping("/user/{userId}/date")
+    public RsData<List<PinDto>> getUserPinsByDate(
             @NotNull
             @PathVariable Long userId,
             @NotNull
@@ -129,9 +129,9 @@ public class PinController {
     }
 
     //사용자로, 날짜로 조회
-    @Operation(summary = "핀 조회 - 다건 (작성자+연도+월)", description = "작성자로 핀을 다건 조회")
-    @GetMapping("/user/{userId}/date")
-    public RsData<List<PinDto>> getUserPinsByDate(
+    @Operation(summary = "핀 조회 - 다건 (작성자)", description = "작성자로 핀을 다건 조회")
+    @GetMapping("/user/{userId}")
+    public RsData<List<PinDto>> getUserPins(
             @NotNull
             @PathVariable Long userId
     ){

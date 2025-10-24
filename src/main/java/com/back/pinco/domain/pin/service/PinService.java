@@ -87,7 +87,7 @@ public class PinService {
     }
 
     public List<Pin> findByUserIdDate(User actor, User writer, double year,double month) {
-
+        System.out.println(year+" "+month+"-------------");
         List<Pin> pins;
         if(actor==null){
             pins= pinRepository.findPublicByUserDate(writer.getId(), (int) year, (int) month);
