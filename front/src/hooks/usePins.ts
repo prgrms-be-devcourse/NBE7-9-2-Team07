@@ -97,7 +97,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
        ✅ 태그 새로고침 함수 (외부에서 호출 가능)
     ========================================================= */
     const reloadTags = async () => {
-        console.log("🔄 태그 목록 새로고침 중...");
         await fetchTags();
     };
 
@@ -147,7 +146,8 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
 
     // ✅ 첫 렌더링 시 자동 전체 핀 로드
     useEffect(() => {
-        loadAllPins();
+        loadNearbyPins();
+        // loadAllPins();
     }, []);
 
     /* =========================================================
