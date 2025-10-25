@@ -8,11 +8,11 @@ import CreatePostModal from "../../components/CreatePostModal";
 import {usePins} from "../../hooks/usePins";
 import {useKakaoMap} from "../../hooks/useKakaoMap";
 import {apiCreatePin} from "../../lib/pincoApi";
-import {useAuth} from "@/context/AuthContext"; // ✅ 로그인 상태 관리
-import {Heart, Star, LogOut} from "lucide-react"; // ✅ 아이콘 추가
+import {useAuth} from "@/context/AuthContext";
+import {Heart, Star, LogOut} from "lucide-react";
 
 export default function PinCoMainPage() {
-    const {user, logout} = useAuth(); // ✅ 로그인 유저 정보
+    const {user, logout} = useAuth();
     const {
         pins,
         loading,
@@ -65,7 +65,7 @@ export default function PinCoMainPage() {
     });
 
     const [radius, setRadius] = useState(1000.0);
-    // ✅ 화면 대각선 길이 기반으로 반지름 자동 계산
+
     const updateRadiusFromScreen = () => {
         const kakao = (window as any).kakao;
         const map = (window as any).mapRef;
@@ -75,8 +75,7 @@ export default function PinCoMainPage() {
         const sw = bounds.getSouthWest();
         const ne = bounds.getNorthEast();
 
-        // 🔹 geometry 없이 거리 계산 (Haversine)
-        const R = 6371000; // m
+        const R = 6371000;
         const toRad = (deg: number) => (deg * Math.PI) / 180;
         const dLat = toRad(ne.getLat() - sw.getLat());
         const dLng = toRad(ne.getLng() - sw.getLng());
@@ -92,8 +91,6 @@ export default function PinCoMainPage() {
         setRadius(newRadius);
     };
 
-
-    // ✅ 지도 이동/확대/축소 시 반지름 갱신 및 핀 자동 갱신 로직 추가
     useEffect(() => {
         if (!kakaoReady) return;
 
@@ -101,11 +98,9 @@ export default function PinCoMainPage() {
         const map = (window as any).mapRef;
         if (!kakao?.maps || !map) return;
 
-        // 🔹 지도 이동이 멈추거나 줌 레벨이 변경되면 발생하는 'idle' 이벤트 핸들러
         const handleMapIdle = () => {
-            updateRadiusFromScreen(); // 1. 화면 대각선 길이 기반으로 반지름 갱신
+            updateRadiusFromScreen();
 
-            // 2. 현재 모드가 "screen" (지도에서 찾기)일 때만 핀을 자동으로 다시 불러옴
             if (mode === "screen") {
                 loadAllPins(center.lat, center.lng, radius);
             }
@@ -129,46 +124,47 @@ export default function PinCoMainPage() {
         if (rightClickCenter) {
             if (!user) {
                 alert("로그인 후 핀을 추가할 수 있습니다.");
-                setRightClickCenter(null); // 로그인 안 했으면 좌표 초기화
+                setRightClickCenter(null);
                 return;
             }
-            // 로그인 상태이고 우클릭 좌표가 있으면 생성 모달 표시
             setShowCreate(true);
         }
     }, [rightClickCenter, user]);
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-            {/* ✅ KakaoMap SDK 필요 라이브러리 추가*/}
             <Script
                 src={`//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=clusterer`}
                 strategy="afterInteractive"
             />
 
             <main className="flex flex-1 overflow-hidden">
-                {/* 📍 PinCoMainPage.tsx 안의 Sidebar 부분 */}
                 <Sidebar
                     pins={pins}
                     loading={loading}
                     mode={mode}
                     allTags={allTags}
                     selectedTags={selectedTags}
-                    onChangeTags={async (next) => {
-                        // ✅ 실제 선택/해제 모두 훅 메서드로 처리
-                        await applyTagFilter(next);     // 빈 배열이면 내부에서 clearTagFilter 호출됨
+                    // ✅ 태그만 변경: 현재 모드 유지하면서 필터 적용
+                    onChangeTags={(next) => {
+                        applyTagFilter(next);
                     }}
+                    // ✅ 모드 변경: 필터 초기화하고 지도에서 찾기
                     onClickAll={() => {
-                        loadAllPins(center.lat, center.lng, radius)
+                        loadAllPins(center.lat, center.lng, radius);
                     }}
-                    onClickNearBy={async () => {
-                        await clearTagFilter();         // 전체 보기 + 태그버튼 전부 해제 + 리스트 갱신
+                    // ✅ 모드 변경: 필터 초기화하고 주변 보기
+                    onClickNearBy={() => {
+                        loadNearbyPins();
                     }}
+                    // ✅ 모드 변경: 필터 초기화하고 북마크 보기
                     onClickMyBookmarks={() => {
-                        clearTagFilter();
+                        console.log("🔘 북마크 버튼 클릭");
                         loadMyBookmarks();
                     }}
+                    // ✅ 모드 변경: 필터 초기화하고 좋아요 보기
                     onClickLikedPins={() => {
-                        clearTagFilter();
+                        console.log("🔘 좋아요 버튼 클릭");
                         loadLikedPins();
                     }}
                     onSelectPin={async (p) => {
@@ -178,11 +174,9 @@ export default function PinCoMainPage() {
                     }}
                 />
 
-
                 <div className="flex-1 relative">
                     <div id="map" className="w-full h-full"/>
 
-                    {/* ✅ 로그인 상태 표시 */}
                     <div className="absolute top-4 left-4 bg-white p-3 px-5 rounded-lg shadow-md z-50">
                         <p className="text-sm text-gray-600">
                             👋 {user ? `${user.name} (${user.email})` : "로그인 안됨"}
@@ -196,14 +190,6 @@ export default function PinCoMainPage() {
                             </button>
                         )}
                     </div>
-
-                    {/*<div className="absolute top-20 left-4 bg-white p-2 px-3 rounded-lg shadow-md z-50 text-xs">*/}
-                    {/*    <p className="text-gray-500">📍 현재 위치</p>*/}
-                    {/*    <p className="text-gray-700 font-mono">*/}
-                    {/*        /!* center 상태는 useKakaoMap에서 실시간으로 갱신됨 *!/*/}
-                    {/*        {center.lat.toFixed(6)}, {center.lng.toFixed(6)}*/}
-                    {/*    </p>*/}
-                    {/*</div>*/}
 
                     {selectedPin && (
                         <PostModal
@@ -223,7 +209,6 @@ export default function PinCoMainPage() {
 
                     {showCreate && (
                         <CreatePostModal
-                            // ✅ 중심 좌표 대신 우클릭 좌표 (rightClickCenter) 또는 현재 중심 좌표 (center) 전달
                             lat={rightClickCenter?.lat ?? center.lat}
                             lng={rightClickCenter?.lng ?? center.lng}
                             userId={user?.id}
@@ -232,7 +217,6 @@ export default function PinCoMainPage() {
                                 setRightClickCenter(null);
                             }}
                             onCreated={async () => {
-                                // 새로 등록한 핀 반영
                                 if (mode === "screen") await loadAllPins(center.lat, center.lng, radius);
                                 else if (mode === "nearby") await loadNearbyPins(center.lat, center.lng);
                                 else if (mode === "tag") await applyTagFilter(selectedTags);
@@ -241,13 +225,11 @@ export default function PinCoMainPage() {
                                 else await loadAllPins();
                             }}
                             onTagsUpdated={async () => {
-                                // ✅ 태그 목록만 새로고침
                                 await reloadTags();
                             }}
                         />
                     )}
 
-                    {/* ✅ 핀 추가 버튼 */}
                     <button
                         className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-lg shadow-lg hover:bg-blue-700 z-50"
                         onClick={() => {
@@ -255,16 +237,13 @@ export default function PinCoMainPage() {
                                 alert("로그인 후 이용 가능합니다.");
                                 return;
                             }
-                            // 버튼 클릭 시에는 현재 화면 중심 좌표로 모달 띄우기
-                            setRightClickCenter(null); // 우클릭 좌표 초기화 후
+                            setRightClickCenter(null);
                             setShowCreate(true);
-                        }
-                        }
+                        }}
                     >
                         + 핀 등록
                     </button>
 
-                    {/* ✅ 확대/축소 컨트롤 */}
                     <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-50">
                         <button
                             className="bg-white border rounded-full shadow-md p-3 hover:bg-gray-100"
@@ -299,11 +278,5 @@ export default function PinCoMainPage() {
                 }
             `}</style>
         </div>
-    )
-        ;
+    );
 }
-
-function setRadius(newRadius: number) {
-    throw new Error("Function not implemented.");
-}
-
