@@ -71,9 +71,6 @@ export function useKakaoMap({
                     if (onCenterChange) {
                       onCenterChange(newLat, newLng);
                     }
-
-                    // ✅ 대신 화면 표시용 좌표만 업데이트 (선택사항)
-                    console.log("📍 현재 중심:", {lat: newLat, lng: newLng});
                 }
             }, 500);
         });
@@ -87,9 +84,6 @@ export function useKakaoMap({
             if (onRightClick) {
                 onRightClick(lat, lng);
             }
-
-            // ✅ 우클릭 좌표 확인 (선택사항)
-            console.log("🖱️ 우클릭 좌표:", {lat, lng});
         });
 
         return () => {

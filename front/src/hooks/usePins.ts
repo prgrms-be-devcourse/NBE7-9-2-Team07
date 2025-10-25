@@ -12,7 +12,7 @@ export interface PinDto {
     isPublic: boolean;
     createdAt: string;
     modifiedAt: string;
-    tags?: string[]; // ✅ 태그 목록 추가
+    tags?: string[];
 }
 
 export interface TagDto {
@@ -30,6 +30,7 @@ interface UsePinsProps {
 
 export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     const [pins, setPins] = useState<PinDto[]>([]);
+    const [allLoadedPins, setAllLoadedPins] = useState<PinDto[]>([]);
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState<Mode>("nearby");
     const [center, setCenter] = useState(initialCenter);
@@ -41,7 +42,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
        ✅ 공통 유틸 함수
     ========================================================= */
 
-    /** 배열 또는 객체 응답을 안전하게 변환 */
     const extractArray = (data: any): any[] => {
         if (!data) return [];
         if (Array.isArray(data)) return data;
@@ -50,13 +50,12 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
         return [];
     };
 
-    /** ✅ 공통 정규화 함수 */
     const normalizePins = (arr: any[] | null | undefined): PinDto[] => {
         if (!Array.isArray(arr)) return [];
         return arr.map((p, idx) => {
-            const pin = p.pin ?? p; // 중첩 구조 대응
+            const pin = p.pin ?? p;
             return {
-                id: pin.id ?? idx + Math.random(), // id 없을 때 fallback
+                id: pin.id ?? idx + Math.random(),
                 latitude: Number(pin.latitude) || 0,
                 longitude: Number(pin.longitude) || 0,
                 content: pin.content ?? "",
@@ -68,78 +67,94 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
                 isPublic: Boolean(pin.isPublic ?? true),
                 createdAt: pin.createdAt ?? "",
                 modifiedAt: pin.modifiedAt ?? "",
-                tags: pin.tags ?? [], // ✅ 기본 태그 배열
+                tags: pin.tags ?? [],
             };
+        });
+    };
+
+    const filterPinsByTags = (pinsToFilter: PinDto[], tags: string[]): PinDto[] => {
+        if (tags.length === 0) return pinsToFilter;
+
+        return pinsToFilter.filter(pin => {
+            if (!pin.tags || pin.tags.length === 0) return false;
+            return tags.every(tag => pin.tags?.includes(tag));
         });
     };
 
     /* =========================================================
        ✅ 태그 목록 로드
     ========================================================= */
+    const fetchTags = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags`);
+            const data = await res.json();
+
+            const tagsArray = extractArray(data.data);
+            setAllTags(tagsArray);
+        } catch (e) {
+            console.error("태그 목록 로드 실패:", e);
+            setAllTags([]);
+        }
+    };
+
     useEffect(() => {
-        const fetchTags = async () => {
-            try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags`);
-                const data = await res.json();
-
-                const tagsArray = extractArray(data.data);
-                setAllTags(tagsArray);
-            } catch (e) {
-                console.error("태그 목록 로드 실패:", e);
-                setAllTags([]);
-            }
-        };
-
         fetchTags();
     }, []);
+
+    const reloadTags = async () => {
+        await fetchTags();
+    };
 
     /* =========================================================
        ✅ 화면상 모든 핀 조회
     ========================================================= */
-    const loadAllPins = async (lat?: number, lng?: number, radius?:number) => {
-
+    const loadAllPins = async (lat?: number, lng?: number, radius?: number) => {
         setLoading(true);
         try {
             const apiKey = localStorage.getItem("apiKey");
             const accessToken = localStorage.getItem("accessToken");
 
-            // 1. 기본 헤더 설정
             const headers: HeadersInit = {
                 "Content-Type": "application/json",
             };
 
-            // 2. ✅ 인증 정보가 모두 있을 때만 Authorization 헤더 추가
             if (apiKey && accessToken) {
                 headers["Authorization"] = `Bearer ${apiKey} ${accessToken}`;
             }
 
-            //url 설정
-            const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}&radius=${radius}`;
+            const validRadius = radius && radius > 0 ? radius : undefined;
+            const radiusParam = validRadius ? `&radius=${validRadius}` : '';
 
-            const res = await fetch(
-                url,
-                {
-                    method: "GET",
-                    headers: headers, // 수정된 headers 객체를 사용
-                    credentials: "include", // ✅ 쿠키 포함
-                }
-            );
+            const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}${radiusParam}`;
+
+            const res = await fetch(url, {
+                method: "GET",
+                headers: headers,
+                credentials: "include",
+            });
             const data = await res.json();
 
             const pinArray = extractArray(data.data);
-            setPins(normalizePins(pinArray));
+            const normalized = normalizePins(pinArray);
+
+            const pinsWithTags = await loadTagsForPins(normalized);
+            setAllLoadedPins(pinsWithTags);
+
+            const filtered = filterPinsByTags(pinsWithTags, selectedTags);
+            setPins(filtered);
+
             setMode("screen");
         } catch (e) {
             console.error("화면 전체 핀 로드 실패:", e);
             setPins([]);
+            setAllLoadedPins([]);
         } finally {
             setLoading(false);
         }
     };
 
-    // ✅ 첫 렌더링 시 자동 전체 핀 로드
     useEffect(() => {
-        loadNearbyPins();
+        loadAllPins();
     }, []);
 
     /* =========================================================
@@ -151,47 +166,82 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
             const apiKey = localStorage.getItem("apiKey");
             const accessToken = localStorage.getItem("accessToken");
 
-            // 1. 기본 헤더 설정
             const headers: HeadersInit = {
                 "Content-Type": "application/json",
             };
 
-            // 2. ✅ 인증 정보가 모두 있을 때만 Authorization 헤더 추가
             if (apiKey && accessToken) {
                 headers["Authorization"] = `Bearer ${apiKey} ${accessToken}`;
             }
 
-            //url 설정
             const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}`;
 
-            const res = await fetch(
-                url,
-                {
-                    method: "GET",
-                    headers: headers, // 수정된 headers 객체를 사용
-                    credentials: "include", // ✅ 쿠키 포함
-                }
-            );
+            const res = await fetch(url, {
+                method: "GET",
+                headers: headers,
+                credentials: "include",
+            });
             const data = await res.json();
 
             const pinArray = extractArray(data.data);
-            setPins(normalizePins(pinArray));
+            const normalized = normalizePins(pinArray);
+
+            const pinsWithTags = await loadTagsForPins(normalized);
+            setPins(pinsWithTags);
+            setAllLoadedPins(pinsWithTags);
             setMode("nearby");
+
+            // ✅ 모드 변경 시 필터 초기화
+            setSelectedTags([]);
         } catch (e) {
             console.error("주변 핀 로드 실패:", e);
             setPins([]);
+            setAllLoadedPins([]);
         } finally {
             setLoading(false);
         }
     };
 
     /* =========================================================
-       ✅ 태그 기반 필터링
+       ✅ 태그 기반 필터링 (모드 유지)
     ========================================================= */
     const applyTagFilter = async (tags: string[]) => {
         setSelectedTags(tags);
-        if (tags.length === 0) return clearTagFilter();
 
+        // ✅ 태그 전체 해제 시
+        if (tags.length === 0) {
+            // screen, bookmark, liked 모드일 때는 전체 로드된 핀 복원
+            if (mode === "screen" || mode === "bookmark" || mode === "liked") {
+                setPins(allLoadedPins);
+                return;
+            }
+            // nearby나 tag 모드일 때는 주변 핀 다시 로드
+            await loadNearbyPins();
+            return;
+        }
+
+        // ✅ screen 모드: 클라이언트 사이드 필터링
+        if (mode === "screen") {
+            const filtered = filterPinsByTags(allLoadedPins, tags);
+            setPins(filtered);
+            return;
+        }
+
+        // ✅ bookmark 모드: 클라이언트 사이드 필터링
+        if (mode === "bookmark") {
+            const filtered = filterPinsByTags(allLoadedPins, tags);
+            setPins(filtered);
+            return;
+        }
+
+        // ✅ liked 모드: 클라이언트 사이드 필터링
+        if (mode === "liked") {
+            const filtered = filterPinsByTags(allLoadedPins, tags);
+            setPins(filtered);
+            return;
+        }
+
+        // ✅ nearby 또는 tag 모드: 서버 사이드 필터링
         setLoading(true);
         try {
             const query = tags.map((t) => `keywords=${encodeURIComponent(t)}`).join("&");
@@ -199,64 +249,80 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
             const data = await res.json();
 
             const filteredPins = extractArray(data.data);
-            setPins(normalizePins(filteredPins));
+            const normalized = normalizePins(filteredPins);
+
+            const pinsWithTags = await loadTagsForPins(normalized);
+            setPins(pinsWithTags);
+            setAllLoadedPins(pinsWithTags);
             setMode("tag");
         } catch (e) {
             console.error("태그 필터 실패:", e);
             setPins([]);
+            setAllLoadedPins([]);
         } finally {
             setLoading(false);
         }
     };
 
     /* =========================================================
-       ✅ 태그 전체 해제
+       ✅ 태그 전체 해제 (deprecated - applyTagFilter([])를 사용)
     ========================================================= */
     const clearTagFilter = async () => {
-        setSelectedTags([]);
-        setMode("screen");
-        await loadNearbyPins()
+        await applyTagFilter([]);
     };
 
     /* =========================================================
        ✅ 북마크 핀 로드
     ========================================================= */
     const loadMyBookmarks = async () => {
+
         if (!userId) {
+            console.warn("⚠️ userId가 없습니다");
             alert("로그인이 필요합니다.");
             return;
         }
+
+        const apiKey = localStorage.getItem("apiKey");
+        const accessToken = localStorage.getItem("accessToken");
+
+        if (!apiKey || !accessToken) {
+            console.error("❌ 토큰이 없습니다. 로그인이 필요합니다.");
+            alert("로그인이 필요합니다.");
+            return;
+        }
+
         setLoading(true);
         try {
-            const apiKey = localStorage.getItem("apiKey");
-            const accessToken = localStorage.getItem("accessToken");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookmarks`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey} ${accessToken}`,
+                },
+                credentials: "include",
+            });
 
-            if (!apiKey || !accessToken) {
-                console.error("❌ 토큰이 없습니다. 로그인이 필요합니다.");
-                alert("로그인이 필요합니다.");
-                setLoading(false);
-                return;
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
             }
-
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookmarks`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey} ${accessToken}`, // ✅ 인증 헤더 추가
-                    },
-                    credentials: "include", // ✅ 쿠키 포함
-                }
-            );
 
             const data = await res.json();
 
             const pinsOnly = extractArray(data.data).map((b: any) => b.pin ?? b);
-            setPins(normalizePins(pinsOnly));
+            const normalized = normalizePins(pinsOnly);
+
+            const pinsWithTags = await loadTagsForPins(normalized);
+            setPins(pinsWithTags);
+            setAllLoadedPins(pinsWithTags);
             setMode("bookmark");
+
+            // ✅ 모드 변경 시 필터 초기화
+            setSelectedTags([]);
         } catch (e) {
-            console.error("북마크 핀 로드 실패:", e);
+            console.error("❌ 북마크 핀 로드 실패:", e);
             setPins([]);
+            setAllLoadedPins([]);
+            alert("북마크를 불러오는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
@@ -266,68 +332,100 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
        ✅ 좋아요한 핀 로드
     ========================================================= */
     const loadLikedPins = async () => {
+
         if (!userId) {
+            console.warn("⚠️ userId가 없습니다");
             alert("로그인이 필요합니다.");
             return;
         }
+
+        const apiKey = localStorage.getItem("apiKey");
+        const accessToken = localStorage.getItem("accessToken");
+
+        if (!apiKey || !accessToken) {
+            console.error("❌ 토큰이 없습니다. 로그인이 필요합니다.");
+            alert("로그인이 필요합니다.");
+            return;
+        }
+
         setLoading(true);
         try {
-            const apiKey = localStorage.getItem("apiKey");
-            const accessToken = localStorage.getItem("accessToken");
-
-            if (!apiKey || !accessToken) {
-                console.error("❌ 토큰이 없습니다. 로그인이 필요합니다.");
-                alert("로그인이 필요합니다.");
-                setLoading(false);
-                return;
-            }
-
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${userId}/likespins`,
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${userId}/likespins`,
                 {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey} ${accessToken}`, // ✅ 인증 헤더 추가
+                        "Authorization": `Bearer ${apiKey} ${accessToken}`,
                     },
-                    credentials: "include", // ✅ 쿠키 포함
+                    credentials: "include",
                 }
             );
+
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
 
             const data = await res.json();
 
             const likedArray = extractArray(data.data);
-            setPins(normalizePins(likedArray));
+            const normalized = normalizePins(likedArray);
+
+            const pinsWithTags = await loadTagsForPins(normalized);
+            setPins(pinsWithTags);
+            setAllLoadedPins(pinsWithTags);
             setMode("liked");
+
+            // ✅ 모드 변경 시 필터 초기화
+            setSelectedTags([]);
         } catch (e) {
-            console.error("좋아요 핀 로드 실패:", e);
+            console.error("❌ 좋아요 핀 로드 실패:", e);
             setPins([]);
+            setAllLoadedPins([]);
+            alert("좋아요한 핀을 불러오는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
     };
 
     /* =========================================================
-       ✅ 핀 클릭 시 태그 로드 (수정된 핵심 부분)
+       ✅ 핀 클릭 시 태그 로드
     ========================================================= */
     const ensurePinTagsLoaded = async (pin: PinDto) => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pin.id}/tags`);
             const data = await res.json();
 
-            console.log("📍[DEBUG] 핀 태그 응답:", data);
-
-            // ✅ 정확한 구조: { data: { pinId, tags: [...] } }
             const tagsArray = Array.isArray(data.data?.tags) ? data.data.tags : [];
-
             const tagNames = tagsArray.map((t: any) => t.keyword);
 
-            console.log("📍[DEBUG] 변환된 태그 이름:", tagNames);
-
-            // ✅ pin 객체에 tags 필드 추가
             return {...pin, tags: tagNames};
         } catch (e) {
             console.error("핀 태그 로드 실패:", e);
             return {...pin, tags: [] as string[]};
+        }
+    };
+
+    const loadTagsForPins = async (pinsToLoad: PinDto[]): Promise<PinDto[]> => {
+        try {
+            const pinsWithTags = await Promise.all(
+                pinsToLoad.map(async (pin) => {
+                    try {
+                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pin.id}/tags`);
+                        const data = await res.json();
+                        const tagsArray = Array.isArray(data.data?.tags) ? data.data.tags : [];
+                        const tagNames = tagsArray.map((t: any) => t.keyword);
+                        return {...pin, tags: tagNames};
+                    } catch (e) {
+                        console.error(`핀 ${pin.id} 태그 로드 실패:`, e);
+                        return {...pin, tags: []};
+                    }
+                })
+            );
+            return pinsWithTags;
+        } catch (e) {
+            console.error("태그 일괄 로드 실패:", e);
+            return pinsToLoad;
         }
     };
 
@@ -351,5 +449,7 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
         loadMyBookmarks,
         loadLikedPins,
         ensurePinTagsLoaded,
+        reloadTags,
+        loadTagsForPins,
     };
 }
