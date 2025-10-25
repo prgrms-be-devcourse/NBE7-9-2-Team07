@@ -76,22 +76,30 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     /* =========================================================
        ✅ 태그 목록 로드
     ========================================================= */
+    const fetchTags = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags`);
+            const data = await res.json();
+
+            const tagsArray = extractArray(data.data);
+            setAllTags(tagsArray);
+        } catch (e) {
+            console.error("태그 목록 로드 실패:", e);
+            setAllTags([]);
+        }
+    };
+
     useEffect(() => {
-        const fetchTags = async () => {
-            try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tags`);
-                const data = await res.json();
-
-                const tagsArray = extractArray(data.data);
-                setAllTags(tagsArray);
-            } catch (e) {
-                console.error("태그 목록 로드 실패:", e);
-                setAllTags([]);
-            }
-        };
-
         fetchTags();
     }, []);
+
+    /* =========================================================
+       ✅ 태그 새로고침 함수 (외부에서 호출 가능)
+    ========================================================= */
+    const reloadTags = async () => {
+        console.log("🔄 태그 목록 새로고침 중...");
+        await fetchTags();
+    };
 
     /* =========================================================
        ✅ 화면상 모든 핀 조회
@@ -313,14 +321,10 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins/${pin.id}/tags`);
             const data = await res.json();
 
-            console.log("📍[DEBUG] 핀 태그 응답:", data);
-
             // ✅ 정확한 구조: { data: { pinId, tags: [...] } }
             const tagsArray = Array.isArray(data.data?.tags) ? data.data.tags : [];
 
             const tagNames = tagsArray.map((t: any) => t.keyword);
-
-            console.log("📍[DEBUG] 변환된 태그 이름:", tagNames);
 
             // ✅ pin 객체에 tags 필드 추가
             return {...pin, tags: tagNames};
@@ -350,5 +354,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
         loadMyBookmarks,
         loadLikedPins,
         ensurePinTagsLoaded,
+        reloadTags, // ✅ 태그 새로고침 함수 export
     };
 }

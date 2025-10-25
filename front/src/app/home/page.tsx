@@ -30,6 +30,7 @@ export default function PinCoMainPage() {
         loadMyBookmarks,
         loadLikedPins,
         ensurePinTagsLoaded,
+        reloadTags,
     } = usePins({lat: 37.5665, lng: 126.978}, user?.id ?? null);
 
     const [kakaoReady, setKakaoReady] = useState(false);
@@ -225,7 +226,7 @@ export default function PinCoMainPage() {
                             // ✅ 중심 좌표 대신 우클릭 좌표 (rightClickCenter) 또는 현재 중심 좌표 (center) 전달
                             lat={rightClickCenter?.lat ?? center.lat}
                             lng={rightClickCenter?.lng ?? center.lng}
-                            userId={user?.id ?? null}
+                            userId={user?.id}
                             onClose={() => {
                                 setShowCreate(false);
                                 setRightClickCenter(null);
@@ -238,6 +239,10 @@ export default function PinCoMainPage() {
                                 else if (mode === "bookmark") await loadMyBookmarks();
                                 else if (mode === "liked") await loadLikedPins();
                                 else await loadAllPins();
+                            }}
+                            onTagsUpdated={async () => {
+                                // ✅ 태그 목록만 새로고침
+                                await reloadTags();
                             }}
                         />
                     )}
