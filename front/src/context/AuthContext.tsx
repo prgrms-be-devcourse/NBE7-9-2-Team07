@@ -170,17 +170,43 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     };
 
 
-    const logout = () => {
-        if (typeof window !== "undefined") {
-            localStorage.removeItem("user");
-            localStorage.removeItem("apiKey");
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-        }
-        setUser(null);
+    const logout = async () => {
+      try {
+        // 1️⃣ 백엔드 로그아웃 API 호출
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/logout`, {
+          method: "POST",
+          credentials: "include", // ✅ 쿠키 기반 인증이라면 필수
+        });
 
-        // TODO: 백엔드에 로그아웃 API가 있다면 호출하여 쿠키를 무효화
+        // 2️⃣ 응답 확인
+        if (res.ok) {
+          const text = await res.text();
+          let data: any = null;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            // 비정상 응답일 경우에도 그냥 진행
+          }
+
+          alert(data?.msg || "로그아웃 성공");
+        } else {
+          alert(`로그아웃 실패 (${res.status})`);
+        }
+      } catch (err) {
+        alert("로그아웃 중 오류가 발생했습니다.");
+      }
+
+      // 3️⃣ 항상 클라이언트 측 세션 초기화
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
+        localStorage.removeItem("apiKey");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+      }
+
+      setUser(null);
     };
+
 
     const isLoggedIn = !!user;
 
