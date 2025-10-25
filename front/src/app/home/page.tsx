@@ -159,12 +159,10 @@ export default function PinCoMainPage() {
                     }}
                     // ✅ 모드 변경: 필터 초기화하고 북마크 보기
                     onClickMyBookmarks={() => {
-                        console.log("🔘 북마크 버튼 클릭");
                         loadMyBookmarks();
                     }}
                     // ✅ 모드 변경: 필터 초기화하고 좋아요 보기
                     onClickLikedPins={() => {
-                        console.log("🔘 좋아요 버튼 클릭");
                         loadLikedPins();
                     }}
                     onSelectPin={async (p) => {

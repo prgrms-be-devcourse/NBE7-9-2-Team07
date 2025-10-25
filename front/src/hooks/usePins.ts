@@ -275,7 +275,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
        ✅ 북마크 핀 로드
     ========================================================= */
     const loadMyBookmarks = async () => {
-        console.log("🔖 loadMyBookmarks 호출됨, userId:", userId);
 
         if (!userId) {
             console.warn("⚠️ userId가 없습니다");
@@ -308,7 +307,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
             }
 
             const data = await res.json();
-            console.log("📥 북마크 데이터:", data);
 
             const pinsOnly = extractArray(data.data).map((b: any) => b.pin ?? b);
             const normalized = normalizePins(pinsOnly);
@@ -320,7 +318,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
 
             // ✅ 모드 변경 시 필터 초기화
             setSelectedTags([]);
-            console.log("✅ 북마크 로드 완료:", pinsWithTags.length, "개");
         } catch (e) {
             console.error("❌ 북마크 핀 로드 실패:", e);
             setPins([]);
@@ -335,7 +332,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
        ✅ 좋아요한 핀 로드
     ========================================================= */
     const loadLikedPins = async () => {
-        console.log("❤️ loadLikedPins 호출됨, userId:", userId);
 
         if (!userId) {
             console.warn("⚠️ userId가 없습니다");
@@ -371,7 +367,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
             }
 
             const data = await res.json();
-            console.log("📥 좋아요 데이터:", data);
 
             const likedArray = extractArray(data.data);
             const normalized = normalizePins(likedArray);
@@ -383,7 +378,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
 
             // ✅ 모드 변경 시 필터 초기화
             setSelectedTags([]);
-            console.log("✅ 좋아요 로드 완료:", pinsWithTags.length, "개");
         } catch (e) {
             console.error("❌ 좋아요 핀 로드 실패:", e);
             setPins([]);
