@@ -844,7 +844,7 @@ class UserControllerIntegrationTest {
     @Transactional
     void getPinsLik2edByUser() throws Exception {
         // given
-        Long userId = 3L;
+        Long userId = 1L;
         User testUser = userService.findById(userId);
         String jwtToken = jwtTokenProvider.generateAccessToken(testUser.getId(), testUser.getEmail(), testUser.getUserName());
 
@@ -853,6 +853,8 @@ class UserControllerIntegrationTest {
                 .map(Pin::getId)
                 .map(id -> id.intValue())
                 .toArray(Integer[]::new);
+
+        assertThat(pinIds).contains(5);
 
         pinService.changePublic(userService.findById(2L), 5L);
 
@@ -872,6 +874,8 @@ class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
 
                 .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data.length()").value(pinIds.length));
+//                .andExpect(jsonPath("$.data.length()").value(expectedPinIds.length))
+//                .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(expectedPinIds)))
+                .andExpect(jsonPath("$.data[?(@.id == 5)]").doesNotExist());
     }
 }

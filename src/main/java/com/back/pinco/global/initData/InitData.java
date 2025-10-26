@@ -42,7 +42,7 @@ public class InitData {
 
     @Transactional
     public void work() {
-        if (pinService.count() > 0) return;
+//        if (pinService.count() > 0) return;
         /**
          * application.yml의 ddl-auto: create 설정으로
          * 애플리케이션 시작 시 초기 데이터로 재생성 -> 시퀀스도 초기화
