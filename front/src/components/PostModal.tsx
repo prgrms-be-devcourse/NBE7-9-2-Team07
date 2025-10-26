@@ -285,10 +285,10 @@ export default function PostModal({
         onChanged?.({ ...currentPin, content });
       }
 
-      alert("게시글이 수정되었습니다 ✅");
+      alert("핀이 수정되었습니다 ✅");
     } catch (err) {
-      console.error("게시글 수정 실패:", err);
-      alert("게시글 수정 중 오류가 발생했습니다.");
+      console.error("핀 수정 실패:", err);
+      alert("핀 수정 중 오류가 발생했습니다.");
     }
   };
 
@@ -317,7 +317,7 @@ export default function PostModal({
         </button>
 
         <div className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold">📝 게시글</h2>
+          <h2 className="text-lg font-semibold">📝 핀 수정</h2>
 
           {editing ? (
             <textarea

@@ -68,7 +68,7 @@ export const apiCreatePin = async (
   longitude: number,
   content: string
 ): Promise<PinDto> => {
-  console.log("📤 보내는 요청:", { latitude, longitude, content });
+  // console.log("📤 보내는 요청:", { latitude, longitude, content });
 
   const res:PinDto = await fetchApi(`/api/pins`, {
     method: "POST",
