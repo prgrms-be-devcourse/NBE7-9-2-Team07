@@ -4,7 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE; // 예: http://localhost:8080
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL; // 예: http://localhost:8080
+
+// ✅ [추가] 서버 응답 타입 정의 (RsData 구조를 명시적으로 지정)
+type RsData = {
+  errorCode: string;
+  msg: string;
+  data?: unknown;
+};
 
 export default function DeleteAccountPage() {
   const router = useRouter();
@@ -32,20 +39,27 @@ export default function DeleteAccountPage() {
     try {
       setLoading(true);
 
-      // ✅ API 호출 (컨트롤러의 @DeleteMapping("/delete") 와 연결)
+      // ✅ API 호출 (백엔드 DELETE /api/user/delete)
       const res = await fetch(`${API_BASE}/api/user/delete`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // rq.getActor() 인증 유지
-        body: JSON.stringify({ password }), // DeleteRequest.password 필드와 일치
+        body: JSON.stringify({ password }),
       });
 
       const contentType = res.headers.get("content-type") || "";
-      const body = contentType.includes("application/json")
-        ? await res.json()
-        : await res.text();
-      const rs: any = typeof body === "string" ? null : body;
 
+      // ✅ [수정됨] 'any' 대신 명시적 타입 사용 + 안전하게 초기화
+      let rs: RsData | null = null;
+
+      // ✅ [추가] 응답이 JSON일 경우만 파싱 (text/plain 대응)
+      if (contentType.includes("application/json")) {
+        rs = (await res.json()) as RsData; // 명시적 타입 캐스팅
+      } else {
+        console.error("서버 응답이 JSON이 아닙니다.");
+      }
+
+      // ✅ [수정됨] 타입 안정성 있게 검사
       if (!res.ok || rs?.errorCode !== "200") {
         alert(rs?.msg || "회원 탈퇴 중 오류가 발생했습니다.");
         return;
@@ -53,10 +67,11 @@ export default function DeleteAccountPage() {
 
       alert(rs.msg || "회원 탈퇴가 완료되었습니다.");
 
-      // ✅ 서버에서 쿠키 삭제됨. 클라이언트 상태도 정리 필요 시:
-      // localStorage.clear(); authContext.logout(); 등
-      router.replace("/goodbye"); // 탈퇴 완료 페이지 혹은 홈으로 이동
-    } catch (_) {
+      // ✅ (선택) 탈퇴 후 홈 또는 별도 페이지로 이동
+      router.replace("/");
+    } catch (error) {
+      // ✅ [추가] 에러 로그 추가
+      console.error(error);
       alert("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setLoading(false);

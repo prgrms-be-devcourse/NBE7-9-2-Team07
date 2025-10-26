@@ -33,7 +33,7 @@ export default function Sidebar({
   // ✅ 전체 보기 클릭 시 태그 상태도 초기화
   const handleClickAll = () => {
     if (selectedTags.length > 0) onChangeTags([]); // 태그 선택 해제
-    onClickAll(); // 전체 보기 로직 실행
+    onClickAll();
   };
 
     const handleClickNearBy = () => {
@@ -50,40 +50,49 @@ export default function Sidebar({
     <aside className="w-80 bg-white border-r flex flex-col overflow-hidden">
 
       {/* 필터 버튼 영역 */}
-      <div className="p-3 border-b flex flex-wrap gap-2">
-          <button
-              onClick={handleClickAll}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "screen" ? "bg-green-600 text-white" : "bg-gray-100 hover:bg-gray-200"
-              }`}
-          >
-              <Globe size={16} /> 전체 보기
-          </button>
+        <div className="p-3 border-b flex flex-col gap-2">
+            {/* 1. 지도에서 찾기 버튼 (첫 번째 줄) */}
+            <div className="flex flex-row gap-2">
+                <button
+                    onClick={handleClickAll}
+                    // ✅ 너비 전체를 사용하도록 'w-full' 추가
+                    className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium flex-1 w-full ${mode === "screen" ? "bg-green-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+                    }`}
+                >
+                    <Globe size={16} /> 지도에서 찾기
+                </button>
 
-        <button
-          onClick={handleClickNearBy}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "nearby" ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"
-            }`}
-        >
-          <Globe size={16} /> 내 주변 보기
-        </button>
+                {/*<button*/}
+                {/*    onClick={handleClickNearBy}*/}
+                {/*    className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium flex-1 ${mode === "nearby" ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"*/}
+                {/*    }`}*/}
+                {/*>*/}
+                {/*    <Globe size={16} /> 내 주변 보기*/}
+                {/*</button>*/}
+            </div>
 
+            {/* 2. 좋아요한 핀, 내 북마크 버튼 (두 번째 줄) */}
+            {/* ✅ flex-row와 gap-2를 사용하여 버튼 두 개를 나란히 배치 */}
+            <div className="flex flex-row gap-2">
+                <button
+                    onClick={onClickLikedPins}
+                    // ✅ 두 버튼이 공간을 균등하게 나누어 가지도록 'flex-1' 추가
+                    className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium flex-1 ${mode === "liked" ? "bg-pink-600 text-white" : "bg-gray-100 hover:bg-gray-200"
+                    }`}
+                >
+                    <Heart size={16} /> 좋아요한 핀
+                </button>
 
-        <button
-          onClick={onClickLikedPins}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "liked" ? "bg-pink-600 text-white" : "bg-gray-100 hover:bg-gray-200"
-            }`}
-        >
-          <Heart size={16} /> 좋아요한 핀
-        </button>
-
-        <button
-          onClick={onClickMyBookmarks}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium ${mode === "bookmark" ? "bg-yellow-400 text-gray-800" : "bg-gray-100 hover:bg-gray-200"
-            }`}
-        >
-          <Star size={16} /> 내 북마크
-        </button>
-      </div>
+                <button
+                    onClick={onClickMyBookmarks}
+                    // ✅ 두 버튼이 공간을 균등하게 나누어 가지도록 'flex-1' 추가
+                    className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium flex-1 ${mode === "bookmark" ? "bg-yellow-400 text-gray-800" : "bg-gray-100 hover:bg-gray-200"
+                    }`}
+                >
+                    <Star size={16} /> 내 북마크
+                </button>
+            </div>
+        </div>
 
       {/* 태그 필터 섹션 */}
       <div className="p-3 border-b">

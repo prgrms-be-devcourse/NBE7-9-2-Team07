@@ -68,7 +68,7 @@ export const apiCreatePin = async (
   longitude: number,
   content: string
 ): Promise<PinDto> => {
-  console.log("📤 보내는 요청:", { latitude, longitude, content });
+  // console.log("📤 보내는 요청:", { latitude, longitude, content });
 
   const res:PinDto = await fetchApi(`/api/pins`, {
     method: "POST",
@@ -126,7 +126,6 @@ export const apiAddLike = async (pinId: number, userId: number) => {
       alert("로그인이 필요합니다.");
       return;
   }
-  
   const res:LikesStatusDto = await fetchApi(`/api/pins/${pinId}/likes`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey} ${accessToken}` },
@@ -140,7 +139,6 @@ export const apiAddLike = async (pinId: number, userId: number) => {
 export const apiRemoveLike = async (pinId: number, userId: number) => {
   const apiKey = localStorage.getItem("apiKey");
   const accessToken = localStorage.getItem("accessToken");
-  
   const res:LikesStatusDto = await fetchApi(`/api/pins/${pinId}/likes`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey} ${accessToken}` },
@@ -161,10 +159,48 @@ export const apiCreateBookmark = (pinId: number) => {
     });
 };
 
-export const apiGetMyBookmarks = () => {
-    return fetchApi<BookmarkDto[] | null>(`/api/bookmarks`, { method: "GET" });
-};
+export const apiListBookmarks = () =>
+  fetchApi<BookmarkDto[] | null>("/api/bookmarks", { method: "GET" });
+
+export const apiGetMyBookmarks = () =>
+  fetchApi<MyBookmarkResponse>("/api/user/mybookmark", { method: "GET" })
+    .then(d => Array.isArray(d?.bookmarkList) ? d.bookmarkList : []);
+type MyBookmarkResponse = { bookmarkList?: PinDto[] };
+
+
 
 export const apiDeleteBookmark = (bookmarkId: number) => {
     return fetchApi<void>(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
 };
+
+// ---------- User ----------
+export const apiJoin = (email: string, password: string, userName: string) =>
+  fetchApi<void>(`/api/user/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, userName }),
+  });
+
+// pincoApi.ts
+type RsData<T = any> = { resultCode?: string; errorCode?: string; msg?: string; data?: T };
+
+async function postJson(url: string, payload: any) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",  // ✅ 쿠키 주고받기
+    mode: "cors",
+    cache: "no-store",
+    body: JSON.stringify(payload),
+    redirect: "follow",
+  });
+
+  // JSON 파싱은 실패해도 안전하게
+  let body: RsData | null = null;
+  try { body = await res.json(); } catch {}
+
+  return { res, body };
+}
+
+
+
