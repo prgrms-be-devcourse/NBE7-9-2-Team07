@@ -113,4 +113,10 @@ public class LikesService {
                 .toList();
     }
 
+    /** 탈퇴한 사용자의 좋아요 취소 */
+    @Transactional
+    public int updateDeleteUserLikedFalse(Long userId) {
+        return likesRepository.updateLikedByUserId(userId);
+    }
+
 }
