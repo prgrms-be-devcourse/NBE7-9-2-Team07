@@ -11,7 +11,7 @@ export default function TagFilter({
   selectedTags: string[];
   onChange: (next: string[]) => void;
   onBookmarkClick: () => void;
-  currentMode: "all" | "nearby" | "tag" | "bookmark";
+  currentMode: "screen" | "nearby" | "tag" | "bookmark";
 }) {
   const toggle = (keyword: string) => {
     const exists = selectedTags.includes(keyword);

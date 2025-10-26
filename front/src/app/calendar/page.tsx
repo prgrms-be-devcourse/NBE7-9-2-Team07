@@ -85,8 +85,6 @@ export default function CalendarPage() {
         }
 
         try {
-            console.log("fetchedPins");
-            console.log(year+" "+(month+1));
             const fetchedPins: PinDto[] = await fetchApi<PinDto[]>(
                 `/api/pins/user/${user!.id}/date?year=${year}&month=${month+1}`,
                 { method: "GET" }
