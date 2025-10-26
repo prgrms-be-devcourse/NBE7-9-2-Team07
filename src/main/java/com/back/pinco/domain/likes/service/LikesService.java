@@ -108,13 +108,15 @@ public class LikesService {
 
         return likesRepository.findPinsByUserIdAndLikedTrue(userId)
                 .stream()
-                .filter(Pin::getIsPublic)
+                .filter(pin -> pin.getUser().getId().equals(userId) || pin.getIsPublic())
                 .map(PinsLikedByUserResponse::formEntry)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public List<Long> getLikedPinIdsByUser(Long userId) {
-        return likesRepository.findLikedPinIdsByUser(userId);
+    /** 탈퇴한 사용자의 좋아요 취소 */
+    @Transactional
+    public int updateDeleteUserLikedFalse(Long userId) {
+        return likesRepository.updateLikedByUserId(userId);
     }
+
 }

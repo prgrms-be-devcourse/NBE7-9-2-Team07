@@ -1,6 +1,7 @@
 package com.back.pinco.domain.user.controller;
 
 import com.back.pinco.domain.likes.repository.LikesRepository;
+import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.entity.User;
@@ -50,6 +51,8 @@ class UserControllerIntegrationTest {
     private PinService pinService;
     @Autowired
     private EntityManager entityManager;
+    @Autowired
+    private LikesService likesService;
 
 
     @Test
@@ -877,5 +880,25 @@ class UserControllerIntegrationTest {
 //                .andExpect(jsonPath("$.data.length()").value(expectedPinIds.length))
 //                .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(expectedPinIds)))
                 .andExpect(jsonPath("$.data[?(@.id == 5)]").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("탈퇴 회원 좋아요 취소 - 성공")
+    @Transactional
+    void setLikedFalse() throws Exception {
+        // given
+        Long userId = 3L;
+        User testUser = userService.findById(userId);
+        String jwtToken = jwtTokenProvider.generateAccessToken(testUser.getId(), testUser.getEmail(), testUser.getUserName());
+
+        Integer[] pinIds = likesRepository.findPinsByUserIdAndLikedTrue(userId)
+                .stream()
+                .map(Pin::getId)
+                .map(Long::intValue)
+                .toArray(Integer[]::new);
+
+        // when & then
+        int delcnt = likesService.updateDeleteUserLikedFalse(userId);
+        assertThat(delcnt).isEqualTo(pinIds.length);
     }
 }

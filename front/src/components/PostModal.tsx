@@ -93,31 +93,39 @@ export default function PostModal({
       }
 
       // 북마크 상태 + bookmarkId
-      try {
-        const myPins = await apiGetMyBookmarks(); // PinDto[]
-        const bookmarkedNow =
-          Array.isArray(myPins) && myPins.some((p) => p.id === pin.id);
+        if (userId) {
+            try {
+                const myPins = await apiGetMyBookmarks(); // PinDto[]
+                const bookmarkedNow =
+                    Array.isArray(myPins) && myPins.some((p) => p.id === pin.id);
 
-        let id: number | null = null;
-        if (bookmarkedNow) {
-          const list = await apiListBookmarks(); // BookmarkDto[] | null
-          const found = (list ?? []).find(
-            (b: BookmarkDto) => b.pin?.id === pin.id
-          );
-          id = found ? found.id : null;
-        }
+                let id: number | null = null;
+                if (bookmarkedNow) {
+                    const list = await apiListBookmarks(); // BookmarkDto[] | null
+                    const found = (list ?? []).find(
+                        (b: BookmarkDto) => b.pin?.id === pin.id
+                    );
+                    id = found ? found.id : null;
+                }
 
-        if (mounted) {
-          setIsBookmarked(Boolean(bookmarkedNow));
-          setBookmarkId(id);
+                if (mounted) {
+                    setIsBookmarked(Boolean(bookmarkedNow));
+                    setBookmarkId(id);
+                }
+            } catch (err) {
+                console.error("북마크 로드 실패:", err);
+                if (mounted) {
+                    setIsBookmarked(false);
+                    setBookmarkId(null);
+                }
+            }
+        } else {
+            // userId가 없으면 북마크 상태를 기본값으로 설정하고 API 호출을 건너뜀
+            if (mounted) {
+                setIsBookmarked(false);
+                setBookmarkId(null);
+            }
         }
-      } catch (err) {
-        console.error("북마크 로드 실패:", err);
-        if (mounted) {
-          setIsBookmarked(false);
-          setBookmarkId(null);
-        }
-      }
     };
 
     loadData();
@@ -317,7 +325,7 @@ export default function PostModal({
         </button>
 
         <div className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold">📝 핀 수정</h2>
+          <h2 className="text-lg font-semibold">📍 핀</h2>
 
           {editing ? (
             <textarea

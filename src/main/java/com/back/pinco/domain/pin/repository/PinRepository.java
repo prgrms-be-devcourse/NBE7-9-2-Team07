@@ -134,4 +134,8 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
         """, nativeQuery = true)
     void refreshLikeCountBatch(@Param("pinIds") Long[] pinIds);
 
+    @Modifying
+    @Query("UPDATE Pin p SET p.deleted = true WHERE p.user.id = :userId AND p.deleted = false")
+    int updatePinsToDeletedByUserId(@Param("userId") Long userId);
+
 }

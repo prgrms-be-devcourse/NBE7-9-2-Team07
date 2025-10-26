@@ -150,24 +150,7 @@ public class PinService {
     }
 
     @Transactional
-    public void syncLikeCount(Long pinId) {
-        pinRepository.refreshLikeCount(pinId);
+    public int updateDeleteByUser(Long userId) {
+        return pinRepository.updatePinsToDeletedByUserId(userId);
     }
-
-    @Transactional
-    public void syncLikeCounts(Collection<Long> pinIds) {
-        if (pinIds == null || pinIds.isEmpty()) {
-            return;
-        }
-        pinRepository.refreshLikeCountBatch(pinIds.toArray(new Long[0]));
-    }
-
-    @Transactional
-    public void syncLikeCountsLikedByUser(Long userId) {
-        List<Long> ids = likesRepository.findLikedPinIdsByUser(userId);
-        syncLikeCounts(ids);
-    }
-
-
-    private final LikesRepository likesRepository;
 }

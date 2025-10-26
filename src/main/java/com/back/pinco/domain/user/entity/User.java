@@ -1,17 +1,11 @@
 package com.back.pinco.domain.user.entity;
 
-import com.back.pinco.domain.bookmark.entity.Bookmark;
-import com.back.pinco.domain.likes.entity.Likes;
-import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -47,17 +41,9 @@ public class User extends BaseEntity {
     @Column(name = "api_key", unique = true, length = 64)
     private String apiKey; // apiKey
 
-    // ✅ 유저가 작성한 게시글들 (Pin)
-    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<Pin> pins = new ArrayList<>();
-
-    // ✅ 유저가 누른 좋아요들 (Like)
-    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<Likes> likes = new ArrayList<>();
-
-    // ✅ 유저가 등록한 북마크들 (Bookmark)
-    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<Bookmark> bookmarks = new ArrayList<>();
+    // ✅ 소프트 삭제용 필드 추가
+    @Column(name = "is_deleted", nullable = false)
+    private boolean deleted = false;   // 기본값 false (삭제되지 않음)
 
     public User(String email, String password, String userName) {
         this.email = email;
@@ -73,5 +59,20 @@ public class User extends BaseEntity {
     // 비밀번호 변경
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    // ✅ 삭제 여부 변경 (setter)
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    // ✅ 소프트 삭제 수행 (편의 메서드)
+    public void softDelete() {
+        this.deleted = true;
+    }
+
+    // ✅ 삭제 여부 확인 (선택)
+    public boolean isDeleted() {
+        return deleted;
     }
 }

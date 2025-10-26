@@ -4,6 +4,7 @@ import com.back.pinco.domain.likes.entity.Likes;
 import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -29,27 +30,12 @@ public interface LikesRepository extends JpaRepository<Likes, Long> {
     @Query("SELECT DISTINCT l.user FROM Likes l WHERE l.pin.id = :pinId AND l.liked = true")
     List<User> findUsersByPinIdAndLikedTrue(@Param("pinId") Long pinId);
 
-    /** 특정 사용자가 좋아요한 모든 핀 엔티티 조회
-     *
-     * @param userId 사용자 ID
-     * @return 핀들 정보
-     */
+    /** 특정 사용자가 좋아요한 모든 핀 엔티티 조회 */
     @Query("SELECT DISTINCT l.pin FROM Likes l WHERE l.user.id = :userId AND l.liked = true")
     List<Pin> findPinsByUserIdAndLikedTrue(@Param("userId") Long userId);
 
-    // 탈퇴하는 유저가 '좋아요=true' 했던 핀 id 목록 (중복 제거)
-    @Query("""
-        select distinct l.pin.id
-        from Likes l
-        where l.user.id = :userId and l.liked = true
-    """)
-    List<Long> findLikedPinIdsByUser(@Param("userId") Long userId);
-
-    // 특정 핀의 현재 좋아요 수 (liked=true)
-    @Query("""
-        select count(l)
-        from Likes l
-        where l.pin.id = :pinId and l.liked = true
-    """)
-    long countByPinIdAndLikedTrue(@Param("pinId") Long pinId);
+    /** 탈퇴한 사용자의 좋아요 기록을 false로 변경 */
+    @Modifying
+    @Query("UPDATE Likes l SET l.liked = false  WHERE l.user.id = :userId AND l.liked = true")
+    int updateLikedByUserId(@Param("userId") Long userId);
 }

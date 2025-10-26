@@ -147,16 +147,11 @@ public class UserService {
 
         User managed = userRepository.findById(user.getId())
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
-
-        // 삭제 전, 영향받는 핀 id 확보
-        List<Long> affectedPinIds = likesService.getLikedPinIdsByUser(managed.getId());
-
-        userRepository.delete(managed);
-        userRepository.flush(); // 같은 트랜잭션 내 즉시 반영(선택)
-
-        // like_count 일괄 동기화
-        pinService.syncLikeCounts(affectedPinIds);
+        managed.setDeleted(true);
+        pinService.updateDeleteByUser(managed.getId());
+        likesService.updateDeleteUserLikedFalse(managed.getId());
     }
+
 
     // 비밀번호 확인
     @Transactional
