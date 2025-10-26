@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect, useState} from "react";
+import {fetchApi} from "@/lib/client";
 
 export interface PinDto {
     id: number;
@@ -111,33 +112,22 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     const loadAllPins = async (lat?: number, lng?: number, radius?: number) => {
         setLoading(true);
         try {
-            const apiKey = localStorage.getItem("apiKey");
-            const accessToken = localStorage.getItem("accessToken");
-
-            const headers: HeadersInit = {
-                "Content-Type": "application/json",
-            };
-
-            if (apiKey && accessToken) {
-                headers["Authorization"] = `Bearer ${apiKey} ${accessToken}`;
-            }
-
             const validRadius = radius && radius > 0 ? radius : undefined;
-            const radiusParam = validRadius ? `&radius=${validRadius}` : '';
+            const radiusParam = validRadius ? `&radius=${validRadius}` : "";
 
-            const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}${radiusParam}`;
+            const url = `/api/pins?latitude=${lat ?? center.lat}&longitude=${lng ?? center.lng}${radiusParam}`;
 
-            const res = await fetch(url, {
-                method: "GET",
-                headers: headers,
-                credentials: "include",
+            // ✅ fetchApi 사용
+            const data:PinDto[] = await fetchApi(url, {
+                method: "GET"
             });
-            const data = await res.json();
 
-            const pinArray = extractArray(data.data);
+            const pinArray = extractArray(data);
+            console.log(data);
+
             const normalized = normalizePins(pinArray);
-
             const pinsWithTags = await loadTagsForPins(normalized);
+
             setAllLoadedPins(pinsWithTags);
 
             const filtered = filterPinsByTags(pinsWithTags, selectedTags);
@@ -156,6 +146,7 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
     useEffect(() => {
         loadAllPins();
     }, []);
+
 
     /* =========================================================
        ✅ 주변 핀 조회
