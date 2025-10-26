@@ -136,7 +136,7 @@ export default function CreatePostModal({
           ✕
         </button>
 
-        <h2 className="text-lg font-semibold mb-3">📝 새 핀 작성</h2>
+        <h2 className="text-lg font-semibold mb-3">📍 새 핀 작성</h2>
 
         {/* 핀 입력 */}
         <textarea

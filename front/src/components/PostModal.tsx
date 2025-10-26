@@ -317,7 +317,7 @@ export default function PostModal({
         </button>
 
         <div className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold">📝 핀 수정</h2>
+          <h2 className="text-lg font-semibold">📍 핀</h2>
 
           {editing ? (
             <textarea
