@@ -181,26 +181,12 @@ export const apiJoin = (email: string, password: string, userName: string) =>
     body: JSON.stringify({ email, password, userName }),
   });
 
-// pincoApi.ts
-type RsData<T = any> = { resultCode?: string; errorCode?: string; msg?: string; data?: T };
-
-async function postJson(url: string, payload: any) {
-  const res = await fetch(url, {
-    method: "POST",
+export const apiDeleteAccount = (password: string) =>
+  fetchApi<void>(`/api/user/delete`, {
+    method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",  // ✅ 쿠키 주고받기
-    mode: "cors",
-    cache: "no-store",
-    body: JSON.stringify(payload),
-    redirect: "follow",
+    body: JSON.stringify({ password }),
   });
-
-  // JSON 파싱은 실패해도 안전하게
-  let body: RsData | null = null;
-  try { body = await res.json(); } catch {}
-
-  return { res, body };
-}
 
 
 
