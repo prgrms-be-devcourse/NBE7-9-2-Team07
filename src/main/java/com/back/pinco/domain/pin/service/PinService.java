@@ -1,5 +1,6 @@
 package com.back.pinco.domain.pin.service;
 
+import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.dto.CreatePinRequest;
 import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
@@ -15,6 +16,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
 import java.util.List;
 
 
@@ -145,5 +148,25 @@ public class PinService {
         pinRepository.save(pin);
     }
 
+    @Transactional
+    public void syncLikeCount(Long pinId) {
+        pinRepository.refreshLikeCount(pinId);
+    }
 
+    @Transactional
+    public void syncLikeCounts(Collection<Long> pinIds) {
+        if (pinIds == null || pinIds.isEmpty()) {
+            return;
+        }
+        pinRepository.refreshLikeCountBatch(pinIds.toArray(new Long[0]));
+    }
+
+    @Transactional
+    public void syncLikeCountsLikedByUser(Long userId) {
+        List<Long> ids = likesRepository.findLikedPinIdsByUser(userId);
+        syncLikeCounts(ids);
+    }
+
+
+    private final LikesRepository likesRepository;
 }

@@ -36,4 +36,20 @@ public interface LikesRepository extends JpaRepository<Likes, Long> {
      */
     @Query("SELECT DISTINCT l.pin FROM Likes l WHERE l.user.id = :userId AND l.liked = true")
     List<Pin> findPinsByUserIdAndLikedTrue(@Param("userId") Long userId);
+
+    // 탈퇴하는 유저가 '좋아요=true' 했던 핀 id 목록 (중복 제거)
+    @Query("""
+        select distinct l.pin.id
+        from Likes l
+        where l.user.id = :userId and l.liked = true
+    """)
+    List<Long> findLikedPinIdsByUser(@Param("userId") Long userId);
+
+    // 특정 핀의 현재 좋아요 수 (liked=true)
+    @Query("""
+        select count(l)
+        from Likes l
+        where l.pin.id = :pinId and l.liked = true
+    """)
+    long countByPinIdAndLikedTrue(@Param("pinId") Long pinId);
 }

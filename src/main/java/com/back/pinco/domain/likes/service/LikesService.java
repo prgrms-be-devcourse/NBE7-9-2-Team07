@@ -113,4 +113,8 @@ public class LikesService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<Long> getLikedPinIdsByUser(Long userId) {
+        return likesRepository.findLikedPinIdsByUser(userId);
+    }
 }

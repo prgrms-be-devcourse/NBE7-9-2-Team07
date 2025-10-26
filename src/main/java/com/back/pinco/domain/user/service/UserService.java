@@ -143,12 +143,19 @@ public class UserService {
     // 회원 정보 삭제
     @Transactional
     public void delete(User user) {
-        if(user == null) {
-            throw new ServiceException(ErrorCode.AUTH_REQUIRED);
-        }
+        if (user == null) throw new ServiceException(ErrorCode.AUTH_REQUIRED);
+
         User managed = userRepository.findById(user.getId())
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+
+        // 삭제 전, 영향받는 핀 id 확보
+        List<Long> affectedPinIds = likesService.getLikedPinIdsByUser(managed.getId());
+
         userRepository.delete(managed);
+        userRepository.flush(); // 같은 트랜잭션 내 즉시 반영(선택)
+
+        // like_count 일괄 동기화
+        pinService.syncLikeCounts(affectedPinIds);
     }
 
     // 비밀번호 확인
