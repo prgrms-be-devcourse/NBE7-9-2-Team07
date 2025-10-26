@@ -108,7 +108,7 @@ public class LikesService {
 
         return likesRepository.findPinsByUserIdAndLikedTrue(userId)
                 .stream()
-                .filter(Pin::getIsPublic)
+                .filter(pin -> pin.getUser().getId().equals(userId) || pin.getIsPublic())
                 .map(PinsLikedByUserResponse::formEntry)
                 .toList();
     }
