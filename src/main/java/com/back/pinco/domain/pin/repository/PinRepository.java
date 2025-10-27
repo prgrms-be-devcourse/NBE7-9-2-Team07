@@ -4,6 +4,7 @@ import com.back.pinco.domain.pin.entity.Pin;
 import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.geometry.GeometryUtil;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
@@ -111,6 +112,30 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
 """)
     Optional<Pin> findPublicPinById(@Param("id") Long id);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE pins p
+        SET like_count = COALESCE((
+          SELECT COUNT(*) FROM likes l
+          WHERE l.pin_id = p.pin_id AND l.is_liked = TRUE
+        ), 0)
+        WHERE p.pin_id = :pinId
+        """, nativeQuery = true)
+    void refreshLikeCount(@Param("pinId") Long pinId);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE pins p
+        SET like_count = COALESCE((
+          SELECT COUNT(*) FROM likes l
+          WHERE l.pin_id = p.pin_id AND l.is_liked = TRUE
+        ), 0)
+        WHERE p.pin_id = ANY(:pinIds)
+        """, nativeQuery = true)
+    void refreshLikeCountBatch(@Param("pinIds") Long[] pinIds);
+
+    @Modifying
+    @Query("UPDATE Pin p SET p.deleted = true WHERE p.user.id = :userId AND p.deleted = false")
+    int updatePinsToDeletedByUserId(@Param("userId") Long userId);
 
 }

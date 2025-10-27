@@ -1,5 +1,6 @@
 package com.back.pinco.domain.pin.service;
 
+import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.pin.dto.CreatePinRequest;
 import com.back.pinco.domain.pin.dto.UpdatePinContentRequest;
 import com.back.pinco.domain.pin.entity.Pin;
@@ -15,6 +16,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
 import java.util.List;
 
 
@@ -87,6 +90,7 @@ public class PinService {
     }
 
     public List<Pin> findByUserIdDate(User actor, User writer, double year,double month) {
+        System.out.println(year+" "+month+"-------------");
         List<Pin> pins;
         if(actor==null){
             pins= pinRepository.findPublicByUserDate(writer.getId(), (int) year, (int) month);
@@ -145,5 +149,8 @@ public class PinService {
         pinRepository.save(pin);
     }
 
-
+    @Transactional
+    public int updateDeleteByUser(Long userId) {
+        return pinRepository.updatePinsToDeletedByUserId(userId);
+    }
 }

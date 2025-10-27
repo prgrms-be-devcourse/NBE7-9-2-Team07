@@ -143,9 +143,15 @@ public class UserService {
     // 회원 정보 삭제
     @Transactional
     public void delete(User user) {
-        userRepository.delete(user);
-        userRepository.flush();
+        if (user == null) throw new ServiceException(ErrorCode.AUTH_REQUIRED);
+
+        User managed = userRepository.findById(user.getId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        managed.setDeleted(true);
+        pinService.updateDeleteByUser(managed.getId());
+        likesService.updateDeleteUserLikedFalse(managed.getId());
     }
+
 
     // 비밀번호 확인
     @Transactional

@@ -41,6 +41,10 @@ public class User extends BaseEntity {
     @Column(name = "api_key", unique = true, length = 64)
     private String apiKey; // apiKey
 
+    // ✅ 소프트 삭제용 필드 추가
+    @Column(name = "is_deleted", nullable = false)
+    private boolean deleted = false;   // 기본값 false (삭제되지 않음)
+
     public User(String email, String password, String userName) {
         this.email = email;
         this.password = password;
@@ -55,5 +59,20 @@ public class User extends BaseEntity {
     // 비밀번호 변경
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    // ✅ 삭제 여부 변경 (setter)
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    // ✅ 소프트 삭제 수행 (편의 메서드)
+    public void softDelete() {
+        this.deleted = true;
+    }
+
+    // ✅ 삭제 여부 확인 (선택)
+    public boolean isDeleted() {
+        return deleted;
     }
 }
