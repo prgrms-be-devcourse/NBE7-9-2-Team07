@@ -40,19 +40,6 @@ public class LikesService {
 
 
     @Transactional
-    public void pinUpdateLikes(Pin pin, boolean type) {
-        int likeCnt = pin.getLikeCount();
-
-        if (type) {
-            pin.setLikeCount(likeCnt + 1);
-        } else if (pin.getLikeCount() > 0) {
-            pin.setLikeCount(likeCnt - 1);
-        }
-
-        pinRepository.save(pin);
-    }
-
-    @Transactional
     public PinLikesResponse changeLikes(Long pinId, Long userId, boolean isLiked) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_INVALID_USER_INPUT));
@@ -62,11 +49,8 @@ public class LikesService {
 
         Likes likes = likesRepository.save(toggleLikes(isLiked, pin, user));
 
-        entityManager.flush();
-        entityManager.clear();
-
         try {
-            pinUpdateLikes(pin, isLiked);
+            updatePinLikeCount(pin);
             return new PinLikesResponse(likes.getLiked(), getLikesCount(pinId));
         } catch (Exception e) {
             throw new ServiceException(ErrorCode.LIKES_UPDATE_PIN_FAILED);
