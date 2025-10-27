@@ -147,6 +147,63 @@ public class InitData {
         PinTag pt17 = pinTagService.createPinTag(pin10, t5); // 야경
         PinTag pt18 = pinTagService.createPinTag(pin11, t7); // 전망좋은
         PinTag pt19 = pinTagService.createPinTag(pin11, t6); // 산책로
+
+        // user1의 하루 일상 트래킹
+        Pin morning1 = pinService.write(user1, new CreatePinRequest(37.497942, 127.027621, "☀️ 출근 시작 - 오늘도 화이팅!"));
+        Pin morning2 = pinService.write(user1, new CreatePinRequest(37.566826, 126.978388, "🚇 광화문역 환승 - 사람 진짜 많다"));
+        Pin morning3 = pinService.write(user1, new CreatePinRequest(37.570196, 126.976849, "🏢 회사 도착 - 커피부터"));
+        Pin morning4 = pinService.write(user1, new CreatePinRequest(37.570180, 126.976920, "💼 오전 회의 중 - 프로젝트 진행 상황 공유"));
+        Pin lunch = pinService.write(user1, new CreatePinRequest(37.569500, 126.977500, "🍜 점심은 칼국수 맛집 - 존맛탱"));
+        Pin afternoon1 = pinService.write(user1, new CreatePinRequest(37.571234, 126.975678, "☕ 카페에서 작업 중 - 집중 모드"));
+        Pin afternoon2 = pinService.write(user1, new CreatePinRequest(37.570500, 126.976234, "🍰 디저트 카페 발견 - 케이크가 예술"));
+        Pin evening1 = pinService.write(user1, new CreatePinRequest(37.570196, 126.976849, "🌆 퇴근 완료 - 오늘 하루도 수고했어"));
+        Pin evening2 = pinService.write(user1, new CreatePinRequest(37.580450, 126.977041, "🍺 친구들과 저녁 - 삼겹살 파티"));
+        Pin evening3 = pinService.write(user1, new CreatePinRequest(37.579617, 126.976950, "🌙 청계천 야경 산책 - 분위기 좋다"));
+        Pin night = pinService.write(user1, new CreatePinRequest(37.497942, 127.027621, "🏠 집 도착 - 오늘 하루 완료!"));
+
+        Tag t10 = tagService.createTag("출근");
+        Tag t11 = tagService.createTag("회사");
+        Tag t12 = tagService.createTag("점심");
+        Tag t13 = tagService.createTag("퇴근");
+        Tag t14 = tagService.createTag("저녁약속");
+        Tag t15 = tagService.createTag("야경산책");
+        Tag t16 = tagService.createTag("일상");
+
+        pinTagService.createPinTag(morning1, t10);  // 출근
+        pinTagService.createPinTag(morning1, t16);  // 일상
+        pinTagService.createPinTag(morning2, t10);  // 출근
+        pinTagService.createPinTag(morning2, t9);   // 지하철
+        pinTagService.createPinTag(morning3, t11);  // 회사
+        pinTagService.createPinTag(morning3, t1);   // 카페
+        pinTagService.createPinTag(morning4, t11);  // 회사
+        pinTagService.createPinTag(morning4, t16);  // 일상
+        pinTagService.createPinTag(lunch, t12);     // 점심
+        pinTagService.createPinTag(lunch, t8);      // 맛집
+        pinTagService.createPinTag(afternoon1, t1); // 카페
+        pinTagService.createPinTag(afternoon1, t2); // 감성
+        pinTagService.createPinTag(afternoon2, t1); // 카페
+        pinTagService.createPinTag(afternoon2, t8); // 맛집
+        pinTagService.createPinTag(evening1, t13);  // 퇴근
+        pinTagService.createPinTag(evening1, t16);  // 일상
+        pinTagService.createPinTag(evening2, t14);  // 저녁약속
+        pinTagService.createPinTag(evening2, t8);   // 맛집
+        pinTagService.createPinTag(evening3, t15);  // 야경산책
+        pinTagService.createPinTag(evening3, t5);   // 야경
+        pinTagService.createPinTag(evening3, t6);   // 산책로
+        pinTagService.createPinTag(night, t16);     // 일상
+
+        likesService.changeLikes(morning1.getId(), user2.getId(), true);
+        likesService.changeLikes(lunch.getId(), user2.getId(), true);
+        likesService.changeLikes(lunch.getId(), user3.getId(), true);
+        likesService.changeLikes(afternoon2.getId(), user3.getId(), true);
+        likesService.changeLikes(evening2.getId(), user2.getId(), true);
+        likesService.changeLikes(evening3.getId(), user2.getId(), true);
+        likesService.changeLikes(evening3.getId(), user3.getId(), true);
+
+        bookmarkService.addBookmark(user2.getId(), lunch.getId());      // 칼국수 맛집
+        bookmarkService.addBookmark(user3.getId(), afternoon1.getId()); // 작업하기 좋은 카페
+        bookmarkService.addBookmark(user2.getId(), afternoon2.getId()); // 디저트 카페
+        bookmarkService.addBookmark(user3.getId(), evening2.getId());   // 삼겹살집
     }
 
 }
