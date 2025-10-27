@@ -30,25 +30,14 @@ public class LikesService {
     private final EntityManager entityManager;
 
 
-    /** 특정 핀에 대한 좋아요 수 조회 */
+    /**
+     * 특정 핀에 대한 좋아요 수 조회
+     */
     @Transactional(readOnly = true)
     public int getLikesCount(Long pinId) {
         return (int) likesRepository.countByPin_IdAndLikedTrue(pinId);
     }
 
-
-    @Transactional
-    public void pinUpdateLikes(Pin pin, boolean type) {
-        int likeCnt = pin.getLikeCount();
-
-        if (type) {
-            pin.setLikeCount(likeCnt + 1);
-        } else if (pin.getLikeCount() > 0) {
-            pin.setLikeCount(likeCnt - 1);
-        }
-
-        pinRepository.save(pin);
-    }
 
     @Transactional
     public PinLikesResponse changeLikes(Long pinId, Long userId, boolean isLiked) {
@@ -60,17 +49,13 @@ public class LikesService {
 
         Likes likes = likesRepository.save(toggleLikes(isLiked, pin, user));
 
-        entityManager.flush();
-        entityManager.clear();
-
         try {
-            pinUpdateLikes(pin, isLiked);
+            updatePinLikeCount(pin);
             return new PinLikesResponse(likes.getLiked(), getLikesCount(pinId));
         } catch (Exception e) {
             throw new ServiceException(ErrorCode.LIKES_UPDATE_PIN_FAILED);
         }
     }
-
 
 
     private Likes toggleLikes(boolean isLiked, Pin pin, User user) {
@@ -88,7 +73,9 @@ public class LikesService {
     }
 
 
-    /** 해당 핀을 좋아요 누른 유저 ID 목록 전달 */
+    /**
+     * 해당 핀을 좋아요 누른 유저 ID 목록 전달
+     */
     public List<PinLikedUserResponse> getUsersWhoLikedPin(Long pinId) {
         if (!pinRepository.existsById(pinId)) {
             throw new ServiceException(ErrorCode.LIKES_INVALID_PIN_INPUT);
@@ -100,7 +87,9 @@ public class LikesService {
                 .toList();
     }
 
-    /** 특정 사용자가 좋아요 누른 핀 목록 전달 */
+    /**
+     * 특정 사용자가 좋아요 누른 핀 목록 전달
+     */
     public List<PinsLikedByUserResponse> getPinsLikedByUser(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ServiceException(ErrorCode.LIKES_INVALID_USER_INPUT);
@@ -113,10 +102,32 @@ public class LikesService {
                 .toList();
     }
 
-    /** 탈퇴한 사용자의 좋아요 취소 */
+    /**탈퇴한 사용자의 좋아요 취소 */
     @Transactional
-    public int updateDeleteUserLikedFalse(Long userId) {
-        return likesRepository.updateLikedByUserId(userId);
+    public void updateDeleteUserLikedFalse(Long userId) {
+        // 핀 조회
+        List<Pin> likedPins = likesRepository.findPinsByUserIdAndLikedTrue(userId);
+
+        if (likedPins.isEmpty()) return;
+
+        try {
+            likesRepository.updateLikedByUserId(userId);
+
+            List<Pin> updatedPins = likedPins
+                    .stream()
+                    .map(pin -> updatePinLikeCount(pin))
+                    .toList();
+
+            pinRepository.saveAll(updatedPins);
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.LIKES_UPDATE_PIN_FAILED);
+        }
     }
 
+    @Transactional
+    public Pin updatePinLikeCount(Pin pin) {
+        int likesCount = getLikesCount(pin.getId());
+        pin.setLikeCount(likesCount);
+        return pin;
+    }
 }
