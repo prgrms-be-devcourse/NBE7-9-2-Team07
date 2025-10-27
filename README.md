@@ -97,7 +97,8 @@ http://localhost:8080/swagger-ui/index.html
 
 ## ☁️ 시스템 아키텍처
 
-[[시스템 구성도] 07팀_2차 프로젝트.pdf](https://github.com/user-attachments/files/23162982/07._2.pdf)
+<img width="252" height="781" alt="시스템 구성도  07팀_2차 프로젝트" src="https://github.com/user-attachments/assets/6c2c5732-3fdd-47fb-bf1f-76d934225fd2" />
+
 
 
 ---
