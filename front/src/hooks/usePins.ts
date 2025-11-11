@@ -123,7 +123,6 @@ export function usePins(initialCenter: UsePinsProps, userId?: number | null) {
             });
 
             const pinArray = extractArray(data);
-            console.log(data);
 
             const normalized = normalizePins(pinArray);
             const pinsWithTags = await loadTagsForPins(normalized);
