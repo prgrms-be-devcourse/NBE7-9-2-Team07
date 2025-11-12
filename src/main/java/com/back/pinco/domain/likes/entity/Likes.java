@@ -6,6 +6,7 @@ import com.back.pinco.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
@@ -38,26 +39,26 @@ public class Likes extends BaseEntity {
     private Long id;    // 고유 ID
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;    // 사용자 ID
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pin_id", nullable = false)
     private Pin pin;    // 핀 ID
 
-    @Column(name = "is_liked", nullable = false)
-    private Boolean liked = true;    // 좋아요 여부
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;    // 사용자 ID
 
-
-    public Likes(User user, Pin pin) {
-        this.user = user;
+    public Likes(Pin pin, User user) {
         this.pin = pin;
-        this.liked = true;
+        this.user = user;
     }
 
-    public Likes toggleLike(boolean isLiked) {
-        this.liked = isLiked;
-        return this;
+    @Profile("test")
+    @Override
+    public String toString() {
+        return "Likes{" +
+                "id=" + id +
+                ", pinId=" + (pin != null ? pin.getId() : null) +
+                ", userId=" + (user != null ? user.getId() : null) +
+                '}';
     }
 
 }

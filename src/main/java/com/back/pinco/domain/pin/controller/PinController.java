@@ -224,7 +224,7 @@ public class PinController {
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
-                likesService.changeLikes(pinId, reqbody.userId(), true)
+                likesService.toggleLikeOn(pinId, reqbody.userId())
         );
 
     }
@@ -239,7 +239,7 @@ public class PinController {
         return new RsData<>(
                 "200",
                 "성공적으로 처리되었습니다",
-                likesService.changeLikes(pinId, reqbody.userId(), false)
+                likesService.toggleLikeOff(pinId, reqbody.userId())
         );
     }
 

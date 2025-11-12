@@ -819,7 +819,7 @@ class UserControllerIntegrationTest {
         User testUser = userService.findById(userId);
         String jwtToken = jwtTokenProvider.generateAccessToken(testUser.getId(), testUser.getEmail(), testUser.getUserName());
 
-        Integer[] pinIds = likesRepository.findPinsByUserIdAndLikedTrue(userId)
+        Integer[] pinIds = likesRepository.findPinsByUserId(userId)
                 .stream()
                 .map(Pin::getId)
                 .map(id -> id.intValue())
@@ -838,7 +838,7 @@ class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.msg").value("성공적으로 처리되었습니다"))
 
                 .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data.length()").value(likesRepository.countByUser_idAndLikedTrue(userId)))
+                .andExpect(jsonPath("$.data.length()").value(likesRepository.countByUserId(userId)))
                 .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(pinIds)));;
     }
 
@@ -851,7 +851,7 @@ class UserControllerIntegrationTest {
         User testUser = userService.findById(userId);
         String jwtToken = jwtTokenProvider.generateAccessToken(testUser.getId(), testUser.getEmail(), testUser.getUserName());
 
-        Integer[] pinIds = likesRepository.findPinsByUserIdAndLikedTrue(userId)
+        Integer[] pinIds = likesRepository.findPinsByUserId(userId)
                 .stream()
                 .map(Pin::getId)
                 .map(id -> id.intValue())
@@ -887,7 +887,7 @@ class UserControllerIntegrationTest {
         User testUser = userService.findById(userId);
         String jwtToken = jwtTokenProvider.generateAccessToken(testUser.getId(), testUser.getEmail(), testUser.getUserName());
 
-        Integer[] pinIds = likesRepository.findPinsByUserIdAndLikedTrue(userId)
+        Integer[] pinIds = likesRepository.findPinsByUserId(userId)
                 .stream()
                 .map(Pin::getId)
                 .map(Long::intValue)
