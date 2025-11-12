@@ -51,9 +51,8 @@ export default function PinCoMainPage() {
         pins,
         center,
         onSelectPin: async (p) => {
-            const withTags = await ensurePinTagsLoaded(p);
-            setSelectedPin(withTags);
-            setCenter({lat: withTags.latitude, lng: withTags.longitude});
+            setSelectedPin(p);  // 태그 로드 없이 바로 설정
+            setCenter({ lat: p.latitude, lng: p.longitude });
         },
         kakaoReady,
         onCenterChange: (lat, lng) => {
