@@ -13,6 +13,11 @@ import {Heart, Star, LogOut} from "lucide-react";
 
 export default function PinCoMainPage() {
     const {user, logout} = useAuth();
+
+    // ✅ 추가: 사용자 위치 상태
+    const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [locationLoading, setLocationLoading] = useState(true);
+
     const {
         pins,
         loading,
@@ -31,10 +36,68 @@ export default function PinCoMainPage() {
         loadLikedPins,
         ensurePinTagsLoaded,
         reloadTags,
-    } = usePins({lat: 37.5665, lng: 126.978}, user?.id ?? null);
+    } = usePins(
+        // ✅ 수정: 초기 중심을 사용자 위치 또는 기본값으로
+        userLocation || { lat: 37.5665, lng: 126.978 },
+        user?.id ?? null
+    );
 
     const [kakaoReady, setKakaoReady] = useState(false);
     const [rightClickCenter, setRightClickCenter] = useState<{ lat: number; lng: number } | null>(null);
+
+    // ✅ 추가: 사용자 위치 가져오기
+    useEffect(() => {
+        if (navigator.geolocation) {
+            console.log("📍 GPS 위치 요청 중...");
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    console.log("✅ GPS 위치 획득:", { lat: latitude, lng: longitude });
+
+                    setUserLocation({ lat: latitude, lng: longitude });
+                    setCenter({ lat: latitude, lng: longitude });
+                    setLocationLoading(false);
+                },
+                (error) => {
+                    console.error("❌ GPS 위치 획득 실패:", error);
+
+                    // 에러 메시지 표시
+                    let errorMsg = "";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = "위치 권한이 거부되었습니다. 기본 위치(서울)로 설정합니다.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = "위치 정보를 사용할 수 없습니다. 기본 위치(서울)로 설정합니다.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = "위치 요청 시간이 초과되었습니다. 기본 위치(서울)로 설정합니다.";
+                            break;
+                    }
+
+                    console.warn("⚠️", errorMsg);
+
+                    // 기본 위치 설정 (서울 시청)
+                    setUserLocation({ lat: 37.5665, lng: 126.978 });
+                    setCenter({ lat: 37.5665, lng: 126.978 });
+                    setLocationLoading(false);
+                },
+                {
+                    enableHighAccuracy: true, // 높은 정확도 요청
+                    timeout: 10000, // 10초 타임아웃
+                    maximumAge: 0 // 캐시된 위치 사용 안 함
+                }
+            );
+        } else {
+            console.error("❌ 브라우저가 Geolocation을 지원하지 않습니다.");
+            alert("이 브라우저는 위치 서비스를 지원하지 않습니다. 기본 위치(서울)로 설정합니다.");
+
+            setUserLocation({ lat: 37.5665, lng: 126.978 });
+            setCenter({ lat: 37.5665, lng: 126.978 });
+            setLocationLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         const t = setInterval(() => {
@@ -129,6 +192,18 @@ export default function PinCoMainPage() {
             setShowCreate(true);
         }
     }, [rightClickCenter, user]);
+
+    // ✅ 추가: 위치 로딩 중 화면
+    if (locationLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-50">
+                <div className="text-center">
+                    <div className="animate-spin text-4xl mb-4">📍</div>
+                    <p className="text-gray-600">현재 위치를 확인하는 중...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
@@ -242,6 +317,19 @@ export default function PinCoMainPage() {
                     </button>
 
                     <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-50">
+                        <button
+                            className="bg-white border rounded-full shadow-md p-3 hover:bg-gray-100 z-50"
+                            onClick={() => {
+                                if (userLocation) {
+                                    setCenter(userLocation);
+                                    alert("현재 위치로 이동합니다.");
+                                } else {
+                                    alert("위치 정보를 사용할 수 없습니다.");
+                                }
+                            }}
+                        >
+                            🚩
+                        </button>
                         <button
                             className="bg-white border rounded-full shadow-md p-3 hover:bg-gray-100"
                             onClick={() => (window as any).mapRef?.setLevel((window as any).mapRef.getLevel() + 1)}
