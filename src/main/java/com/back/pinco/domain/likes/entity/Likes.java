@@ -20,8 +20,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
         ),
         indexes = {
                 @Index(name = "idx_like_user", columnList = "user_id"),
-                @Index(name = "idx_like_pin", columnList = "pin_id"),
-                @Index(name = "idx_like_status", columnList = "is_liked")
+                @Index(name = "idx_like_pin", columnList = "pin_id")
         }
 )
 @EntityListeners(AuditingEntityListener.class)
