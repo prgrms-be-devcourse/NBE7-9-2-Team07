@@ -11,7 +11,6 @@ import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.domain.user.repository.UserRepository;
 import com.back.pinco.global.exception.ErrorCode;
 import com.back.pinco.global.exception.ServiceException;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,107 +26,128 @@ public class LikesService {
     private final LikesRepository likesRepository;
     private final PinRepository pinRepository;
     private final UserRepository userRepository;
-    private final EntityManager entityManager;
 
 
-    /**
-     * 특정 핀에 대한 좋아요 수 조회
-     */
+    // 특정 핀에 대한 좋아요 수 조회
     @Transactional(readOnly = true)
     public int getLikesCount(Long pinId) {
-        return (int) likesRepository.countByPin_IdAndLikedTrue(pinId);
+        return (int) likesRepository.countByPinId(pinId);
+    }
+
+
+    // 좋아요 등록
+    @Transactional
+    public PinLikesResponse toggleLikeOn(Long pinId, Long userId) {
+        User user = validateUser(userId);
+        Pin pin = validatePin(pinId, userId);
+
+        saveLike(pin, user);
+        int likeCount = refreshPinLikeCount(pinId);
+
+        return new PinLikesResponse(true, likeCount);
+    }
+
+    private Likes saveLike(Pin pin, User user) {
+        try {
+            return likesRepository.save(new Likes(pin, user));
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.LIKES_CREATE_FAILED);
+        }
+    }
+
+
+    // 좋아요 취소
+    @Transactional
+    public PinLikesResponse toggleLikeOff(Long pinId, Long userId) {
+        User user = validateUser(userId);
+        Pin pin = validatePin(pinId, userId);
+
+        deleteLike(pin, user);
+        int likeCount = refreshPinLikeCount(pinId);
+
+        return new PinLikesResponse(false, likeCount);
+    }
+
+    private void deleteLike(Pin pin, User user) {
+        Likes likes = likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_NOT_FOUND));
+
+        try {
+            likesRepository.delete(likes);
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.LIKES_REVOKE_FAILED);
+        }
+    }
+
+
+    private Pin validatePin(Long pinId, Long userId) {
+        Pin pin = pinRepository.findAccessiblePinById(pinId, userId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_INVALID_PIN_INPUT));
+        return pin;
+    }
+
+    private User validateUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_INVALID_USER_INPUT));
+        return user;
     }
 
 
     @Transactional
-    public PinLikesResponse changeLikes(Long pinId, Long userId, boolean isLiked) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_INVALID_USER_INPUT));
-
-        Pin pin = pinRepository.findAccessiblePinById(pinId, userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_INVALID_PIN_INPUT));
-
-        Likes likes = likesRepository.save(toggleLikes(isLiked, pin, user));
-
+    public int refreshPinLikeCount(Long pinId) {
         try {
-            updatePinLikeCount(pin);
-            return new PinLikesResponse(likes.getLiked(), getLikesCount(pinId));
+            pinRepository.refreshLikeCount(pinId);
+            return getLikesCount(pinId);
         } catch (Exception e) {
             throw new ServiceException(ErrorCode.LIKES_UPDATE_PIN_FAILED);
         }
     }
 
 
-    private Likes toggleLikes(boolean isLiked, Pin pin, User user) {
-        try {
-            return likesRepository.findByPinIdAndUserId(pin.getId(), user.getId())
-                    .map(like -> like.toggleLike(isLiked))
-                    .orElse(new Likes(user, pin));
-        } catch (Exception e) {
-            if (isLiked) {
-                throw new ServiceException(ErrorCode.LIKES_CREATE_FAILED);
-            } else {
-                throw new ServiceException(ErrorCode.LIKES_REVOKE_FAILED);
-            }
-        }
-    }
-
-
-    /**
-     * 해당 핀을 좋아요 누른 유저 ID 목록 전달
-     */
+    // 해당 핀을 좋아요 누른 유저 ID 목록 전달
     public List<PinLikedUserResponse> getUsersWhoLikedPin(Long pinId) {
         if (!pinRepository.existsById(pinId)) {
             throw new ServiceException(ErrorCode.LIKES_INVALID_PIN_INPUT);
         }
 
-        return likesRepository.findUsersByPinIdAndLikedTrue(pinId)
+        return likesRepository.findUsersByPinId(pinId)
                 .stream()
                 .map(PinLikedUserResponse::formEntry)
                 .toList();
     }
 
-    /**
-     * 특정 사용자가 좋아요 누른 핀 목록 전달
-     */
+    // 특정 사용자가 좋아요 누른 핀 목록 전달
     public List<PinsLikedByUserResponse> getPinsLikedByUser(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ServiceException(ErrorCode.LIKES_INVALID_USER_INPUT);
         }
 
-        return likesRepository.findPinsByUserIdAndLikedTrue(userId)
+        return likesRepository.findPinsByUserId(userId)
                 .stream()
                 .filter(pin -> pin.getUser().getId().equals(userId) || pin.getIsPublic())
                 .map(PinsLikedByUserResponse::formEntry)
                 .toList();
     }
 
-    /**탈퇴한 사용자의 좋아요 취소 */
+    // 탈퇴한 사용자의 좋아요 삭제
     @Transactional
-    public void updateDeleteUserLikedFalse(Long userId) {
-        // 핀 조회
-        List<Pin> likedPins = likesRepository.findPinsByUserIdAndLikedTrue(userId);
+    public void deleteWithdrawnUserLikes(Long userId) {
+        // 핀 조회 : 좋아요 갱신을 위해 -> 비 효율적?
+        List<Pin> likedPinsList = likesRepository.findPinsByUserId(userId);
 
-        if (likedPins.isEmpty()) return;
+        if (likedPinsList.isEmpty()) return;
 
         try {
-            likesRepository.updateLikedByUserId(userId);
+            likesRepository.deleteAllByUserId(userId);
 
-            List<Pin> updatedPins = likedPins
-                    .stream()
-                    .map(pin -> updatePinLikeCount(pin))
-                    .toList();
+            Long[] pinsId = likedPinsList.stream()
+                    .map(Pin::getId)
+                    .toArray(Long[]::new);
 
-            pinRepository.saveAll(updatedPins);
+            pinRepository.refreshLikeCountBatch(pinsId);
         } catch (Exception e) {
             throw new ServiceException(ErrorCode.LIKES_UPDATE_PIN_FAILED);
         }
     }
 
-    @Transactional
-    public Pin updatePinLikeCount(Pin pin) {
-        int likesCount = getLikesCount(pin.getId());
-        pin.setLikeCount(likesCount);
-        return pin;
-    }
 }

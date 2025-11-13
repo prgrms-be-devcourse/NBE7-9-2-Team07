@@ -1,14 +1,10 @@
 package com.back.pinco.domain.user.service;
 
 import com.back.pinco.domain.bookmark.dto.BookmarkDto;
-import com.back.pinco.domain.bookmark.entity.Bookmark;
-import com.back.pinco.domain.bookmark.repository.BookmarkRepository;
 import com.back.pinco.domain.bookmark.service.BookmarkService;
-import com.back.pinco.domain.likes.repository.LikesRepository;
 import com.back.pinco.domain.likes.service.LikesService;
 import com.back.pinco.domain.pin.dto.PinDto;
 import com.back.pinco.domain.pin.entity.Pin;
-import com.back.pinco.domain.pin.repository.PinRepository;
 import com.back.pinco.domain.pin.service.PinService;
 import com.back.pinco.domain.user.dto.UserResBody.MyPinResponse;
 import com.back.pinco.domain.user.entity.User;
@@ -149,7 +145,7 @@ public class UserService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
         managed.setDeleted(true);
         pinService.updateDeleteByUser(managed.getId());
-        likesService.updateDeleteUserLikedFalse(managed.getId());
+        likesService.deleteWithdrawnUserLikes(managed.getId());
     }
 
 

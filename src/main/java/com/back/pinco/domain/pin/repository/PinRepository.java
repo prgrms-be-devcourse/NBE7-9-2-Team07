@@ -1,12 +1,12 @@
 package com.back.pinco.domain.pin.repository;
 
 import com.back.pinco.domain.pin.entity.Pin;
-import com.back.pinco.domain.user.entity.User;
 import com.back.pinco.global.geometry.GeometryUtil;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -104,6 +104,7 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
       AND (p.user.id = :userId OR p.isPublic = true)
 """)
     Optional<Pin> findAccessiblePinById(@Param("id") Long id, @Param("userId") Long userId);
+
     @Query("""
     SELECT p FROM Pin p
     WHERE p.id = :id
@@ -117,7 +118,7 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
         UPDATE pins p
         SET like_count = COALESCE((
           SELECT COUNT(*) FROM likes l
-          WHERE l.pin_id = p.pin_id AND l.is_liked = TRUE
+          WHERE l.pin_id = p.pin_id
         ), 0)
         WHERE p.pin_id = :pinId
         """, nativeQuery = true)
@@ -128,7 +129,7 @@ public interface PinRepository extends JpaRepository<Pin,Long> {
         UPDATE pins p
         SET like_count = COALESCE((
           SELECT COUNT(*) FROM likes l
-          WHERE l.pin_id = p.pin_id AND l.is_liked = TRUE
+          WHERE l.pin_id = p.pin_id
         ), 0)
         WHERE p.pin_id = ANY(:pinIds)
         """, nativeQuery = true)

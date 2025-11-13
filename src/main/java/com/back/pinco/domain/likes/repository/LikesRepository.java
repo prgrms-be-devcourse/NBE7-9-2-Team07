@@ -19,23 +19,24 @@ public interface LikesRepository extends JpaRepository<Likes, Long> {
     @Query("SELECT l FROM Likes l WHERE l.pin.id = :pinId AND l.user.id = :userId")
     Optional<Likes> findByPinIdAndUserId(@Param("pinId") Long pinId, @Param("userId") Long userId);
 
-    /** 특정 핀에 대한 좋아요 수 조회(liked = true) */
-    long countByPin_IdAndLikedTrue(Long pinId);
+    /** 특정 핀에 대한 좋아요 수 조회 */
+    @Query("SELECT COUNT(l) FROM Likes l WHERE l.pin.id = :pinId")
+    long countByPinId(@Param("pinId") Long pinId);
 
-    /** 특정 사용자가 누른 좋아요 수 조회(liked = true) */
-    long countByUser_idAndLikedTrue(Long userId);
+    /** 특정 사용자가 누른 좋아요 수 조회 */
+    @Query("SELECT COUNT(l) FROM Likes l WHERE l.user.id = :userId")
+    long countByUserId(@Param("userId") Long userId);
 
-
-    /** 특정 핀에 좋아요를 누른 모든 사용자 조회(liked = true) */
-    @Query("SELECT DISTINCT l.user FROM Likes l WHERE l.pin.id = :pinId AND l.liked = true")
-    List<User> findUsersByPinIdAndLikedTrue(@Param("pinId") Long pinId);
+    /** 특정 핀에 좋아요를 누른 모든 사용자 조회 */
+    @Query("SELECT DISTINCT l.user FROM Likes l WHERE l.pin.id = :pinId")
+    List<User> findUsersByPinId(@Param("pinId") Long pinId);
 
     /** 특정 사용자가 좋아요한 모든 핀 엔티티 조회 */
-    @Query("SELECT DISTINCT l.pin FROM Likes l WHERE l.user.id = :userId AND l.liked = true")
-    List<Pin> findPinsByUserIdAndLikedTrue(@Param("userId") Long userId);
+    @Query("SELECT DISTINCT l.pin FROM Likes l WHERE l.user.id = :userId")
+    List<Pin> findPinsByUserId(@Param("userId") Long userId);
 
-    /** 탈퇴한 사용자의 좋아요 기록을 false로 변경 */
+    /** 탈퇴한 사용자의 좋아요 삭제 */
     @Modifying
-    @Query("UPDATE Likes l SET l.liked = false  WHERE l.user.id = :userId AND l.liked = true")
-    int updateLikedByUserId(@Param("userId") Long userId);
+    @Query("DELETE FROM Likes l WHERE l.user.id = :userId")
+    void deleteAllByUserId(@Param("userId") Long userId);
 }

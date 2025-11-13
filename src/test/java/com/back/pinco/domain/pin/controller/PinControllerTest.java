@@ -758,12 +758,14 @@ public class PinControllerTest {
     @Test
     @DisplayName("좋아요 저장 성공")
     @Transactional
-    void likesCreateSuccess() throws Exception {
+    void 좋아요등록성공() throws Exception {
         //given
         Long pinId = 5L;
         Long userId = 2L;
         String requestBody = "{\"userId\": " + userId + "}";
         User testUser = userService.findById(userId);
+
+        int likeCnt = likesService.getLikesCount(pinId);
 
         // when & then
         mvc.perform(
@@ -780,12 +782,12 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("200"))
 
                 .andExpect(jsonPath("$.data.isLiked").value(true))
-                .andExpect(jsonPath("$.data.likeCount").value(2));
+                .andExpect(jsonPath("$.data.likeCount").value(likeCnt + 1));
 
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getLiked()).isTrue();
+//        assertThat(likes.getLiked()).isTrue();
         assertThat(likes.getPin().getId()).isEqualTo(pinId);
         assertThat(likes.getUser().getId()).isEqualTo(userId);
         assertThat(likes.getCreatedAt()).isNotNull();
@@ -878,12 +880,8 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.data.likeCount").value(lcount - 1));
 
         // DB 검증
-        Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getLiked()).isFalse();
-        assertThat(likes.getPin().getId()).isEqualTo(pinId);
-        assertThat(likes.getUser().getId()).isEqualTo(userId);
-        assertThat(likes.getModifiedAt()).isNotNull();
+        Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId).orElse(null);
+        assertThat(likes).isNull();
     }
 
     @Test
@@ -915,7 +913,6 @@ public class PinControllerTest {
         // DB 검증
         Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getLiked()).isTrue();
         assertThat(likes.getPin().getId()).isEqualTo(pinId);
         assertThat(likes.getUser().getId()).isEqualTo(userId);
         assertThat(likes.getModifiedAt()).isNotNull();
@@ -946,10 +943,8 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.data.isLiked").value(false));
 
         // DB 검증
-        Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getLiked()).isFalse();
-
+        Likes likes = likesRepository.findByPinIdAndUserId(pinId, userId).orElse(null);
+        assertThat(likes).isNull();
 
         // 좋아요 재등록
         mvc.perform(
@@ -968,7 +963,6 @@ public class PinControllerTest {
         // DB 검증
         likes = likesRepository.findByPinIdAndUserId(pinId, userId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.LIKES_CREATE_FAILED));
-        assertThat(likes.getLiked()).isTrue();
     }
 
 
@@ -993,7 +987,7 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("200"))
 
                 .andExpect(jsonPath("$.data.id").value(pin.getId()))
-                .andExpect(jsonPath("$.data.likeCount").value(likesRepository.countByPin_IdAndLikedTrue(pinId)));
+                .andExpect(jsonPath("$.data.likeCount").value(likesRepository.countByPinId(pinId)));
     }
 
     @Test
@@ -1026,7 +1020,7 @@ public class PinControllerTest {
         // given
         Long pinId = 1L;
 
-        Integer[] userIds = likesRepository.findUsersByPinIdAndLikedTrue(pinId)
+        Integer[] userIds = likesRepository.findUsersByPinId(pinId)
                 .stream()
                 .map(User::getId)
                 .map(id -> id.intValue())
@@ -1046,7 +1040,7 @@ public class PinControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("200"))
 
                 .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data.length()").value(likesRepository.countByPin_IdAndLikedTrue(pinId)))
+                .andExpect(jsonPath("$.data.length()").value(likesRepository.countByPinId(pinId)))
                 .andExpect(jsonPath("$.data[*].id", containsInAnyOrder(userIds)));
     }
 
@@ -1056,7 +1050,7 @@ public class PinControllerTest {
         // given
         Long pinId = 4L;
 
-        Integer[] userIds = likesRepository.findUsersByPinIdAndLikedTrue(pinId)
+        Integer[] userIds = likesRepository.findUsersByPinId(pinId)
                 .stream()
                 .map(User::getId)
                 .map(id -> id.intValue())

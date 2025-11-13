@@ -86,32 +86,32 @@ public class InitData {
 
 
         // 좋아요 등록
-        // A(2), B(1), C(1), D(0), E(1)
-        likesService.changeLikes(pinA.getId(), user1.getId(), true);
-        likesService.changeLikes(pinA.getId(), user2.getId(), true);
+        // A(2), B(2), C(1), D(0), E(1)
+        likesService.toggleLikeOn(pinA.getId(), user1.getId());
+        likesService.toggleLikeOn(pinA.getId(), user2.getId());
 
-        likesService.changeLikes(pinB.getId(), user1.getId(), true);
-        likesService.changeLikes(pinB.getId(), user2.getId(), true);
+        likesService.toggleLikeOn(pinB.getId(), user1.getId());
+        likesService.toggleLikeOn(pinB.getId(), user2.getId());
 
-        likesService.changeLikes(pinC.getId(), user1.getId(), true);
-        likesService.changeLikes(pinC.getId(), user2.getId(), true);
-        likesService.changeLikes(pinC.getId(), user1.getId(), false);   // 취소
+        likesService.toggleLikeOn(pinC.getId(), user1.getId());
+        likesService.toggleLikeOn(pinC.getId(), user2.getId());
+        likesService.toggleLikeOff(pinC.getId(), user1.getId());   // 취소
 
-        likesService.changeLikes(pinD.getId(), user1.getId(), true);
-        likesService.changeLikes(pinD.getId(), user1.getId(), false);   // 취소
+        likesService.toggleLikeOn(pinD.getId(), user1.getId());
+        likesService.toggleLikeOff(pinD.getId(), user1.getId());   // 취소
 
-        likesService.changeLikes(pinE.getId(), user1.getId(), true);
+        likesService.toggleLikeOn(pinE.getId(), user1.getId());
 
-        likesService.changeLikes(pin6.getId(), user1.getId(), true);
-        likesService.changeLikes(pin6.getId(), user2.getId(), true);
+        likesService.toggleLikeOn(pin6.getId(), user1.getId());
+        likesService.toggleLikeOn(pin6.getId(), user2.getId());
 
-        likesService.changeLikes(pin7.getId(), user1.getId(), true);
+        likesService.toggleLikeOn(pin7.getId(), user1.getId());
 
-        likesService.changeLikes(pin8.getId(), user1.getId(), true);
+        likesService.toggleLikeOn(pin8.getId(), user1.getId());
 
-        likesService.changeLikes(pin9.getId(), user1.getId(), true);
+        likesService.toggleLikeOn(pin9.getId(), user1.getId());
 
-        likesService.changeLikes(pin10.getId(), user1.getId(), true);
+        likesService.toggleLikeOn(pin10.getId(), user1.getId());
 
 
 
@@ -192,13 +192,13 @@ public class InitData {
         pinTagService.createPinTag(evening3, t6);   // 산책로
         pinTagService.createPinTag(night, t16);     // 일상
 
-        likesService.changeLikes(morning1.getId(), user2.getId(), true);
-        likesService.changeLikes(lunch.getId(), user2.getId(), true);
-        likesService.changeLikes(lunch.getId(), user3.getId(), true);
-        likesService.changeLikes(afternoon2.getId(), user3.getId(), true);
-        likesService.changeLikes(evening2.getId(), user2.getId(), true);
-        likesService.changeLikes(evening3.getId(), user2.getId(), true);
-        likesService.changeLikes(evening3.getId(), user3.getId(), true);
+        likesService.toggleLikeOn(morning1.getId(), user2.getId());
+        likesService.toggleLikeOn(lunch.getId(), user2.getId());
+        likesService.toggleLikeOn(lunch.getId(), user3.getId());
+        likesService.toggleLikeOn(afternoon2.getId(), user3.getId());
+        likesService.toggleLikeOn(evening2.getId(), user2.getId());
+        likesService.toggleLikeOn(evening3.getId(), user2.getId());
+        likesService.toggleLikeOn(evening3.getId(), user3.getId());
 
         bookmarkService.addBookmark(user2.getId(), lunch.getId());      // 칼국수 맛집
         bookmarkService.addBookmark(user3.getId(), afternoon1.getId()); // 작업하기 좋은 카페

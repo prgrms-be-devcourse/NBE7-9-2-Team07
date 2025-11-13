@@ -66,8 +66,9 @@ public enum ErrorCode {
     LIKES_INVALID_USER_INPUT(5001, HttpStatus.NOT_FOUND, "잘못된 사용자 정보입니다."),
     LIKES_INVALID_PIN_INPUT(5002, HttpStatus.NOT_FOUND, "잘못된 핀 정보입니다."),
     LIKES_CREATE_FAILED(5003, HttpStatus.INTERNAL_SERVER_ERROR, "좋아요 등록 중 오류가 발생했습니다."),
-    LIKES_REVOKE_FAILED(5004, HttpStatus.INTERNAL_SERVER_ERROR, "좋아요 변경 중 오류가 발생했습니다."),
-    LIKES_UPDATE_PIN_FAILED(5005, HttpStatus.NOT_FOUND, "좋아요 갱신 중 오류가 발생했습니다.")
+    LIKES_REVOKE_FAILED(5004, HttpStatus.INTERNAL_SERVER_ERROR, "좋아요 취소 중 오류가 발생했습니다."),
+    LIKES_UPDATE_PIN_FAILED(5005, HttpStatus.NOT_FOUND, "좋아요 갱신 중 오류가 발생했습니다."),
+    LIKES_NOT_FOUND(5006, HttpStatus.NOT_FOUND, "존재하지 않는 좋아요입니다."),
     ;
 
 
